@@ -4,7 +4,7 @@ A installable, offline-first PWA that answers one question every day:
 
 > **"Given how I feel today, what is the best 10–30 minutes I can do?"**
 
-Built for a 41-year-old BJJ practitioner / calisthenics enthusiast managing
+Built for a BJJ practitioner / calisthenics enthusiast managing
 occasional lower back stiffness and hamstring tightness. Rule-based coaching,
 not a generic tracker.
 
