@@ -1,0 +1,7 @@
+{
+  "buildCommand": "npm install --prefer-offline --no-audit && npm run build",
+  "installCommand": "npm ci --prefer-offline --no-audit",
+  "env": {
+    "NODE_OPTIONS": "--max_old_space_size=2048"
+  }
+}
