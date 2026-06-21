@@ -11,3 +11,4 @@ dist/
 *.swn
 .claude/
 CONTEXT.md
+*.md
