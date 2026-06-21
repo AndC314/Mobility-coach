@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
 import { Card } from './Card'
 import { useAllSessions } from '../hooks/useSessions'
 import { useStreak, useLongestStreak } from '../hooks/useStreak'
 import { usePreferences } from '../hooks/usePreferences'
 import { isoDate, startOfWeek, todayIso } from '../lib/date'
-import type { CompletedSession } from '../db/db'
+import { db, type CompletedSession } from '../db/db'
+import { computeMuscleScores, MUSCLE_LABELS, type MuscleGroup } from '../data/muscleMap'
 
 const WEEKDAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 const SESSION_TYPE_LABELS: Record<string, string> = {
@@ -19,8 +21,17 @@ const SESSION_TYPE_LABELS: Record<string, string> = {
   custom: 'Session'
 }
 
-/** Builds a Monday-first grid of dates covering the full month, including
- * leading/trailing days from adjacent months to fill complete weeks. */
+// Ring colors
+const RING_MOBILITY = '#3b82f6' // blue
+const RING_BJJ = '#ef4444' // red
+const RING_CALISTHENICS = '#22c55e' // green
+
+interface DayRings {
+  mobility: number // 0-1 completion
+  bjj: number // 0 or 1
+  calisthenics: number // 0-1 (10% per muscle group at 100%)
+}
+
 function buildMonthGrid(year: number, month: number): Date[] {
   const first = new Date(year, month, 1)
   const last = new Date(year, month + 1, 0)
@@ -47,16 +58,60 @@ export default function TrainingCalendar() {
   const year = viewDate.getFullYear()
   const month = viewDate.getMonth()
 
-  const sessionDates = new Set((sessions ?? []).map((s) => s.date))
   const today = new Date()
   const todayStr = isoDate(today)
 
-  // Weekly count for the current week (Mon-start)
   const weekStart = isoDate(startOfWeek(today))
-  const weeklyCount = (sessions ?? []).filter((s) => s.date >= weekStart).length
+  const weeklyCount = new Set((sessions ?? []).filter((s) => s.date >= weekStart).map((s) => s.date)).size
 
   const monthGrid = buildMonthGrid(year, month)
   const monthLabel = viewDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+
+  // Load BJJ and calisthenics logs for the visible month range
+  const monthStart = isoDate(monthGrid[0])
+  const monthEnd = isoDate(monthGrid[monthGrid.length - 1])
+
+  const bjjLogs = useLiveQuery(
+    () => db.bjjClassLogs.where('date').between(monthStart, monthEnd, true, true).toArray(),
+    [monthStart, monthEnd],
+    []
+  )
+  const calLogs = useLiveQuery(
+    () => db.calisthenicsLogs.where('date').between(monthStart, monthEnd, true, true).toArray(),
+    [monthStart, monthEnd],
+    []
+  )
+
+  // Compute ring data per day
+  function getRingsForDate(dateStr: string): DayRings {
+    const daySessions = (sessions ?? []).filter((s) => s.date === dateStr)
+
+    // Mobility: sum actualSec / sum plannedSec for non-calisthenics sessions
+    const mobilitySessions = daySessions.filter((s) => s.type !== 'calisthenics')
+    let mobility = 0
+    if (mobilitySessions.length > 0) {
+      const totalPlanned = mobilitySessions.reduce((s, x) => s + x.plannedSec, 0)
+      const totalActual = mobilitySessions.reduce((s, x) => s + x.actualSec, 0)
+      mobility = totalPlanned > 0 ? Math.min(1, totalActual / totalPlanned) : (totalActual > 0 ? 1 : 0)
+    }
+
+    // BJJ: 1 if any BJJ class logged that day
+    const bjj = (bjjLogs ?? []).some((l) => l.date === dateStr) ? 1 : 0
+
+    // Calisthenics: 10% per muscle group at 100% load
+    const dayCalLogs = (calLogs ?? []).filter((l) => l.date === dateStr)
+    let calisthenics = 0
+    if (dayCalLogs.length > 0) {
+      const scores = computeMuscleScores(
+        dayCalLogs.map((l) => ({ exerciseId: l.exerciseId, value: l.value, date: l.date })),
+        dateStr
+      )
+      const fullGroups = scores.filter((s) => s.score >= 100).length
+      calisthenics = Math.min(1, fullGroups * 0.1)
+    }
+
+    return { mobility, bjj, calisthenics }
+  }
 
   const sessionsThisMonth = (sessions ?? [])
     .filter((s) => {
@@ -125,7 +180,7 @@ export default function TrainingCalendar() {
         </div>
       </Card>
 
-      {/* Month calendar */}
+      {/* Month calendar with rings */}
       <Card>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-extrabold">{monthLabel}</h2>
@@ -145,6 +200,13 @@ export default function TrainingCalendar() {
           </div>
         </div>
 
+        {/* Legend */}
+        <div className="mb-2 flex items-center justify-center gap-4">
+          <LegendDot color={RING_MOBILITY} label="Mobility" />
+          <LegendDot color={RING_BJJ} label="BJJ" />
+          <LegendDot color={RING_CALISTHENICS} label="Calisthenics" />
+        </div>
+
         <div className="grid grid-cols-7 gap-1 text-center">
           {WEEKDAY_LABELS.map((d, i) => (
             <div key={i} className="py-1 text-[11px] font-semibold text-muted">
@@ -154,21 +216,18 @@ export default function TrainingCalendar() {
           {monthGrid.map((d, i) => {
             const dStr = isoDate(d)
             const inMonth = d.getMonth() === month
-            const hasSession = sessionDates.has(dStr)
             const isToday = dStr === todayStr
+            const rings = inMonth ? getRingsForDate(dStr) : { mobility: 0, bjj: 0, calisthenics: 0 }
+            const hasAny = rings.mobility > 0 || rings.bjj > 0 || rings.calisthenics > 0
 
             return (
-              <div key={i} className="flex items-center justify-center py-1">
-                <div
-                  className={`relative flex h-9 w-9 items-center justify-center rounded-full text-sm transition-colors ${
-                    !inMonth ? 'text-border' : isToday ? 'border border-accent text-accent font-bold' : 'text-ink/90'
-                  } ${hasSession && inMonth ? 'bg-teal/15' : ''}`}
-                >
-                  {d.getDate()}
-                  {hasSession && inMonth && (
-                    <span className="absolute bottom-0.5 h-1 w-1 rounded-full bg-teal" />
-                  )}
-                </div>
+              <div key={i} className="flex items-center justify-center py-0.5">
+                <DayCell
+                  day={d.getDate()}
+                  inMonth={inMonth}
+                  isToday={isToday}
+                  rings={rings}
+                />
               </div>
             )
           })}
@@ -191,6 +250,97 @@ export default function TrainingCalendar() {
           </div>
         )}
       </Card>
+    </div>
+  )
+}
+
+// ─── Day cell with concentric progress rings ────────────────────────────────
+
+interface DayCellProps {
+  day: number
+  inMonth: boolean
+  isToday: boolean
+  rings: DayRings
+}
+
+function DayCell({ day, inMonth, isToday, rings }: DayCellProps) {
+  const size = 40
+  const cx = size / 2
+  const cy = size / 2
+
+  // Three concentric rings: outer=mobility, middle=bjj, inner=calisthenics
+  // Radii chosen so numbers (even 2-digit) fit comfortably inside
+  const ringDefs = [
+    { radius: 17, value: rings.mobility, color: RING_MOBILITY, width: 2.5 },
+    { radius: 13.5, value: rings.bjj, color: RING_BJJ, width: 2.5 },
+    { radius: 10, value: rings.calisthenics, color: RING_CALISTHENICS, width: 2.5 }
+  ]
+
+  const hasAnyRing = rings.mobility > 0 || rings.bjj > 0 || rings.calisthenics > 0
+
+  return (
+    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
+      {hasAnyRing && inMonth && (
+        <svg
+          width={size}
+          height={size}
+          className="absolute inset-0"
+          style={{ transform: 'rotate(-90deg)' }}
+        >
+          {ringDefs.map(({ radius, value, color, width }, i) => {
+            if (value <= 0) return null
+            const circumference = 2 * Math.PI * radius
+            const offset = circumference * (1 - value)
+            return (
+              <circle
+                key={i}
+                cx={cx}
+                cy={cy}
+                r={radius}
+                fill="none"
+                stroke={color}
+                strokeWidth={width}
+                strokeDasharray={circumference}
+                strokeDashoffset={offset}
+                strokeLinecap="round"
+                opacity={0.85}
+              />
+            )
+          })}
+        </svg>
+      )}
+
+      {/* Today ring (thin accent border) */}
+      {isToday && inMonth && (
+        <svg width={size} height={size} className="absolute inset-0">
+          <circle
+            cx={cx}
+            cy={cy}
+            r={18.5}
+            fill="none"
+            stroke="#e8622a"
+            strokeWidth={1.5}
+            opacity={0.9}
+          />
+        </svg>
+      )}
+
+      <span
+        className={`relative z-10 text-[13px] font-semibold ${
+          !inMonth ? 'text-border' : isToday ? 'text-accent font-bold' : 'text-ink/85'
+        }`}
+      >
+        {day}
+      </span>
+    </div>
+  )
+}
+
+function LegendDot({ color, label }: { color: string; label: string }) {
+  return (
+    <div className="flex items-center gap-1">
+      <div className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+      <span className="text-[10px] text-muted">{label}</span>
     </div>
   )
 }

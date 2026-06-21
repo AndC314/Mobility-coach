@@ -1,14 +1,22 @@
 import { db, type SorenessArea, type ProgressionKey } from '../db/db'
+import { PROGRESSIONS } from '../data/exercises'
 import { todayIso, isoDate, addDays, dayName } from './date'
+import {
+  computeMuscleSorenessDecay,
+  computeCategorySoreness,
+  type BiometricModifiers,
+  type DecayInput,
+  type CategorySoreness,
+  type MovementCategory
+} from '../data/muscleMap'
+import { RECOVERY_SEQUENCES } from '../data/recovery'
 
 export interface PlanItem {
   id: string
   label: string
   durationMin: number
-  /** route within Mobility / Recovery pages to start this item */
   target: { tab: 'morning' | 'bjj_release' | ProgressionKey | 'recovery'; area?: SorenessArea }
   done: boolean
-  /** 0-100, based on actualSec/plannedSec of the matching session, if any */
   percent: number
 }
 
@@ -17,27 +25,36 @@ export interface TodayPlan {
   items: PlanItem[]
   totalMin: number
   rationale: string
+  categorySoreness: CategorySoreness[]
   context: {
     bjjYesterday: boolean
     bjjToday: boolean
     restYesterday: boolean
     soreAreasToday: SorenessArea[]
+    suppressedCategories: MovementCategory[]
   }
 }
 
-/**
- * Core rule-based recommendation engine.
- *
- * Future integration hook: if `healthMetrics` for today/yesterday exist
- * (Apple Health / Garmin sync), `recoveryScore` and the soreness-driven
- * exclusions below can be refined using HRV / sleep / training readiness.
- * For now the score is a deterministic heuristic based on:
- *  - whether BJJ happened yesterday (recovery focus today)
- *  - whether BJJ is scheduled today (pre-BJJ "primer" item, not heavy work)
- *  - logged soreness today
- *  - current streak (consistency bonus)
- */
-export async function generateTodayPlan(): Promise<TodayPlan> {
+// ─────────────────────────────────────────────────────────────────────────
+// RECOVERY-AWARE RECOMMENDATION ENGINE
+//
+// Integrates the 48h exponential decay model into the daily plan generator.
+// When a muscle category's avg soreness > 30%, heavy training for that
+// group is suppressed and replaced with targeted recovery drills.
+// ─────────────────────────────────────────────────────────────────────────
+
+async function loadDecayInputs(): Promise<DecayInput[]> {
+  const logs = await db.calisthenicsLogs.toArray()
+  return logs.map((log) => ({
+    exerciseId: log.exerciseId,
+    value: log.value,
+    loggedAt: new Date(log.createdAt).getTime()
+  }))
+}
+
+export async function generateTodayPlan(
+  biometrics?: BiometricModifiers
+): Promise<TodayPlan> {
   const today = new Date()
   const yesterday = addDays(today, -1)
 
@@ -47,36 +64,39 @@ export async function generateTodayPlan(): Promise<TodayPlan> {
   const prefs = await db.preferences.get(1)
   const bjjDays = prefs?.bjjDays ?? ['Mon', 'Wed']
 
-  // Did BJJ happen yesterday? Check explicit log first, fall back to scheduled days.
   const bjjLogYesterday = await db.bjjLogs.where('date').equals(yesterdayStr).first()
   const bjjYesterday = bjjLogYesterday
     ? bjjLogYesterday.attended
     : bjjDays.includes(dayName(yesterday))
 
-  // Is BJJ scheduled (or already logged) for today?
   const bjjLogToday = await db.bjjLogs.where('date').equals(todayStr).first()
   const bjjToday = bjjLogToday ? bjjLogToday.attended : bjjDays.includes(dayName(today))
 
-  // Soreness logged today
   const sorenessToday = await db.sorenessLogs.where('date').equals(todayStr).first()
   const soreAreasToday: SorenessArea[] = sorenessToday?.areas ?? []
 
-  // Was yesterday a rest day (no session completed and no BJJ)?
   const sessionsYesterday = await db.sessions.where('date').equals(yesterdayStr).count()
   const restYesterday = !bjjYesterday && sessionsYesterday === 0
 
-  // Streak (for score bonus)
   const streak = await computeStreak()
-
-  // Phase progress (to pick which exercise to recommend on rest/mobility days)
   const phaseProgress = await db.phaseProgress.toArray()
   const phaseMap = new Map(phaseProgress.map((p) => [p.exerciseKey, p]))
+
+  // ── Compute muscle decay state ──────────────────────────────────────
+  const decayInputs = await loadDecayInputs()
+  const muscleSoreness = computeMuscleSorenessDecay(
+    decayInputs,
+    Date.now(),
+    biometrics
+  )
+  const categorySoreness = computeCategorySoreness(muscleSoreness)
+  const suppressedCategories = categorySoreness
+    .filter((c) => c.isRecovering)
+    .map((c) => c.category)
 
   const items: PlanItem[] = []
 
   if (bjjYesterday) {
-    // Post-BJJ recovery focus: morning mobility + hip recovery + neck decompression
-    // Avoid: max pancake stretch, heavy compression work
     items.push({
       id: 'morning',
       label: 'Morning mobility',
@@ -102,7 +122,6 @@ export async function generateTodayPlan(): Promise<TodayPlan> {
       percent: 0
     })
   } else if (restYesterday) {
-    // Rest yesterday -> push progressions: pancake (straddle), pike, L-sit compression
     items.push({
       id: 'morning',
       label: 'Morning mobility',
@@ -111,24 +130,37 @@ export async function generateTodayPlan(): Promise<TodayPlan> {
       done: false,
       percent: 0
     })
-    items.push({
-      id: 'pancake',
-      label: `Pancake progression · Phase ${phaseMap.get('straddle')?.phase ?? 1}`,
-      durationMin: 8,
-      target: { tab: 'straddle' },
-      done: false,
-      percent: 0
-    })
-    items.push({
-      id: 'pike',
-      label: `Pike / L-sit compression · Phase ${phaseMap.get('pike')?.phase ?? 1}`,
-      durationMin: 7,
-      target: { tab: 'pike' },
-      done: false,
-      percent: 0
-    })
+
+    // Only recommend push progressions if push category is not suppressed
+    if (!suppressedCategories.includes('push') && !suppressedCategories.includes('core')) {
+      items.push({
+        id: 'pancake',
+        label: `Pancake progression · Phase ${phaseMap.get('straddle')?.phase ?? 1}`,
+        durationMin: 8,
+        target: { tab: 'straddle' },
+        done: false,
+        percent: 0
+      })
+      items.push({
+        id: 'pike',
+        label: `Pike / L-sit compression · Phase ${phaseMap.get('pike')?.phase ?? 1}`,
+        durationMin: 7,
+        target: { tab: 'pike' },
+        done: false,
+        percent: 0
+      })
+    } else {
+      // Substitute recovery for the suppressed categories
+      items.push({
+        id: 'active_recovery_core',
+        label: 'Active recovery (core/hip)',
+        durationMin: 9,
+        target: { tab: 'recovery', area: 'lower_back' },
+        done: false,
+        percent: 0
+      })
+    }
   } else {
-    // Default mobility day: full hip mobility block
     items.push({
       id: 'morning',
       label: 'Morning mobility',
@@ -163,8 +195,6 @@ export async function generateTodayPlan(): Promise<TodayPlan> {
     })
   }
 
-  // BJJ scheduled today: add a light pre-class primer, and trim load so the
-  // plan isn't asking for max-effort stretches right before training.
   if (bjjToday) {
     items.push({
       id: 'bjj_primer',
@@ -176,8 +206,27 @@ export async function generateTodayPlan(): Promise<TodayPlan> {
     })
   }
 
-  // Inject any extra soreness-driven recovery (e.g. user logged sore shoulders
-  // even on a non-BJJ day) without duplicating an already-present area.
+  // Inject soreness-driven recovery for suppressed categories
+  for (const cat of suppressedCategories) {
+    const mappedArea = categoryToRecoveryArea(cat)
+    if (!mappedArea) continue
+    const alreadyCovered = items.some(
+      (i) => i.target.tab === 'recovery' && i.target.area === mappedArea
+    )
+    if (!alreadyCovered) {
+      const seq = RECOVERY_SEQUENCES[mappedArea]
+      items.push({
+        id: `decay_recovery_${cat}`,
+        label: `${cat} recovery (active)`,
+        durationMin: seq?.durationMin ?? 8,
+        target: { tab: 'recovery', area: mappedArea },
+        done: false,
+        percent: 0
+      })
+    }
+  }
+
+  // Inject explicit soreness-logged recovery
   for (const area of soreAreasToday) {
     const alreadyCovered = items.some(
       (i) => i.target.tab === 'recovery' && i.target.area === area
@@ -194,9 +243,7 @@ export async function generateTodayPlan(): Promise<TodayPlan> {
     }
   }
 
-  // Reflect real progress: each item's percent comes from the matching
-  // session's actual logged percent (set by upsertTodaySession as the
-  // user completes exercises within that routine/progression).
+  // Reflect real progress from today's sessions
   const sessionsToday = await db.sessions.where('date').equals(todayStr).toArray()
   for (const item of items) {
     const match = sessionsToday.find((s) => s.label === item.label)
@@ -213,6 +260,8 @@ export async function generateTodayPlan(): Promise<TodayPlan> {
   if (bjjYesterday) score -= 12
   score -= soreAreasToday.length * 6
   score += Math.min(streak, 5) * 1.5
+  // Factor in decay-based category fatigue
+  score -= suppressedCategories.length * 8
   score = Math.max(35, Math.min(98, Math.round(score)))
 
   let rationale: string
@@ -226,6 +275,9 @@ export async function generateTodayPlan(): Promise<TodayPlan> {
   if (bjjToday) {
     rationale += ' BJJ scheduled today — a short primer is included; save the deep stretches for after class.'
   }
+  if (suppressedCategories.length > 0) {
+    rationale += ` Recovery mode active for: ${suppressedCategories.join(', ')} (>30% soreness via decay model).`
+  }
   if (soreAreasToday.length > 0) {
     rationale += ` Extra focus added for: ${soreAreasToday.map((a) => a.replace('_', ' ')).join(', ')}.`
   }
@@ -235,11 +287,20 @@ export async function generateTodayPlan(): Promise<TodayPlan> {
     items,
     totalMin,
     rationale,
-    context: { bjjYesterday, bjjToday, restYesterday, soreAreasToday }
+    categorySoreness,
+    context: { bjjYesterday, bjjToday, restYesterday, soreAreasToday, suppressedCategories }
   }
 }
 
-/** Consecutive days (including today, if already done) with at least one completed session. */
+function categoryToRecoveryArea(category: MovementCategory): SorenessArea | null {
+  switch (category) {
+    case 'push': return 'shoulders'
+    case 'pull': return 'shoulders'
+    case 'legs': return 'hips'
+    case 'core': return 'lower_back'
+  }
+}
+
 export async function computeStreak(): Promise<number> {
   const sessions = await db.sessions.toArray()
   if (sessions.length === 0) return 0
@@ -248,8 +309,6 @@ export async function computeStreak(): Promise<number> {
   let streak = 0
   let cursor = new Date()
 
-  // If nothing done today yet, start counting from yesterday so the streak
-  // doesn't immediately drop to 0 before the user does today's session.
   if (!dates.has(isoDate(cursor))) {
     cursor = addDays(cursor, -1)
   }
@@ -262,7 +321,6 @@ export async function computeStreak(): Promise<number> {
   return streak
 }
 
-/** Longest run of consecutive days with at least one completed session, ever. */
 export async function computeLongestStreak(): Promise<number> {
   const sessions = await db.sessions.toArray()
   if (sessions.length === 0) return 0
@@ -272,9 +330,6 @@ export async function computeLongestStreak(): Promise<number> {
   let current = 1
 
   for (let i = 1; i < dates.length; i++) {
-    // Parse as local dates (YYYY-MM-DD with no time component defaults to
-    // local midnight via the Date(y, m, d) constructor, unlike new Date(str)
-    // which parses as UTC and can misjudge day gaps near midnight).
     const [py, pm, pd] = dates[i - 1].split('-').map(Number)
     const [cy, cm, cd] = dates[i].split('-').map(Number)
     const prev = new Date(py, pm - 1, pd)
@@ -295,4 +350,5 @@ export function progressionPercent(phase: 1 | 2 | 3 | 4) {
   return Math.round((phase / 4) * 100)
 }
 
+export { PROGRESSIONS }
 export type { ProgressionKey }

@@ -18,9 +18,11 @@ export function useWakeLock(active: boolean) {
     if (lockRef.current) return // already held
     try {
       lockRef.current = await (navigator as any).wakeLock.request('screen')
-      lockRef.current.addEventListener('release', () => {
-        lockRef.current = null
-      })
+      if (lockRef.current) {
+        lockRef.current.addEventListener('release', () => {
+          lockRef.current = null
+        })
+      }
     } catch {
       // permission denied or not supported — silent fail, timer still works
     }
