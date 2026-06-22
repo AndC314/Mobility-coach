@@ -112,12 +112,13 @@ interface WorkoutDoc {
   actualSec?: number
   
   // BJJ specific
-  tags?: string[]
+  tags?: string[]                // Skills trained: ['guard_pass', 'mount_escape', 'submission']
   
   // Mobility specific
   plannedSec?: number
   actualSec?: number
   label?: string
+  area?: 'shoulders' | 'hips' | 'lower_back'  // Primary area impacted
 }
 
 interface ExerciseLog {
@@ -358,12 +359,32 @@ async function getWeeklyStats(weekStart: Date) {
     where('date', '<=', formatDate(weekEnd))
   ).get()
   
-  // Aggregate in-memory
+  // Aggregate calisthenics by movement category
+  const calisthenicsBreakdown = {
+    push: sum(workouts.calisthenics, e => e in PUSH_EXERCISES ? e.reps : 0),
+    pull: sum(workouts.calisthenics, e => e in PULL_EXERCISES ? e.reps : 0),
+    legs: sum(workouts.calisthenics, e => e in LEGS_EXERCISES ? e.reps : 0),
+    total: sum(workouts.calisthenics.reps)
+  }
+  
+  // Aggregate mobility by muscle area
+  const mobilityByArea = {
+    shoulders: sum(workouts.mobility.seconds, m => m.area === 'shoulders'),
+    hips: sum(workouts.mobility.seconds, m => m.area === 'hips'),
+    lowerBack: sum(workouts.mobility.seconds, m => m.area === 'lower_back'),
+    // Find area with most time
+    mostImpacted: maxBy(mobilityByArea, (area) => area.seconds)
+  }
+  
+  // Aggregate BJJ by skills trained
+  const bjjSkillsCount = countOccurrences(workouts.bjj.tags)
+  
   return {
     totalWorkouts: workouts.length,
-    totalCalisthenicsReps: sum(workouts.calisthenics.reps),
-    totalBjjClasses: count(workouts.bjj),
-    totalMobilitySeconds: sum(workouts.mobility.seconds),
+    calisthenics: calisthenicsBreakdown,
+    bjjClasses: count(workouts.bjj),
+    bjjSkillsTrained: bjjSkillsCount,
+    mobility: mobilityByArea,
     peakSorenessDay: max(workouts.soreness),
     newPRsUnlocked: filter(milestones, m.unlockedThisWeek)
   }
@@ -375,11 +396,24 @@ async function getWeeklyStats(weekStart: Date) {
 Show as a card on Progress page:
 ```
 Week of Jun 17–23
-───────────────
-Total workouts: 5
-BJJ classes: 2
-Total reps: 147
-Total mobility: 45 min
+───────────────────────────────────────
+
+Calisthenics (147 total reps)
+  Push: 45 reps
+  Pull: 62 reps
+  Legs: 40 reps
+
+BJJ (2 classes)
+  Skills trained:
+    • Guard passes: 3 sessions
+    • Mount escapes: 2 sessions
+    • Submissions: 1 session
+
+Mobility (45 min)
+  Most impacted: Hips (20 min)
+  Shoulders: 15 min
+  Lower back: 10 min
+
 Peak soreness: Monday
 New PRs: Hollow body 30s, 5 pullups
 ```
