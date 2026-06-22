@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type CompletedSession, type SessionType } from '../db/db'
 import { todayIso, startOfWeek, isoDate } from '../lib/date'
+import { syncSessionToFirebase } from '../lib/firebase-workout-sync'
 
 /** Coerces to a finite number, falling back if NaN/undefined/Infinity. */
 function safeNum(n: unknown, fallback: number): number {
@@ -48,10 +49,17 @@ export async function upsertTodaySession(params: {
       percent,
       exerciseIds: params.exerciseIds
     })
+    // Sync updated session to Firestore (non-blocking)
+    const updated = await db.sessions.get(existing.id!)
+    if (updated) {
+      syncSessionToFirebase(updated).catch(err => {
+        console.error('[useSessions] Failed to sync updated session:', err)
+      })
+    }
     return existing.id!
   }
 
-  return db.sessions.add({
+  const id = await db.sessions.add({
     date: today,
     type: params.type,
     label: params.label,
@@ -62,6 +70,16 @@ export async function upsertTodaySession(params: {
     exerciseIds: params.exerciseIds,
     createdAt: new Date().toISOString()
   })
+
+  // Sync new session to Firestore (non-blocking)
+  const newSession = await db.sessions.get(id)
+  if (newSession) {
+    syncSessionToFirebase(newSession).catch(err => {
+      console.error('[useSessions] Failed to sync new session:', err)
+    })
+  }
+
+  return id
 }
 
 export function useTodaySessions() {

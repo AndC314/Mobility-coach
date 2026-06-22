@@ -1,5 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db, type BjjSkillTag, type BjjClassLog } from '../db/db'
+import { db, type BjjSkillTag, type BjjClassLog, type CompletedSession } from '../db/db'
+import { todayIso } from '../lib/date'
+import { syncSessionToFirebase } from '../lib/firebase-workout-sync'
 
 export function useBjjSkillTags() {
   const tags = useLiveQuery(() => db.bjjSkillTags.toArray(), [], [])
@@ -47,7 +49,30 @@ export function useBjjClassLogs() {
     tagIds: number[]
     notes?: string
   }) {
-    return db.bjjClassLogs.add({ ...entry, createdAt: new Date().toISOString() })
+    const id = await db.bjjClassLogs.add({ ...entry, createdAt: new Date().toISOString() })
+
+    // Also create a session entry for consistency with other workout types
+    // and sync to Firestore (non-blocking)
+    try {
+      const session: CompletedSession = {
+        date: entry.date,
+        type: 'recovery',
+        label: `BJJ: ${entry.theme || entry.className || 'Class'}`,
+        durationMin: 60, // default estimate
+        plannedSec: 3600,
+        actualSec: 3600,
+        percent: 100,
+        exerciseIds: [`bjj_class_${id}`],
+        createdAt: new Date().toISOString()
+      }
+      await syncSessionToFirebase(session).catch(err => {
+        console.error('[addClassLog] Failed to sync to Firestore:', err)
+      })
+    } catch (err) {
+      console.error('[addClassLog] Error creating session:', err)
+    }
+
+    return id
   }
 
   async function updateClassLog(id: number, patch: Partial<Omit<BjjClassLog, 'id'>>) {

@@ -11,11 +11,21 @@ import { useAuth } from './hooks/useAuth'
 import { useFirebaseSync } from './hooks/useFirebaseSync'
 import { ConflictWarning } from './components/ConflictWarning'
 import { LoginScreen } from './components/LoginScreen'
+import { setFirebaseSyncCallback } from './lib/firebase-workout-sync'
 
 function AppContent() {
   const { preferences } = usePreferences()
   const { user } = useAuth()
-  const { conflictDays, isLoading } = useFirebaseSync(user)
+  const { conflictDays, isLoading, addWorkoutToFirestore } = useFirebaseSync(user)
+
+  // Set up the Firebase sync callback for logging functions
+  useEffect(() => {
+    if (user && addWorkoutToFirestore) {
+      setFirebaseSyncCallback(addWorkoutToFirestore)
+    } else {
+      setFirebaseSyncCallback(null)
+    }
+  }, [user, addWorkoutToFirestore])
 
   useEffect(() => {
     const root = document.documentElement
