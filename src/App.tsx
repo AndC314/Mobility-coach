@@ -7,8 +7,10 @@ import Recovery from './pages/Recovery'
 import Progress from './pages/Progress'
 import Profile from './pages/Profile'
 import { usePreferences } from './hooks/usePreferences'
+import { useAuth } from './hooks/useAuth'
+import { LoginScreen } from './components/LoginScreen'
 
-export default function App() {
+function AppContent() {
   const { preferences } = usePreferences()
 
   useEffect(() => {
@@ -44,4 +46,22 @@ export default function App() {
       </div>
     </HashRouter>
   )
+}
+
+export default function App() {
+  const { user, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-blue-500"></div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return <LoginScreen />
+  }
+
+  return <AppContent />
 }
