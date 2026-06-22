@@ -44,7 +44,7 @@ export default function BjjSkillsSection() {
 
 function LogClassView() {
   const { tags, addTag } = useBjjSkillTags()
-  const { logs, addClassLog, deleteClassLog } = useBjjClassLogs()
+  const { logs, addClassLog, deleteClassLog, updateClassLog } = useBjjClassLogs()
 
   const [date, setDate] = useState(todayIso())
   const [className, setClassName] = useState('')
@@ -53,6 +53,7 @@ function LogClassView() {
   const [notes, setNotes] = useState('')
   const [newTagName, setNewTagName] = useState('')
   const [saved, setSaved] = useState(false)
+  const [editingId, setEditingId] = useState<number | null>(null)
 
   function toggleTag(id: number) {
     setSelectedTagIds((prev) => (prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]))
@@ -65,18 +66,47 @@ function LogClassView() {
     setNewTagName('')
   }
 
-  async function handleSave() {
-    await addClassLog({
-      date,
-      className: className.trim() || undefined,
-      theme: theme.trim() || undefined,
-      tagIds: selectedTagIds,
-      notes: notes.trim() || undefined
-    })
+  function openEdit(log: any) {
+    setEditingId(log.id)
+    setDate(log.date)
+    setClassName(log.className || '')
+    setTheme(log.theme || '')
+    setSelectedTagIds(log.tagIds || [])
+    setNotes(log.notes || '')
+  }
+
+  function closeEdit() {
+    setEditingId(null)
+    setDate(todayIso())
     setClassName('')
     setTheme('')
     setSelectedTagIds([])
     setNotes('')
+  }
+
+  async function handleSave() {
+    if (editingId) {
+      await updateClassLog(editingId, {
+        date,
+        className: className.trim() || undefined,
+        theme: theme.trim() || undefined,
+        tagIds: selectedTagIds,
+        notes: notes.trim() || undefined
+      })
+      closeEdit()
+    } else {
+      await addClassLog({
+        date,
+        className: className.trim() || undefined,
+        theme: theme.trim() || undefined,
+        tagIds: selectedTagIds,
+        notes: notes.trim() || undefined
+      })
+      setClassName('')
+      setTheme('')
+      setSelectedTagIds([])
+      setNotes('')
+    }
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
@@ -190,10 +220,20 @@ function LogClassView() {
         ) : (
           <div className="space-y-2">
             {logs.slice(0, 10).map((log) => (
-              <div key={log.id} className="rounded-xl bg-card2 p-3">
+              <button
+                key={log.id}
+                onClick={() => openEdit(log)}
+                className="w-full text-left rounded-xl bg-card2 p-3 transition-colors hover:bg-card2/80"
+              >
                 <div className="mb-1 flex items-center justify-between">
                   <span className="text-sm font-bold text-ink">{log.theme || log.className || 'Class'}</span>
-                  <button onClick={() => deleteClassLog(log.id!)} className="text-xs text-muted">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      deleteClassLog(log.id!)
+                    }}
+                    className="text-xs text-muted hover:text-red"
+                  >
                     ✕
                   </button>
                 </div>
@@ -215,11 +255,90 @@ function LogClassView() {
                   </div>
                 )}
                 {log.notes && <p className="mt-1.5 text-xs leading-relaxed text-ink/70">{log.notes}</p>}
-              </div>
+              </button>
             ))}
           </div>
         )}
       </Card>
+
+      {editingId && (
+        <div className="fixed inset-0 z-50 flex items-end bg-black/50">
+          <div className="w-full rounded-t-2xl bg-card p-4 pb-6">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-base font-bold">Edit class</h3>
+              <button onClick={closeEdit} className="text-muted">✕</button>
+            </div>
+            <div className="space-y-3 max-h-[70vh] overflow-y-auto">
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-muted">Date</label>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-card2 px-3 py-2 text-sm text-ink"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-muted">Class</label>
+                <input
+                  type="text"
+                  value={className}
+                  onChange={(e) => setClassName(e.target.value)}
+                  placeholder="e.g. Beginners & Intermediates"
+                  className="w-full rounded-lg border border-border bg-card2 px-3 py-2 text-sm text-ink placeholder:text-muted"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-muted">Lesson theme</label>
+                <input
+                  type="text"
+                  value={theme}
+                  onChange={(e) => setTheme(e.target.value)}
+                  placeholder="e.g. Armlock Variations"
+                  className="w-full rounded-lg border border-border bg-card2 px-3 py-2 text-sm text-ink placeholder:text-muted"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-muted">Skill tags</label>
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((t) => {
+                    const active = selectedTagIds.includes(t.id!)
+                    return (
+                      <button
+                        key={t.id}
+                        onClick={() => toggleTag(t.id!)}
+                        className="rounded-full px-3 py-1.5 text-xs font-semibold transition-colors"
+                        style={
+                          active
+                            ? { background: (t.color ?? '#2ec4b6') + '22', color: t.color ?? '#2ec4b6', border: `1px solid ${(t.color ?? '#2ec4b6')}55` }
+                            : { background: '#262b40', color: '#7a7d96', border: '1px solid #2e3248' }
+                        }
+                      >
+                        {t.name}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-muted">Notes</label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={2}
+                  className="w-full rounded-lg border border-border bg-card2 px-3 py-2 text-sm text-ink placeholder:text-muted"
+                />
+              </div>
+              <button
+                onClick={handleSave}
+                className="w-full rounded-full bg-accent/20 py-2.5 text-sm font-bold text-accent border border-accent/40"
+              >
+                {saved ? '✓ Updated' : 'Update class'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
