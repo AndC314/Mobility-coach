@@ -15,6 +15,9 @@ export interface ExerciseLog {
 }
 
 export interface WorkoutDoc {
+  // Document ID
+  id?: string // Firestore document ID
+
   // Immutable
   type: WorkoutType
   date: string // YYYY-MM-DD
