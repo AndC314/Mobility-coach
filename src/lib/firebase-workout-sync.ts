@@ -12,10 +12,12 @@ import { CompletedSession } from '../db/db'
  * Used when syncing logged workouts to Firestore
  */
 export function sessionToWorkoutDoc(session: CompletedSession): Omit<WorkoutDoc, 'id'> {
+  const now = new Date(session.createdAt).getTime()
   return {
     type: mapSessionTypeToWorkoutType(session.type),
     date: session.date,
-    createdAt: new Date(session.createdAt).getTime(),
+    createdAt: now,
+    updatedAt: now,
     exerciseIds: session.exerciseIds,
     data: {}, // populated from specific exercise logs if available
     plannedSec: session.plannedSec,
