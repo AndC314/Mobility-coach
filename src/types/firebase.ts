@@ -3,6 +3,8 @@
  * Defines the data structures for workouts, exercises, and user metadata
  */
 
+import { User } from 'firebase/auth'
+
 export type WorkoutType = 'calisthenics' | 'bjj' | 'mobility'
 
 export type MobilityArea = 'shoulders' | 'hips' | 'lower_back'
@@ -42,3 +44,10 @@ export interface UserMetadata {
   lastSync: number
   version: number
 }
+
+export interface UseAuthState {
+  user: User | null
+  loading: boolean
+  logout: () => Promise<void>
+}
+
