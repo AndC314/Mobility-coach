@@ -12,3 +12,4 @@ dist/
 .claude/
 CONTEXT.md
 *.md
+!docs/**/*.md
