@@ -47,7 +47,11 @@ function buildMonthGrid(year: number, month: number): Date[] {
   return days
 }
 
-export default function TrainingCalendar() {
+interface TrainingCalendarProps {
+  conflictDays?: string[]
+}
+
+export default function TrainingCalendar({ conflictDays = [] }: TrainingCalendarProps) {
   const sessions = useAllSessions()
   const streak = useStreak()
   const longestStreak = useLongestStreak()
@@ -219,6 +223,7 @@ export default function TrainingCalendar() {
             const isToday = dStr === todayStr
             const rings = inMonth ? getRingsForDate(dStr) : { mobility: 0, bjj: 0, calisthenics: 0 }
             const hasAny = rings.mobility > 0 || rings.bjj > 0 || rings.calisthenics > 0
+            const hasConflict = conflictDays.includes(dStr)
 
             return (
               <div key={i} className="flex items-center justify-center py-0.5">
@@ -227,6 +232,7 @@ export default function TrainingCalendar() {
                   inMonth={inMonth}
                   isToday={isToday}
                   rings={rings}
+                  hasConflict={hasConflict}
                 />
               </div>
             )
@@ -261,9 +267,10 @@ interface DayCellProps {
   inMonth: boolean
   isToday: boolean
   rings: DayRings
+  hasConflict?: boolean
 }
 
-function DayCell({ day, inMonth, isToday, rings }: DayCellProps) {
+function DayCell({ day, inMonth, isToday, rings, hasConflict }: DayCellProps) {
   const size = 40
   const cx = size / 2
   const cy = size / 2
@@ -323,6 +330,11 @@ function DayCell({ day, inMonth, isToday, rings }: DayCellProps) {
             opacity={0.9}
           />
         </svg>
+      )}
+
+      {/* Conflict indicator */}
+      {hasConflict && inMonth && (
+        <span className="absolute top-0 right-0 text-red-600 font-bold text-lg leading-none">!</span>
       )}
 
       <span

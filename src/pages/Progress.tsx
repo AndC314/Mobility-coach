@@ -20,6 +20,8 @@ import { usePhaseProgress } from '../hooks/usePhaseProgress'
 import { useHoldHistory } from '../hooks/useHoldLogs'
 import { useAllSessions } from '../hooks/useSessions'
 import { useStreak } from '../hooks/useStreak'
+import { useAuth } from '../hooks/useAuth'
+import { useFirebaseSync } from '../hooks/useFirebaseSync'
 import { db, type Measurement, type MeasurementType, type PhaseProgress } from '../db/db'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { isoDate, todayIso } from '../lib/date'
@@ -50,6 +52,8 @@ function last7Days() {
 
 export default function Progress() {
   const [tab, setTab] = useState<'logs' | 'skills' | 'bjj' | 'calisthenics' | 'trends'>('logs')
+  const { user } = useAuth()
+  const { conflictDays } = useFirebaseSync(user)
   const { rows } = usePhaseProgress()
   const sessions = useAllSessions()
   const streak = useStreak()
@@ -92,7 +96,7 @@ export default function Progress() {
         ))}
       </div>
 
-      {tab === 'logs' && <TrainingCalendar />}
+      {tab === 'logs' && <TrainingCalendar conflictDays={conflictDays} />}
 
       {tab === 'calisthenics' && <CalisthenicsSection />}
 

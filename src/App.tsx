@@ -8,10 +8,14 @@ import Progress from './pages/Progress'
 import Profile from './pages/Profile'
 import { usePreferences } from './hooks/usePreferences'
 import { useAuth } from './hooks/useAuth'
+import { useFirebaseSync } from './hooks/useFirebaseSync'
+import { ConflictWarning } from './components/ConflictWarning'
 import { LoginScreen } from './components/LoginScreen'
 
 function AppContent() {
   const { preferences } = usePreferences()
+  const { user } = useAuth()
+  const { conflictDays, isLoading } = useFirebaseSync(user)
 
   useEffect(() => {
     const root = document.documentElement
@@ -34,6 +38,7 @@ function AppContent() {
             paddingBottom: 'calc(88px + env(safe-area-inset-bottom))'
           }}
         >
+          {!isLoading && <ConflictWarning conflictDays={conflictDays} />}
           <Routes>
             <Route path="/" element={<Today />} />
             <Route path="/mobility" element={<Mobility />} />
