@@ -61,7 +61,7 @@ export function useCalisthenics() {
     id: number,
     params: {
       exerciseId?: CalisthenicsExerciseId
-      metric?: 'reps' | 'seconds'
+      metric?: CalisthenicsMetric
       value?: number
       date?: string
     }
