@@ -57,7 +57,27 @@ export function useCalisthenics() {
     return db.calisthenicsLogs.delete(id)
   }
 
-  return { logs: logsData, logCalisthenics, deleteCalisthenics }
+  const updateCalisthenics = async (
+    id: number,
+    params: {
+      exerciseId?: CalisthenicsExerciseId
+      metric?: 'reps' | 'seconds'
+      value?: number
+      date?: string
+    }
+  ) => {
+    const log = logsData?.find((l) => l.id === id)
+    if (!log) throw new Error('Log not found')
+
+    await db.calisthenicsLogs.update(id, {
+      exerciseId: params.exerciseId ?? log.exerciseId,
+      metric: params.metric ?? log.metric,
+      value: params.value ?? log.value,
+      date: params.date ?? log.date,
+    })
+  }
+
+  return { logs: logsData, logCalisthenics, deleteCalisthenics, updateCalisthenics }
 }
 
 export function useCalisthenicsLogs(exerciseId?: CalisthenicsExerciseId) {

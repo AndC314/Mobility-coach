@@ -44,15 +44,45 @@ function LogTab() {
   const [selected, setSelected] = useState<CalisthenicsExerciseId>('pushups')
   const exercise = CALISTHENICS_EXERCISES.find((e) => e.id === selected)!
   const logs = useCalisthenicsLogs(selected)
-  const { logCalisthenics } = useCalisthenics()
+  const { logCalisthenics, updateCalisthenics } = useCalisthenics()
 
   const [value, setValue] = useState('')
   const [sets, setSets] = useState('')
   const [date, setDate] = useState(todayIso())
   const [saved, setSaved] = useState(false)
 
+  // Edit modal state
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editExerciseId, setEditExerciseId] = useState<CalisthenicsExerciseId | null>(null)
+  const [editValue, setEditValue] = useState('')
+  const [editDate, setEditDate] = useState(todayIso())
+
   const best = logs && logs.length > 0 ? Math.max(...logs.map((l) => l.value)) : undefined
   const recent = (logs ?? []).slice().reverse().slice(0, 6)
+
+  function openEdit(log: any) {
+    setEditingId(log.id)
+    setEditExerciseId(log.exerciseId)
+    setEditValue(String(log.value))
+    setEditDate(log.date)
+  }
+
+  function closeEdit() {
+    setEditingId(null)
+    setEditExerciseId(null)
+    setEditValue('')
+    setEditDate(todayIso())
+  }
+
+  async function handleUpdateLog() {
+    if (!editingId || !editExerciseId) return
+    await updateCalisthenics(editingId, {
+      exerciseId: editExerciseId,
+      value: Number(editValue),
+      date: editDate,
+    })
+    closeEdit()
+  }
 
   async function handleSave() {
     const v = Number(value)
@@ -165,20 +195,77 @@ function LogTab() {
           <h2 className="mb-3 text-base font-bold">Recent</h2>
           <div className="space-y-2">
             {recent.map((log) => (
-              <div key={log.id} className="flex items-center justify-between rounded-lg bg-card2 px-3 py-2">
-                <span className="text-xs text-muted">
-                  {new Date(log.date + 'T12:00:00').toLocaleDateString(undefined, {
-                    weekday: 'short', month: 'short', day: 'numeric'
-                  })}
-                </span>
-                <span className="text-sm font-bold text-ink">
-                  {log.value}{exercise.unit}
-                  {log.sets ? ` × ${log.sets} sets` : ''}
-                </span>
-              </div>
+              <button
+                key={log.id}
+                onClick={() => openEdit(log)}
+                className="w-full text-left rounded-lg bg-card2 p-3 transition-colors hover:bg-card2/80"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted">
+                    {new Date(log.date + 'T12:00:00').toLocaleDateString(undefined, {
+                      weekday: 'short', month: 'short', day: 'numeric'
+                    })}
+                  </span>
+                  <span className="text-sm font-bold text-ink">
+                    {log.value}{exercise.unit}
+                    {log.sets ? ` × ${log.sets} sets` : ''}
+                  </span>
+                </div>
+              </button>
             ))}
           </div>
         </Card>
+      )}
+
+      {editingId && (
+        <div className="fixed inset-0 z-50 flex items-end bg-black/50">
+          <div className="w-full rounded-t-2xl bg-card p-4 pb-6">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-base font-bold">Edit log</h3>
+              <button onClick={closeEdit} className="text-muted">✕</button>
+            </div>
+            <div className="space-y-3 max-h-[70vh] overflow-y-auto">
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-muted">Exercise</label>
+                <select
+                  value={editExerciseId || ''}
+                  onChange={(e) => setEditExerciseId(e.target.value as CalisthenicsExerciseId)}
+                  className="w-full rounded-lg border border-border bg-card2 px-3 py-2 text-sm text-ink"
+                >
+                  {CALISTHENICS_EXERCISES.map((ex) => (
+                    <option key={ex.id} value={ex.id}>{ex.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-muted">Date</label>
+                <input
+                  type="date"
+                  value={editDate}
+                  onChange={(e) => setEditDate(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-card2 px-3 py-2 text-sm text-ink"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-muted">
+                  Value ({CALISTHENICS_EXERCISES.find(e => e.id === editExerciseId)?.metric === 'reps' ? 'reps' : 'seconds'})
+                </label>
+                <input
+                  type="number"
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-card2 px-3 py-2 text-sm text-ink"
+                />
+              </div>
+              <button
+                onClick={handleUpdateLog}
+                className="w-full rounded-full bg-accent/20 py-2.5 text-sm font-bold text-accent border border-accent/40"
+              >
+                Update log
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   )
