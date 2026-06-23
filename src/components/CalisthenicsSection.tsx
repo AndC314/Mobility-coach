@@ -4,7 +4,7 @@ import { Card, Tag } from './Card'
 import BodyMap from './BodyMap'
 import { CALISTHENICS_EXERCISES } from '../data/calisthenics'
 import { MUSCLE_LABELS, computeMuscleScores } from '../data/muscleMap'
-import { logCalisthenics, useCalisthenicsLogs } from '../hooks/useCalisthenics'
+import { useCalisthenics, useCalisthenicsLogs } from '../hooks/useCalisthenics'
 import { db } from '../db/db'
 import { todayIso } from '../lib/date'
 import type { CalisthenicsExerciseId } from '../db/db'
@@ -44,9 +44,11 @@ function LogTab() {
   const [selected, setSelected] = useState<CalisthenicsExerciseId>('pushups')
   const exercise = CALISTHENICS_EXERCISES.find((e) => e.id === selected)!
   const logs = useCalisthenicsLogs(selected)
+  const { logCalisthenics } = useCalisthenics()
 
   const [value, setValue] = useState('')
   const [sets, setSets] = useState('')
+  const [date, setDate] = useState(todayIso())
   const [saved, setSaved] = useState(false)
 
   const best = logs && logs.length > 0 ? Math.max(...logs.map((l) => l.value)) : undefined
@@ -59,10 +61,12 @@ function LogTab() {
       exerciseId: selected,
       metric: exercise.metric,
       value: v,
-      sets: sets ? Number(sets) : undefined
+      sets: sets ? Number(sets) : undefined,
+      date,
     })
     setValue('')
     setSets('')
+    setDate(todayIso())
     setSaved(true)
     setTimeout(() => setSaved(false), 1500)
   }
@@ -136,6 +140,16 @@ function LogTab() {
               className="w-full rounded-lg border border-border bg-card2 px-3 py-2 text-sm text-ink placeholder:text-muted"
             />
           </div>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-semibold text-muted">Date (optional)</label>
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="w-full rounded-lg border border-border bg-card2 px-3 py-2 text-sm text-ink"
+          />
         </div>
 
         <button

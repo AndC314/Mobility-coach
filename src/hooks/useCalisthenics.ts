@@ -4,15 +4,17 @@ import { todayIso } from '../lib/date'
 import { upsertTodaySession } from './useSessions'
 import { getExerciseDef } from '../data/calisthenics'
 
-export async function logCalisthenics(params: {
+export async function logCalisthenicsBase(params: {
   exerciseId: CalisthenicsExerciseId
   metric: CalisthenicsMetric
   value: number
   sets?: number
   notes?: string
+  date?: string
 }) {
+  const date = params.date || todayIso()
   const id = await db.calisthenicsLogs.add({
-    date: todayIso(),
+    date,
     exerciseId: params.exerciseId,
     metric: params.metric,
     value: params.value,
@@ -35,6 +37,27 @@ export async function logCalisthenics(params: {
   })
 
   return id
+}
+
+export function useCalisthenics() {
+  const logsData = useCalisthenicsLogs()
+
+  const logCalisthenics = async (params: {
+    exerciseId: CalisthenicsExerciseId
+    metric: CalisthenicsMetric
+    value: number
+    sets?: number
+    notes?: string
+    date?: string
+  }) => {
+    return logCalisthenicsBase(params)
+  }
+
+  const deleteCalisthenics = async (id: number) => {
+    return db.calisthenicsLogs.delete(id)
+  }
+
+  return { logs: logsData, logCalisthenics, deleteCalisthenics }
 }
 
 export function useCalisthenicsLogs(exerciseId?: CalisthenicsExerciseId) {
