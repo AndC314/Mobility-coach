@@ -1,9 +1,3 @@
-/**
- * useFirebaseSync Hook
- * Sets up real-time Firestore listener for workouts and manages sync state
- * Provides access to all workouts, conflict detection, and CRUD operations
- */
-
 import { useState, useEffect, useRef } from 'react'
 import { User } from 'firebase/auth'
 import {
@@ -15,7 +9,7 @@ import {
   Timestamp,
 } from 'firebase/firestore'
 import { db as firestoreDb } from '../lib/firebase'
-import { db as dexieDb } from '../db/db'
+import { db as dexieDb, type SessionType } from '../db/db'
 import { WorkoutDoc } from '../types/firebase'
 import { isoDate } from '../lib/date'
 
@@ -129,18 +123,19 @@ export function useFirebaseSync(user: User | null): UseSyncState {
 async function syncFirestoreToLocal(workouts: WorkoutDoc[]): Promise<void> {
   // Convert Firestore workouts to local Dexie sessions
   for (const workout of workouts) {
+    const sessionType = mapWorkoutTypeToSessionType(workout.type)
     // Skip if already exists in local Dexie by checking date + type
     const existing = await dexieDb.sessions
       .where('date')
       .equals(workout.date)
-      .filter((s) => mapWorkoutTypeToSessionType(workout.type) === s.type)
+      .filter((s) => sessionType === s.type)
       .first()
 
     if (!existing) {
       // Insert as a session so it shows in Progress/Logs
       await dexieDb.sessions.add({
         date: workout.date,
-        type: mapWorkoutTypeToSessionType(workout.type),
+        type: sessionType,
         label: workout.label || `${workout.type} workout`,
         durationMin: Math.round((workout.actualSec || 0) / 60),
         plannedSec: workout.plannedSec || 0,
@@ -153,8 +148,8 @@ async function syncFirestoreToLocal(workouts: WorkoutDoc[]): Promise<void> {
   }
 }
 
-function mapWorkoutTypeToSessionType(workoutType: 'calisthenics' | 'bjj' | 'mobility'): string {
+function mapWorkoutTypeToSessionType(workoutType: 'calisthenics' | 'bjj' | 'mobility'): SessionType {
   if (workoutType === 'calisthenics') return 'calisthenics'
   if (workoutType === 'bjj') return 'recovery'
-  return 'morning' // default mobility type
+  return 'morning'
 }
