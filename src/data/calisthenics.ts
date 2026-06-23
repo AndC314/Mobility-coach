@@ -37,6 +37,18 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     description: 'Total hold time, lower back pressed to floor, shoulders and legs lifted.'
   },
   {
+    id: 'hollow_body_hold',
+    name: 'Hollow Body Hold',
+    metric: 'hold_sec',
+    unit: 's',
+    icon: '🛡️',
+    description: 'Your structural armor. Lie on back, contract abs, lift shoulders and legs. Zero gap at spine.',
+    setup: 'Lie on your back on a mat or floor.',
+    cue: 'Lie on your back, point your toes, and tuck your chin. Contract your abs to lift your shoulders and legs a few inches off the floor. Crush your lower back into the mat—there should be zero gap between your spine and the floor.',
+    bjjTransfer: 'This is your structural armor. When you are stuck in bottom mount, a hollow body prevents your spine from being flattened out, preserving your ability to bridge effectively.',
+    feelIt: 'Your entire abdominal wall. If you feel it in your lower back, lift your legs higher to restore the pelvic tilt.'
+  },
+  {
     id: 'pushups',
     name: 'Push-ups',
     metric: 'reps',
