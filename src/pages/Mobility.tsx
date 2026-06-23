@@ -3,7 +3,6 @@ import { useSearchParams } from 'react-router-dom'
 import ExerciseCard from '../components/ExerciseCard'
 import ProgressionHeader from '../components/ProgressionHeader'
 import { Card } from '../components/Card'
-import BjjSkillsSection from '../components/BjjSkillsSection'
 import { MORNING_ROUTINE, BJJ_RELEASE, PROGRESSIONS, PROGRESSION_LABELS } from '../data/exercises'
 import { usePhaseProgress } from '../hooks/usePhaseProgress'
 import { upsertTodaySession } from '../hooks/useSessions'
@@ -11,15 +10,14 @@ import { logHold } from '../hooks/useHoldLogs'
 import { usePreferences } from '../hooks/usePreferences'
 import type { ProgressionKey } from '../db/db'
 
-type Tab = 'morning' | 'bjj_release' | ProgressionKey | 'calisthenics'
+type Tab = 'morning' | 'bjj_release' | ProgressionKey
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'morning', label: 'Morning' },
   { id: 'bjj_release', label: 'Post-BJJ' },
   { id: '90/90', label: '90/90' },
   { id: 'straddle', label: 'Straddle' },
-  { id: 'pike', label: 'Pike' },
-  { id: 'calisthenics', label: 'Calisthenics' }
+  { id: 'pike', label: 'Pike' }
 ]
 
 export default function Mobility() {
@@ -37,7 +35,7 @@ export default function Mobility() {
   return (
     <div className="space-y-4 pb-4 fade-in">
       <div>
-        <p className="text-sm text-muted">Pelvis · Hips · Hamstrings</p>
+        <p className="text-sm text-muted">Pelvis - Hips - Hamstrings</p>
         <h1 className="text-2xl font-extrabold">Mobility</h1>
       </div>
 
@@ -86,10 +84,9 @@ export default function Mobility() {
           soundEnabled={preferences.soundEnabled}
         />
       )}
-
-      {tab === 'calisthenics' && <BjjSkillsSection />}
     </div>
   )
+}
 }
 
 // ─────────────────────────────────────────────────────────────────────────

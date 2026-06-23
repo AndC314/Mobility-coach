@@ -170,26 +170,27 @@ export default function Today() {
 
       <Card>
         <h2 className="mb-3 text-base font-bold">Activity</h2>
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-2">
           {Array.from({ length: 35 }).map((_, i) => {
             const date = new Date()
             date.setDate(date.getDate() - (34 - i))
             const dateStr = date.toISOString().split('T')[0]
             const count = (calendar as Record<string, number>)[dateStr] || 0
-            let bg = 'bg-card'
-            if (count >= 3) bg = 'bg-teal/60'
-            else if (count === 2) bg = 'bg-teal/40'
-            else if (count === 1) bg = 'bg-teal/20'
+            let bg = 'bg-border'
+            let ring = ''
+            if (count >= 3) { bg = 'bg-teal'; ring = 'ring-2 ring-teal/50' }
+            else if (count === 2) { bg = 'bg-teal/60'; ring = 'ring-1 ring-teal/40' }
+            else if (count === 1) { bg = 'bg-teal/30'; ring = 'ring-1 ring-teal/30' }
             return (
               <div
                 key={i}
-                className={`h-6 w-6 rounded-md ${bg} border border-border/30`}
+                className={`h-8 w-8 rounded-md ${bg} ${ring} border border-border/50 transition-all`}
                 title={`${dateStr}: ${count} sessions`}
               />
             )
           })}
         </div>
-        <p className="mt-2 text-xs text-muted">Past 35 days of activity</p>
+        <p className="mt-3 text-xs text-muted">Past 35 days - squares show activity level</p>
       </Card>
 
       {avatarStats?.recoveryReadiness && (

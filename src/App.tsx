@@ -3,6 +3,8 @@ import { HashRouter, Routes, Route } from 'react-router-dom'
 import BottomNav from './components/BottomNav'
 import Today from './pages/Today'
 import Mobility from './pages/Mobility'
+import Bjj from './pages/Bjj'
+import CalisthenicsPage from './pages/CalisthenicsPage'
 import Recovery from './pages/Recovery'
 import Progress from './pages/Progress'
 import Profile from './pages/Profile'
@@ -52,6 +54,8 @@ function AppContent() {
           <Routes>
             <Route path="/" element={<Today />} />
             <Route path="/mobility" element={<Mobility />} />
+            <Route path="/bjj" element={<Bjj />} />
+            <Route path="/calisthenics" element={<CalisthenicsPage />} />
             <Route path="/recovery" element={<Recovery />} />
             <Route path="/progress" element={<Progress />} />
             <Route path="/profile" element={<Profile />} />

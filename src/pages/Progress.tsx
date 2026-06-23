@@ -1,12 +1,11 @@
 import { useState } from 'react'
-import { Card } from '../components/Card'
 import SkillTree from '../components/SkillTree'
 import SkillRadar from '../components/SkillRadar'
 import { useAuth } from '../hooks/useAuth'
 import { useFirebaseSync } from '../hooks/useFirebaseSync'
 
 export default function Progress() {
-  const [view, setView] = useState<'tree' | 'patterns' | 'map' | 'trends'>('tree')
+  const [view, setView] = useState<'tree' | 'trends'>('tree')
   const { user } = useAuth()
   useFirebaseSync(user)
 
@@ -21,8 +20,6 @@ export default function Progress() {
         {(
           [
             { id: 'tree', label: 'Skill Tree' },
-            { id: 'patterns', label: 'Patterns' },
-            { id: 'map', label: 'Skill Map' },
             { id: 'trends', label: 'Trends' },
           ] as const
         ).map((t) => (
@@ -40,18 +37,6 @@ export default function Progress() {
 
       {view === 'tree' && <SkillTree />}
 
-      {view === 'patterns' && (
-        <Card>
-          <p className="text-sm text-muted">Patterns will be shown in the Mobility section under Calisthenics</p>
-        </Card>
-      )}
-
-      {view === 'map' && (
-        <Card>
-          <p className="text-sm text-muted">Skill map will be shown in the Mobility section under Calisthenics</p>
-        </Card>
-      )}
-
       {view === 'trends' && (
         <div className="space-y-4">
           <SkillRadar />
@@ -60,3 +45,4 @@ export default function Progress() {
     </div>
   )
 }
+
