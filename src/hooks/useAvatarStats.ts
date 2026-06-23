@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type CalisthenicsExerciseId } from '../db/db'
 import { EXERCISE_MUSCLES, MUSCLE_CATEGORY } from '../data/muscleMap'
+import { useRecoveryReadiness } from './useRecoveryReadiness'
 
 // ─────────────────────────────────────────────────────────────────────────
 // AVATAR STATS — 5-Axis Development Profile
@@ -25,6 +26,13 @@ export interface AvatarStats {
   axes: AvatarAxis[]
   overallLevel: number // 0-100 average
   milestones: AvatarMilestone[]
+  recoveryReadiness: {
+    Push?: number
+    Pull?: number
+    Legs?: number
+    Core?: number
+    Mobility?: number
+  }
 }
 
 export interface AvatarMilestone {
@@ -50,6 +58,8 @@ function normalize(value: number, cap: number): number {
 }
 
 export function useAvatarStats(): AvatarStats | null {
+  const recoveryReadiness = useRecoveryReadiness()
+
   return useLiveQuery(async () => {
     const [calLogs, sessions, bjjLogs, measurements, holdLogs] = await Promise.all([
       db.calisthenicsLogs.toArray(),
@@ -190,6 +200,8 @@ export function useAvatarStats(): AvatarStats | null {
       }
     ]
 
-    return { axes, overallLevel, milestones }
+    return { axes, overallLevel, milestones, recoveryReadiness: Object.fromEntries(
+      recoveryReadiness.map((axis) => [axis.axis, axis.readinessPercent])
+    ) }
   }, [], null)
 }
