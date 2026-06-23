@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import ExerciseCard from '../components/ExerciseCard'
 import ProgressionHeader from '../components/ProgressionHeader'
 import { Card } from '../components/Card'
+import BjjSkillsSection from '../components/BjjSkillsSection'
 import { MORNING_ROUTINE, BJJ_RELEASE, PROGRESSIONS, PROGRESSION_LABELS } from '../data/exercises'
 import { usePhaseProgress } from '../hooks/usePhaseProgress'
 import { upsertTodaySession } from '../hooks/useSessions'
@@ -10,14 +11,15 @@ import { logHold } from '../hooks/useHoldLogs'
 import { usePreferences } from '../hooks/usePreferences'
 import type { ProgressionKey } from '../db/db'
 
-type Tab = 'morning' | 'bjj_release' | ProgressionKey
+type Tab = 'morning' | 'bjj_release' | ProgressionKey | 'calisthenics'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'morning', label: 'Morning' },
   { id: 'bjj_release', label: 'Post-BJJ' },
   { id: '90/90', label: '90/90' },
   { id: 'straddle', label: 'Straddle' },
-  { id: 'pike', label: 'Pike' }
+  { id: 'pike', label: 'Pike' },
+  { id: 'calisthenics', label: 'Calisthenics' }
 ]
 
 export default function Mobility() {
@@ -84,6 +86,8 @@ export default function Mobility() {
           soundEnabled={preferences.soundEnabled}
         />
       )}
+
+      {tab === 'calisthenics' && <BjjSkillsSection />}
     </div>
   )
 }

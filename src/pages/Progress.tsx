@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Card } from '../components/Card'
-import BjjSkillsSection from '../components/BjjSkillsSection'
 import SkillTree from '../components/SkillTree'
 import SkillRadar from '../components/SkillRadar'
 import { useAuth } from '../hooks/useAuth'
@@ -41,9 +40,17 @@ export default function Progress() {
 
       {view === 'tree' && <SkillTree />}
 
-      {view === 'patterns' && <BjjSkillsSection />}
+      {view === 'patterns' && (
+        <Card>
+          <p className="text-sm text-muted">Patterns will be shown in the Mobility section under Calisthenics</p>
+        </Card>
+      )}
 
-      {view === 'map' && <BjjSkillsSection />}
+      {view === 'map' && (
+        <Card>
+          <p className="text-sm text-muted">Skill map will be shown in the Mobility section under Calisthenics</p>
+        </Card>
+      )}
 
       {view === 'trends' && (
         <div className="space-y-4">

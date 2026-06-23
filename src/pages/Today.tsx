@@ -1,40 +1,63 @@
-import { useNavigate } from 'react-router-dom'
-import { useLiveQuery } from 'dexie-react-hooks'
-import ProgressRing from '../components/ProgressRing'
-import { Card, Tag } from '../components/Card'
-import { useTodayPlan } from '../hooks/useTodayPlan'
-import { useStreak } from '../hooks/useStreak'
-import { db } from '../db/db'
-import { todayIso } from '../lib/date'
-import type { PlanItem } from '../lib/recommendation'
+import { useNavigate } from ‘react-router-dom’
+import { useLiveQuery } from ‘dexie-react-hooks’
+import ProgressRing from ‘../components/ProgressRing’
+import { Card, Tag } from ‘../components/Card’
+import SkillRadar from ‘../components/SkillRadar’
+import { useTodayPlan } from ‘../hooks/useTodayPlan’
+import { useStreak } from ‘../hooks/useStreak’
+import { useAvatarStats } from ‘../hooks/useAvatarStats’
+import { db } from ‘../db/db’
+import { todayIso } from ‘../lib/date’
+import type { PlanItem } from ‘../lib/recommendation’
 
 function scoreColor(score: number) {
-  if (score >= 80) return '#2ec4b6'
-  if (score >= 60) return '#f5c842'
-  return '#e8622a'
+  if (score >= 80) return ‘#2ec4b6’
+  if (score >= 60) return ‘#f5c842’
+  return ‘#e8622a’
 }
 
 export default function Today() {
   const plan = useTodayPlan()
   const streak = useStreak()
+  const avatarStats = useAvatarStats()
   const navigate = useNavigate()
 
   const today = new Date()
   const todayStr = todayIso()
   const dateLabel = today.toLocaleDateString(undefined, {
-    weekday: 'long',
-    month: 'short',
-    day: 'numeric'
+    weekday: ‘long’,
+    month: ‘short’,
+    day: ‘numeric’
   })
 
   const bjjToday = useLiveQuery(
-    () => db.bjjLogs.where('date').equals(todayStr).first(),
+    () => db.bjjLogs.where(‘date’).equals(todayStr).first(),
     [todayStr],
     undefined
   )
 
+  // Calendar data: count sessions per day over past 30 days
+  const calendar = useLiveQuery(
+    async () => {
+      const thirtyDaysAgo = new Date()
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+      const sessions = await db.sessions
+        .where(‘date’)
+        .above(thirtyDaysAgo.toISOString().split(‘T’)[0])
+        .toArray()
+
+      const byDate: Record<string, number> = {}
+      sessions.forEach(s => {
+        byDate[s.date] = (byDate[s.date] || 0) + 1
+      })
+      return byDate
+    },
+    [],
+    {}
+  )
+
   async function toggleBjjToday() {
-    const existing = await db.bjjLogs.where('date').equals(todayStr).first()
+    const existing = await db.bjjLogs.where(‘date’).equals(todayStr).first()
     if (existing) {
       await db.bjjLogs.update(existing.id!, { attended: !existing.attended })
     } else {
@@ -43,9 +66,9 @@ export default function Today() {
   }
 
   async function handleItemTap(item: PlanItem) {
-    if (item.target.tab === 'recovery') {
+    if (item.target.tab === ‘recovery’) {
       navigate(`/recovery?area=${item.target.area}`)
-    } else if (item.target.tab === 'morning' || item.target.tab === 'bjj_release') {
+    } else if (item.target.tab === ‘morning’ || item.target.tab === ‘bjj_release’) {
       navigate(`/mobility?tab=${item.target.tab}`)
     } else {
       navigate(`/mobility?tab=${item.target.tab}`)
@@ -77,7 +100,7 @@ export default function Today() {
         />
         <div className="flex-1 space-y-2">
           <div className="flex items-center gap-2">
-            <span className="text-xl">{'🔥'}</span>
+            <span className="text-xl">{‘🔥’}</span>
             <div>
               <div className="text-lg font-extrabold leading-none">{streak ?? 0}</div>
               <div className="text-xs text-muted">day streak</div>
@@ -98,7 +121,7 @@ export default function Today() {
             <Card key={item.id} className="flex items-center gap-3 p-3">
               <MiniProgress percent={item.percent} done={item.done} />
               <div className="flex-1">
-                <div className={`text-sm font-semibold ${item.done ? 'text-muted' : 'text-ink'}`}>
+                <div className={`text-sm font-semibold ${item.done ? ‘text-muted’ : ‘text-ink’}`}>
                   {item.label}
                 </div>
                 {item.percent > 0 && !item.done && (
@@ -110,11 +133,11 @@ export default function Today() {
                 onClick={() => handleItemTap(item)}
                 className={`flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${
                   item.done
-                    ? 'bg-teal/15 text-teal border border-teal/30'
-                    : 'bg-accent/15 text-accent border border-accent/30'
+                    ? ‘bg-teal/15 text-teal border border-teal/30’
+                    : ‘bg-accent/15 text-accent border border-accent/30’
                 }`}
               >
-                {item.done ? 'Review' : item.percent > 0 ? 'Continue' : 'Start'}
+                {item.done ? ‘Review’ : item.percent > 0 ? ‘Continue’ : ‘Start’}
               </button>
             </Card>
           ))}
@@ -138,13 +161,49 @@ export default function Today() {
           onClick={toggleBjjToday}
           className={`rounded-full px-4 py-2 text-sm font-bold transition-colors ${
             bjjToday?.attended
-              ? 'bg-accent/20 text-accent border border-accent/40'
-              : 'bg-card2 text-muted border border-border'
+              ? ‘bg-accent/20 text-accent border border-accent/40’
+              : ‘bg-card2 text-muted border border-border’
           }`}
         >
-          {bjjToday?.attended ? '🥋 Yes' : 'No'}
+          {bjjToday?.attended ? ‘🥋 Yes’ : ‘No’}
         </button>
       </Card>
+
+      {/* Calendar heatmap */}
+      <Card>
+        <h2 className="mb-3 text-base font-bold">Activity</h2>
+        <div className="grid grid-cols-7 gap-1">
+          {Array.from({ length: 35 }).map((_, i) => {
+            const date = new Date()
+            date.setDate(date.getDate() - (34 - i))
+            const dateStr = date.toISOString().split(‘T’)[0]
+            const count = calendar[dateStr] || 0
+            let bg = ‘bg-card’
+            if (count >= 3) bg = ‘bg-teal/60’
+            else if (count === 2) bg = ‘bg-teal/40’
+            else if (count === 1) bg = ‘bg-teal/20’
+            return (
+              <div
+                key={i}
+                className={`h-6 w-6 rounded-md ${bg} border border-border/30`}
+                title={`${dateStr}: ${count} sessions`}
+              />
+            )
+          })}
+        </div>
+        <p className="mt-2 text-xs text-muted">Past 35 days of activity</p>
+      </Card>
+
+      {/* Recovery readiness radar */}
+      {avatarStats?.recoveryReadiness && (
+        <Card>
+          <h2 className="mb-3 text-base font-bold">Training readiness</h2>
+          <div style={{ height: 320 }}>
+            <SkillRadar recoveryReadiness={avatarStats.recoveryReadiness} />
+          </div>
+          <p className="mt-2 text-xs text-muted">Inner ring: skill levels • Outer ring: training readiness after recovery</p>
+        </Card>
+      )}
     </div>
   )
 }
@@ -155,7 +214,7 @@ function MiniProgress({ percent, done }: { percent: number; done: boolean }) {
   const radius = (size - stroke) / 2
   const circumference = 2 * Math.PI * radius
   const offset = circumference - (Math.min(100, percent) / 100) * circumference
-  const color = done ? '#2ec4b6' : percent > 0 ? '#f5c842' : '#2e3248'
+  const color = done ? ‘#2ec4b6’ : percent > 0 ? ‘#f5c842’ : ‘#2e3248’
 
   return (
     <div className="relative h-7 w-7 flex-shrink-0">
@@ -177,7 +236,7 @@ function MiniProgress({ percent, done }: { percent: number; done: boolean }) {
       </svg>
       {done && (
         <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-teal">
-          {'✓'}
+          {‘✓’}
         </div>
       )}
     </div>
