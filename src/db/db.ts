@@ -116,6 +116,15 @@ export type CalisthenicsExerciseId =
   | 'pike_pushups'
   | 'tuck_lsit'
   | 'pistol_squat'
+  | 'lsit'
+  | 'planche_leans'
+  | 'pistol_squats'
+  | 'ring_rows'
+  | 'hindu_pushups'
+  | 'scapular_pullups'
+  | 'gymnastics_bridge'
+  | 'hanging_knee_to_chest'
+  | 'archer_pushups'
 
 export type CalisthenicsMetric = 'hold_sec' | 'reps'
 
