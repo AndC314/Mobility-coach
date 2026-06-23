@@ -124,11 +124,16 @@ async function syncFirestoreToLocal(workouts: WorkoutDoc[]): Promise<void> {
   // Convert Firestore workouts to local Dexie sessions
   for (const workout of workouts) {
     const sessionType = mapWorkoutTypeToSessionType(workout.type)
-    // Skip if already exists in local Dexie by checking date + type
+
+    // Improved dedup: check date + type + label
     const existing = await dexieDb.sessions
       .where('date')
       .equals(workout.date)
-      .filter((s) => sessionType === s.type)
+      .filter(
+        (s) =>
+          sessionType === s.type &&
+          s.label === (workout.label || `${workout.type} workout`)
+      )
       .first()
 
     if (!existing) {
