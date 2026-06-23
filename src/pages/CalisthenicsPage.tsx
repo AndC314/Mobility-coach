@@ -1,4 +1,4 @@
-import BjjSkillsSection from '../components/BjjSkillsSection'
+import CalisthenicsSection from '../components/CalisthenicsSection'
 
 export default function CalisthenicsPage() {
   return (
@@ -8,7 +8,7 @@ export default function CalisthenicsPage() {
         <h1 className="text-2xl font-extrabold">Calisthenics</h1>
       </div>
 
-      <BjjSkillsSection />
+      <CalisthenicsSection />
     </div>
   )
 }
