@@ -10,6 +10,13 @@ import { useAvatarStats, type AvatarAxis } from '../hooks/useAvatarStats'
 interface SkillRadarProps {
   axes?: AvatarAxis[]
   size?: number
+  recoveryReadiness?: {
+    Push: number
+    Pull: number
+    Legs: number
+    Core: number
+    Mobility: number
+  }
 }
 
 const AXIS_COLORS = {
@@ -20,7 +27,7 @@ const AXIS_COLORS = {
   grappling: '#7a7d96'
 }
 
-export default function SkillRadar({ axes, size = 260 }: SkillRadarProps) {
+export default function SkillRadar({ axes, size = 260, recoveryReadiness }: SkillRadarProps) {
   const stats = useAvatarStats()
   const data = axes ?? stats?.axes ?? []
 
@@ -46,13 +53,34 @@ export default function SkillRadar({ axes, size = 260 }: SkillRadarProps) {
   // Grid rings at 25%, 50%, 75%, 100%
   const rings = [0.25, 0.5, 0.75, 1.0]
 
-  // Data polygon points
+  // Data polygon points for skill
   const dataPoints = data.map((axis, i) => {
     const angle = startAngle + i * angleStep
     const r = (axis.value / 100) * radius
     return polarToXY(angle, r)
   })
   const dataPath = dataPoints.map(([x, y], i) => `${i === 0 ? 'M' : 'L'} ${x} ${y}`).join(' ') + ' Z'
+
+  // Data polygon points for readiness (if provided)
+  const readinessPoints = recoveryReadiness
+    ? data.map((axis, i) => {
+        const angle = startAngle + i * angleStep
+        let readinessValue = 100 // default
+
+        // Map axis key to readiness object property
+        if (axis.key === 'push') readinessValue = recoveryReadiness.Push
+        else if (axis.key === 'pull') readinessValue = recoveryReadiness.Pull
+        else if (axis.key === 'core') readinessValue = recoveryReadiness.Core
+        else if (axis.key === 'mobility') readinessValue = recoveryReadiness.Legs
+        else if (axis.key === 'grappling') readinessValue = recoveryReadiness.Mobility
+
+        const r = (readinessValue / 100) * radius
+        return polarToXY(angle, r)
+      })
+    : []
+  const readinessPath = readinessPoints.length > 0
+    ? readinessPoints.map(([x, y], i) => `${i === 0 ? 'M' : 'L'} ${x} ${y}`).join(' ') + ' Z'
+    : ''
 
   return (
     <div className="flex flex-col items-center">
@@ -102,6 +130,19 @@ export default function SkillRadar({ axes, size = 260 }: SkillRadarProps) {
           strokeWidth={2}
           strokeLinejoin="round"
         />
+
+        {/* Readiness polygon (if provided) */}
+        {readinessPath && (
+          <path
+            d={readinessPath}
+            fill="none"
+            stroke="#a78bfa"
+            strokeWidth={2}
+            strokeDasharray="4 2"
+            opacity={0.5}
+            strokeLinejoin="round"
+          />
+        )}
 
         {/* Data points */}
         {dataPoints.map(([x, y], i) => (
