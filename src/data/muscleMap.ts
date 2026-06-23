@@ -94,12 +94,49 @@ export interface MuscleActivation {
 // ─────────────────────────────────────────────────────────────────────────
 
 export const EXERCISE_MUSCLES: Record<CalisthenicsExerciseId, MuscleActivation[]> = {
-  plank: [
-    { muscle: 'abs', level: 'primary' },
-    { muscle: 'lower_back', level: 'primary' },
-    { muscle: 'glutes', level: 'secondary' },
+  archer_pushups: [
+    { muscle: 'chest', level: 'primary' },
+    { muscle: 'triceps', level: 'primary' },
     { muscle: 'front_delt', level: 'secondary' },
-    { muscle: 'triceps', level: 'secondary' }
+    { muscle: 'biceps', level: 'secondary' }
+  ],
+  australian_pullups: [
+    { muscle: 'rhomboids', level: 'primary' },
+    { muscle: 'lats', level: 'primary' },
+    { muscle: 'rear_delt', level: 'primary' },
+    { muscle: 'biceps', level: 'secondary' },
+    { muscle: 'traps', level: 'secondary' },
+    { muscle: 'abs', level: 'secondary' }
+  ],
+  bulgarian_squat: [
+    { muscle: 'quads', level: 'primary' },
+    { muscle: 'glutes', level: 'primary' },
+    { muscle: 'hip_flexors', level: 'secondary' },
+    { muscle: 'hamstrings', level: 'secondary' },
+    { muscle: 'calves', level: 'secondary' }
+  ],
+  dips: [
+    { muscle: 'triceps', level: 'primary' },
+    { muscle: 'chest', level: 'primary' },
+    { muscle: 'front_delt', level: 'secondary' },
+    { muscle: 'lats', level: 'secondary' }
+  ],
+  gymnastics_bridge: [
+    { muscle: 'glutes', level: 'primary' },
+    { muscle: 'hamstrings', level: 'primary' },
+    { muscle: 'chest', level: 'secondary' },
+    { muscle: 'front_delt', level: 'secondary' }
+  ],
+  hanging_knee_to_chest: [
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'hip_flexors', level: 'primary' },
+    { muscle: 'forearms', level: 'secondary' }
+  ],
+  hindu_pushups: [
+    { muscle: 'chest', level: 'primary' },
+    { muscle: 'triceps', level: 'primary' },
+    { muscle: 'lower_back', level: 'secondary' },
+    { muscle: 'front_delt', level: 'secondary' }
   ],
   hollow_body: [
     { muscle: 'abs', level: 'primary' },
@@ -107,12 +144,48 @@ export const EXERCISE_MUSCLES: Record<CalisthenicsExerciseId, MuscleActivation[]
     { muscle: 'lower_back', level: 'secondary' },
     { muscle: 'quads', level: 'secondary' }
   ],
-  pushups: [
-    { muscle: 'chest', level: 'primary' },
+  hollow_body_hold: [
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'hip_flexors', level: 'secondary' },
+    { muscle: 'lower_back', level: 'secondary' }
+  ],
+  lsit: [
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'hip_flexors', level: 'primary' },
+    { muscle: 'triceps', level: 'secondary' },
+    { muscle: 'front_delt', level: 'secondary' }
+  ],
+  pike_pushups: [
+    { muscle: 'front_delt', level: 'primary' },
+    { muscle: 'chest', level: 'secondary' },
+    { muscle: 'triceps', level: 'secondary' },
+    { muscle: 'abs', level: 'secondary' }
+  ],
+  planche_leans: [
     { muscle: 'front_delt', level: 'primary' },
     { muscle: 'triceps', level: 'primary' },
     { muscle: 'abs', level: 'secondary' },
-    { muscle: 'lats', level: 'secondary' }
+    { muscle: 'chest', level: 'secondary' }
+  ],
+  plank: [
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'lower_back', level: 'primary' },
+    { muscle: 'glutes', level: 'secondary' },
+    { muscle: 'front_delt', level: 'secondary' },
+    { muscle: 'triceps', level: 'secondary' }
+  ],
+  pistol_squat: [
+    { muscle: 'quads', level: 'primary' },
+    { muscle: 'glutes', level: 'primary' },
+    { muscle: 'hamstrings', level: 'secondary' },
+    { muscle: 'calves', level: 'secondary' },
+    { muscle: 'lower_back', level: 'secondary' }
+  ],
+  pistol_squats: [
+    { muscle: 'quads', level: 'primary' },
+    { muscle: 'glutes', level: 'primary' },
+    { muscle: 'hamstrings', level: 'secondary' },
+    { muscle: 'hip_flexors', level: 'secondary' }
   ],
   pullups: [
     { muscle: 'lats', level: 'primary' },
@@ -123,6 +196,25 @@ export const EXERCISE_MUSCLES: Record<CalisthenicsExerciseId, MuscleActivation[]
     { muscle: 'forearms', level: 'secondary' },
     { muscle: 'abs', level: 'secondary' }
   ],
+  pushups: [
+    { muscle: 'chest', level: 'primary' },
+    { muscle: 'front_delt', level: 'primary' },
+    { muscle: 'triceps', level: 'primary' },
+    { muscle: 'abs', level: 'secondary' },
+    { muscle: 'lats', level: 'secondary' }
+  ],
+  ring_rows: [
+    { muscle: 'lats', level: 'primary' },
+    { muscle: 'biceps', level: 'primary' },
+    { muscle: 'rear_delt', level: 'secondary' },
+    { muscle: 'rhomboids', level: 'secondary' }
+  ],
+  scapular_pullups: [
+    { muscle: 'lats', level: 'primary' },
+    { muscle: 'rear_delt', level: 'primary' },
+    { muscle: 'traps', level: 'secondary' },
+    { muscle: 'rhomboids', level: 'secondary' }
+  ],
   squats: [
     { muscle: 'quads', level: 'primary' },
     { muscle: 'glutes', level: 'primary' },
@@ -130,45 +222,11 @@ export const EXERCISE_MUSCLES: Record<CalisthenicsExerciseId, MuscleActivation[]
     { muscle: 'calves', level: 'secondary' },
     { muscle: 'lower_back', level: 'secondary' }
   ],
-  bulgarian_squat: [
-    { muscle: 'quads', level: 'primary' },
-    { muscle: 'glutes', level: 'primary' },
-    { muscle: 'hip_flexors', level: 'secondary' },
-    { muscle: 'hamstrings', level: 'secondary' },
-    { muscle: 'calves', level: 'secondary' }
-  ],
-  australian_pullups: [
-    { muscle: 'rhomboids', level: 'primary' },
-    { muscle: 'lats', level: 'primary' },
-    { muscle: 'rear_delt', level: 'primary' },
-    { muscle: 'biceps', level: 'secondary' },
-    { muscle: 'traps', level: 'secondary' },
-    { muscle: 'abs', level: 'secondary' }
-  ],
-  dips: [
-    { muscle: 'triceps', level: 'primary' },
-    { muscle: 'chest', level: 'primary' },
-    { muscle: 'front_delt', level: 'secondary' },
-    { muscle: 'lats', level: 'secondary' }
-  ],
-  pike_pushups: [
-    { muscle: 'front_delt', level: 'primary' },
-    { muscle: 'chest', level: 'secondary' },
-    { muscle: 'triceps', level: 'secondary' },
-    { muscle: 'abs', level: 'secondary' }
-  ],
   tuck_lsit: [
     { muscle: 'abs', level: 'primary' },
     { muscle: 'hip_flexors', level: 'primary' },
     { muscle: 'triceps', level: 'secondary' },
     { muscle: 'front_delt', level: 'secondary' }
-  ],
-  pistol_squat: [
-    { muscle: 'quads', level: 'primary' },
-    { muscle: 'glutes', level: 'primary' },
-    { muscle: 'hamstrings', level: 'secondary' },
-    { muscle: 'calves', level: 'secondary' },
-    { muscle: 'lower_back', level: 'secondary' }
   ]
 }
 
