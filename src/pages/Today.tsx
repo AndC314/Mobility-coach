@@ -175,7 +175,7 @@ export default function Today() {
             const date = new Date()
             date.setDate(date.getDate() - (34 - i))
             const dateStr = date.toISOString().split('T')[0]
-            const count = calendar[dateStr] || 0
+            const count = (calendar as Record<string, number>)[dateStr] || 0
             let bg = 'bg-card'
             if (count >= 3) bg = 'bg-teal/60'
             else if (count === 2) bg = 'bg-teal/40'
@@ -196,7 +196,13 @@ export default function Today() {
         <Card>
           <h2 className="mb-3 text-base font-bold">Training readiness</h2>
           <div style={{ height: 320 }}>
-            <SkillRadar recoveryReadiness={avatarStats.recoveryReadiness} />
+            <SkillRadar recoveryReadiness={{
+              Push: avatarStats.recoveryReadiness.Push || 50,
+              Pull: avatarStats.recoveryReadiness.Pull || 50,
+              Legs: avatarStats.recoveryReadiness.Legs || 50,
+              Core: avatarStats.recoveryReadiness.Core || 50,
+              Mobility: avatarStats.recoveryReadiness.Mobility || 50
+            }} />
           </div>
           <p className="mt-2 text-xs text-muted">Inner ring: skill levels - Outer ring: training readiness</p>
         </Card>
