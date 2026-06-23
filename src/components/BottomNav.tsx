@@ -3,6 +3,8 @@ import { NavLink } from 'react-router-dom'
 const TABS = [
   { to: '/', label: 'Today', icon: '☀️' },
   { to: '/mobility', label: 'Mobility', icon: '🧘' },
+  { to: '/progress?tab=bjj', label: 'BJJ', icon: '🥋' },
+  { to: '/progress?tab=calisthenics', label: 'Calisthenics', icon: '💪' },
   { to: '/recovery', label: 'Recovery', icon: '🪻' },
   { to: '/progress', label: 'Progress', icon: '📈' },
   { to: '/profile', label: 'Profile', icon: '⚙️' }
@@ -14,7 +16,7 @@ export default function BottomNav() {
       className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-surface/95 backdrop-blur-md"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <div className="mx-auto flex max-w-md items-stretch">
+      <div className="mx-auto flex max-w-full items-stretch overflow-x-auto">
         {TABS.map((tab) => (
           <NavLink
             key={tab.to}
