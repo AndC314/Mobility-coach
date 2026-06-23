@@ -87,7 +87,6 @@ export default function Mobility() {
     </div>
   )
 }
-}
 
 // ─────────────────────────────────────────────────────────────────────────
 // MORNING / POST-BJJ ROUTINES
