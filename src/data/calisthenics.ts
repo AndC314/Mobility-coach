@@ -42,11 +42,11 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     metric: 'hold_sec',
     unit: 's',
     icon: '🛡️',
-    description: 'Your structural armor. Lie on back, contract abs, lift shoulders and legs. Zero gap at spine.',
-    setup: 'Lie on your back on a mat or floor.',
-    cue: 'Lie on your back, point your toes, and tuck your chin. Contract your abs to lift your shoulders and legs a few inches off the floor. Crush your lower back into the mat—there should be zero gap between your spine and the floor.',
-    bjjTransfer: 'This is your structural armor. When you are stuck in bottom mount, a hollow body prevents your spine from being flattened out, preserving your ability to bridge effectively.',
-    feelIt: 'Your entire abdominal wall. If you feel it in your lower back, lift your legs higher to restore the pelvic tilt.'
+    description: 'Your structural armor when playing guard or defending from the bottom. Keep your spine off the mat.',
+    setup: 'Lie flat on your yoga mat.',
+    cue: 'Lie flat on your yoga mat. Point your toes and tuck your chin to your chest. Contract your abs heavily to lift your shoulder blades and your legs a few inches off the floor. The absolute most important detail: You must crush your lower back into the mat. There should be zero gap between your lumbar spine and the floor. If you cannot maintain this, bring your knees into a tuck position until your core is strong enough to keep your back flat with straight legs.',
+    bjjTransfer: 'This is your structural armor when playing guard or defending from the bottom. When you are on your back, an opponent\'s goal is to flatten your spine against the mat, which kills your hip mobility and stops you from bridging. A strong hollow body acts like a spring—it keeps your core engaged, your shoulders off the mat, and your hips active, making it incredibly difficult for them to pin you flat.',
+    feelIt: 'Your entire abdominal wall should be burning. If you feel any tension or arching in your lower back, your form has broken and you are no longer protecting your spine.'
   },
   {
     id: 'pushups',
