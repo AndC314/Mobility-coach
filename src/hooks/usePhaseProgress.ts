@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type PhaseProgress, type ProgressionKey } from '../db/db'
+import { isCheckpointMet } from '../lib/checkpointDetection'
 
 export function usePhaseProgress() {
   const rows = useLiveQuery(() => db.phaseProgress.toArray(), [], [])
@@ -44,5 +45,11 @@ export function usePhaseProgress() {
     }
   }
 
-  return { rows: rows ?? [], getPhase, setPhase, setCheckpoint, advancePhase }
+  async function autoDetectCheckpoint(key: ProgressionKey) {
+    const met = await isCheckpointMet(key, getPhase(key)?.phase || 1)
+    await setCheckpoint(key, met)
+    return met
+  }
+
+  return { rows: rows ?? [], getPhase, setPhase, setCheckpoint, advancePhase, autoDetectCheckpoint }
 }

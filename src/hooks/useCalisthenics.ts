@@ -2,7 +2,8 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type CalisthenicsExerciseId, type CalisthenicsMetric } from '../db/db'
 import { todayIso } from '../lib/date'
 import { upsertTodaySession } from './useSessions'
-import { getExerciseDef } from '../data/calisthenics'
+import { getExerciseDef, estimateCalisthenicsduration } from '../data/calisthenics'
+import { usePreferences } from './usePreferences'
 
 export async function logCalisthenicsBase(params: {
   exerciseId: CalisthenicsExerciseId
@@ -11,6 +12,7 @@ export async function logCalisthenicsBase(params: {
   sets?: number
   notes?: string
   date?: string
+  restSeconds?: number // override default 30s per-user preference
 }) {
   const date = params.date || todayIso()
   const id = await db.calisthenicsLogs.add({
@@ -23,16 +25,20 @@ export async function logCalisthenicsBase(params: {
     createdAt: new Date().toISOString()
   })
 
-  // Also reflect into the daily session log so it shows up in Logs/streaks,
-  // same way BJJ and mobility sessions do. Calisthenics doesn't have a
-  // natural "planned duration", so treat the act of logging as 100% done
-  // with a nominal 1-minute planned/actual duration.
+  // Estimate duration based on exercise type and reps/sets
+  const estimatedSec = estimateCalisthenicsduration(
+    params.exerciseId,
+    params.value,
+    params.sets,
+    params.restSeconds ?? 30
+  )
+
   const def = getExerciseDef(params.exerciseId)
   await upsertTodaySession({
     type: 'calisthenics',
-    label: `${def?.name ?? 'Calisthenics'} logged`,
-    plannedSec: 60,
-    actualSec: 60,
+    label: def?.name ?? 'Calisthenics',
+    plannedSec: estimatedSec,
+    actualSec: estimatedSec, // assume completed as planned
     exerciseIds: [params.exerciseId]
   })
 

@@ -11,6 +11,7 @@ import {
 import { db as firestoreDb } from '../lib/firebase'
 import { db as dexieDb, type SessionType } from '../db/db'
 import { WorkoutDoc } from '../types/firebase'
+import { mergeWorkouts } from '../lib/merge'
 
 export interface UseSyncState {
   allWorkouts: WorkoutDoc[]
@@ -129,34 +130,36 @@ export function useFirebaseSync(user: User | null): UseSyncState {
 }
 
 async function syncFirestoreToLocal(workouts: WorkoutDoc[]): Promise<void> {
-  // Convert Firestore workouts to local Dexie sessions
-  for (const workout of workouts) {
-    const sessionType = mapWorkoutTypeToSessionType(workout.type)
+  const dexieSessions = await dexieDb.sessions.toArray()
+  const {merged} = mergeWorkouts(workouts, dexieSessions)
 
-    // Improved dedup: check date + type + label
+  for (const workout of merged) {
+    const sessionType = mapWorkoutTypeToSessionType(workout.type)
+    const session = {
+      date: workout.date,
+      type: sessionType,
+      label: workout.label || `${workout.type} workout`,
+      durationMin: Math.round((workout.actualSec || 0) / 60),
+      plannedSec: workout.plannedSec || 0,
+      actualSec: workout.actualSec || 0,
+      percent: workout.plannedSec ? Math.round((workout.actualSec! / workout.plannedSec) * 100) : 0,
+      exerciseIds: workout.exerciseIds || [],
+      createdAt: new Date(workout.createdAt).toISOString(),
+    }
+
+    // Check if this session already exists locally by (date, type, label)
     const existing = await dexieDb.sessions
       .where('date')
       .equals(workout.date)
-      .filter(
-        (s) =>
-          sessionType === s.type &&
-          s.label === (workout.label || `${workout.type} workout`)
-      )
+      .filter((s) => s.type === sessionType && s.label === session.label)
       .first()
 
-    if (!existing) {
-      // Insert as a session so it shows in Progress/Logs
-      await dexieDb.sessions.add({
-        date: workout.date,
-        type: sessionType,
-        label: workout.label || `${workout.type} workout`,
-        durationMin: Math.round((workout.actualSec || 0) / 60),
-        plannedSec: workout.plannedSec || 0,
-        actualSec: workout.actualSec || 0,
-        percent: workout.plannedSec ? Math.round((workout.actualSec! / workout.plannedSec) * 100) : 0,
-        exerciseIds: workout.exerciseIds || [],
-        createdAt: new Date(workout.createdAt).toISOString(),
-      })
+    if (existing) {
+      // Update with merged data (Firestore wins on conflict via mergeWorkouts)
+      await dexieDb.sessions.update(existing.id!, session)
+    } else {
+      // New row from Firestore
+      await dexieDb.sessions.add(session)
     }
   }
 }

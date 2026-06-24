@@ -3,6 +3,7 @@ import type { CalisthenicsExerciseId, CalisthenicsMetric } from '../db/db'
 export interface CalisthenicsExerciseDef {
   id: CalisthenicsExerciseId
   name: string
+  type: 'dynamic' | 'hold' // dynamic = reps (3s per rep default), hold = timed
   metric: CalisthenicsMetric
   unit: string
   icon: string
@@ -23,6 +24,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
   {
     id: 'plank',
     name: 'Plank',
+    type: 'hold',
     metric: 'hold_sec',
     unit: 's',
     icon: '🧱',
@@ -31,6 +33,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
   {
     id: 'hollow_body',
     name: 'Hollow Body',
+    type: 'hold',
     metric: 'hold_sec',
     unit: 's',
     icon: '🌙',
@@ -39,6 +42,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
   {
     id: 'hollow_body_hold',
     name: 'Hollow Body Hold',
+    type: 'hold',
     metric: 'hold_sec',
     unit: 's',
     icon: '🛡️',
@@ -51,6 +55,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
   {
     id: 'pushups',
     name: 'Push-ups',
+    type: 'dynamic',
     metric: 'reps',
     unit: 'reps',
     icon: '💪',
@@ -59,6 +64,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
   {
     id: 'pullups',
     name: 'Pull-ups',
+    type: 'dynamic',
     metric: 'reps',
     unit: 'reps',
     icon: '🧗',
@@ -67,6 +73,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
   {
     id: 'squats',
     name: 'Squats',
+    type: 'dynamic',
     metric: 'reps',
     unit: 'reps',
     icon: '🦵',
@@ -75,6 +82,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
   {
     id: 'bulgarian_squat',
     name: 'Bulgarian Split Squat',
+    type: 'dynamic',
     metric: 'reps',
     unit: 'reps',
     icon: '🦿',
@@ -83,6 +91,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
   {
     id: 'australian_pullups',
     name: 'Australian Pull-ups',
+    type: 'dynamic',
     metric: 'reps',
     unit: 'reps',
     icon: '🪢',
@@ -92,6 +101,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
   {
     id: 'dips',
     name: 'Dips',
+    type: 'dynamic',
     metric: 'reps',
     unit: 'reps',
     icon: '🔻',
@@ -101,6 +111,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
   {
     id: 'pike_pushups',
     name: 'Pike Push-ups',
+    type: 'dynamic',
     metric: 'reps',
     unit: 'reps',
     icon: '🔺',
@@ -109,6 +120,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
   {
     id: 'tuck_lsit',
     name: 'Tuck L-sit',
+    type: 'hold',
     metric: 'hold_sec',
     unit: 's',
     icon: '🪑',
@@ -117,6 +129,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
   {
     id: 'pistol_squat',
     name: 'Pistol Squat',
+    type: 'dynamic',
     metric: 'reps',
     unit: 'reps',
     icon: '🦯',
@@ -125,6 +138,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
   {
     id: 'lsit',
     name: 'L-Sit',
+    type: 'hold',
     metric: 'hold_sec',
     unit: 's',
     icon: '📐',
@@ -137,6 +151,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
   {
     id: 'planche_leans',
     name: 'Planche Leans',
+    type: 'hold',
     metric: 'hold_sec',
     unit: 's',
     icon: '⬆️',
@@ -149,6 +164,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
   {
     id: 'pistol_squats',
     name: 'Pistol Squats',
+    type: 'dynamic',
     metric: 'reps',
     unit: 'reps',
     icon: '🦿',
@@ -161,6 +177,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
   {
     id: 'ring_rows',
     name: 'Ring Rows',
+    type: 'dynamic',
     metric: 'reps',
     unit: 'reps',
     icon: '⭕',
@@ -173,6 +190,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
   {
     id: 'hindu_pushups',
     name: 'Hindu Push-Ups',
+    type: 'dynamic',
     metric: 'reps',
     unit: 'reps',
     icon: '🙏',
@@ -185,6 +203,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
   {
     id: 'scapular_pullups',
     name: 'Scapular Pull-Ups',
+    type: 'dynamic',
     metric: 'reps',
     unit: 'reps',
     icon: '⬆️',
@@ -197,6 +216,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
   {
     id: 'gymnastics_bridge',
     name: 'Gymnastics Bridge',
+    type: 'hold',
     metric: 'hold_sec',
     unit: 's',
     icon: '🌉',
@@ -209,6 +229,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
   {
     id: 'hanging_knee_to_chest',
     name: 'Hanging Knee-to-Chest',
+    type: 'dynamic',
     metric: 'reps',
     unit: 'reps',
     icon: '🔺',
@@ -221,6 +242,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
   {
     id: 'archer_pushups',
     name: 'Archer Push-Ups',
+    type: 'dynamic',
     metric: 'reps',
     unit: 'reps',
     icon: '🏹',
@@ -234,4 +256,36 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
 
 export function getExerciseDef(id: CalisthenicsExerciseId): CalisthenicsExerciseDef | undefined {
   return CALISTHENICS_EXERCISES.find((e) => e.id === id)
+}
+
+/**
+ * Calculate estimated duration in seconds for a calisthenics exercise.
+ *
+ * For hold exercises: uses the logged value directly (or value × sets)
+ * For dynamic (reps) exercises: 3 seconds per rep × sets + rest time between sets
+ *
+ * Rest time defaults to 30s, configurable via userRestSeconds parameter.
+ */
+export function estimateCalisthenicsduration(
+  exerciseId: CalisthenicsExerciseId,
+  value: number,
+  sets?: number,
+  userRestSeconds: number = 30
+): number {
+  const exercise = getExerciseDef(exerciseId)
+  if (!exercise) return 0
+
+  const numSets = sets ?? 1
+
+  if (exercise.type === 'hold') {
+    // Hold exercises: user logs the duration directly
+    // If they log sets, multiply: 3×60s = 180s total
+    return value * numSets
+  }
+
+  // Dynamic exercises: reps with rest between sets
+  // Duration = (reps × 3 sec/rep × sets) + (rest × (sets - 1))
+  const repsTime = value * 3 * numSets
+  const restTime = userRestSeconds * Math.max(0, numSets - 1)
+  return repsTime + restTime
 }
