@@ -1,17 +1,16 @@
 import { useState } from 'react'
 import { useAvatarStats, type AvatarMilestone } from '../hooks/useAvatarStats'
+import { useAvatarProgression } from '../hooks/useAvatarProgression'
+import { getAvatarDescription } from '../lib/avatarProgression'
+import { SpriteAnimator, type SpriteSheetConfig } from './SpriteAnimator'
+import { Card } from './Card'
 
-// ─────────────────────────────────────────────────────────────────────────
-// EVOLVING AVATAR DISPLAY
-//
-// Displays a tier-based AI-generated illustration if available in
-// public/avatar/. Falls back to the procedural SVG if images aren't
-// present yet. Tier is computed from unlocked milestones.
-//
-// To populate: drop 4 images into public/avatar/:
-//   novice.webp, developing.webp, strong.webp, elite.webp
-// ─────────────────────────────────────────────────────────────────────────
+interface AvatarDisplayProps {
+  compact?: boolean
+  useSpriteAnimation?: boolean // use new pixel art sprite system if true
+}
 
+// Old system: tier-based AI images
 const AVATAR_IMAGES: Record<string, string> = {
   novice: '/avatar/novice.webp',
   developing: '/avatar/developing.webp',
@@ -19,13 +18,9 @@ const AVATAR_IMAGES: Record<string, string> = {
   elite: '/avatar/elite.webp'
 }
 
-interface AvatarDisplayProps {
-  compact?: boolean
-}
-
 type AvatarTier = 'novice' | 'developing' | 'strong' | 'elite'
 
-function computeAvatarTier(milestones: AvatarMilestone[]): AvatarTier {
+function computeOldAvatarTier(milestones: AvatarMilestone[]): AvatarTier {
   const unlocked = milestones.filter((m) => m.unlocked)
   const advancedCount = unlocked.filter((m) => m.tier === 'advanced').length
   const intermediateCount = unlocked.filter((m) => m.tier === 'intermediate').length
@@ -59,7 +54,69 @@ const TIER_STYLES: Record<AvatarTier, { bodyOpacity: number; limbWidth: number; 
   elite: { bodyOpacity: 1.0, limbWidth: 6, glowColor: 'rgba(167, 139, 250, 0.25)' }
 }
 
-export default function AvatarDisplay({ compact }: AvatarDisplayProps) {
+/**
+ * New sprite-based avatar display component
+ */
+function SpriteAvatarDisplay({ compact = false }: { compact?: boolean }) {
+  const { state, spriteUrl, hoursUntilNext, isLoading } = useAvatarProgression()
+
+  if (isLoading || !state || !spriteUrl) {
+    return (
+      <div className="flex items-center justify-center h-32 text-muted">
+        Loading avatar...
+      </div>
+    )
+  }
+
+  const scale = compact ? 1.5 : 3
+  const spriteConfig: SpriteSheetConfig = {
+    frameWidth: 64,
+    frameHeight: 64,
+    frameCols: 4,
+    frameCount: 4,
+    fps: 8,
+    loop: true
+  }
+
+  const description = getAvatarDescription(state)
+  const progressPercent = hoursUntilNext === Infinity
+    ? 100
+    : Math.max(0, 100 - (hoursUntilNext / 40) * 100)
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-col items-center gap-2">
+        <div style={{ transform: `scale(${scale})`, transformOrigin: 'center' }}>
+          <SpriteAnimator src={spriteUrl} config={spriteConfig} />
+        </div>
+        <div className="text-center">
+          <div className="text-sm font-semibold text-ink">{description}</div>
+          <div className="text-xs text-muted">{state.totalHours} hours trained</div>
+        </div>
+      </div>
+
+      {hoursUntilNext !== Infinity && (
+        <Card className="p-3">
+          <div className="text-xs font-semibold text-muted mb-2">Next milestone</div>
+          <div className="bg-border rounded-full h-2 overflow-hidden">
+            <div
+              className="bg-accent h-full transition-all"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+          <div className="text-xs text-muted mt-2 text-center">
+            {hoursUntilNext} hours to go
+          </div>
+        </Card>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Old procedural SVG avatar for backward compatibility
+ */
+function ProceduralAvatarDisplay({ compact }: { compact?: boolean }) {
   const stats = useAvatarStats()
   const [imgError, setImgError] = useState(false)
 
@@ -71,7 +128,7 @@ export default function AvatarDisplay({ compact }: AvatarDisplayProps) {
     )
   }
 
-  const tier = computeAvatarTier(stats.milestones)
+  const tier = computeOldAvatarTier(stats.milestones)
   const style = TIER_STYLES[tier]
   const grapplingAxis = stats.axes.find((a) => a.key === 'grappling')
   const beltColor = getBeltColor(grapplingAxis?.raw ?? 0)
@@ -81,7 +138,7 @@ export default function AvatarDisplay({ compact }: AvatarDisplayProps) {
   const pullAxis = stats.axes.find((a) => a.key === 'pull')
   const coreAxis = stats.axes.find((a) => a.key === 'core')
 
-  // Try to show AI-generated tier image, fall back to procedural SVG
+  // Try to show tier image, fall back to SVG
   const tierImage = AVATAR_IMAGES[tier]
 
   if (tierImage && !imgError) {
@@ -105,7 +162,6 @@ export default function AvatarDisplay({ compact }: AvatarDisplayProps) {
     )
   }
 
-  // Avatar proportions shift based on strength balance
   const shoulderWidth = 18 + (pushAxis?.value ?? 0) * 0.06
   const armThickness = style.limbWidth + (pullAxis?.value ?? 0) * 0.02
   const coreDefinition = (coreAxis?.value ?? 0) / 100
@@ -164,7 +220,7 @@ export default function AvatarDisplay({ compact }: AvatarDisplayProps) {
           opacity={style.bodyOpacity}
         />
 
-        {/* Core definition lines (visible at higher core values) */}
+        {/* Core definition lines */}
         {coreDefinition > 0.3 && (
           <>
             <line
@@ -222,7 +278,6 @@ export default function AvatarDisplay({ compact }: AvatarDisplayProps) {
         ))}
 
         {/* Arms */}
-        {/* Left arm */}
         <line
           x1={cx - shoulderWidth}
           y1={headR * 2 + 18}
@@ -233,7 +288,6 @@ export default function AvatarDisplay({ compact }: AvatarDisplayProps) {
           strokeLinecap="round"
           opacity={style.bodyOpacity}
         />
-        {/* Right arm */}
         <line
           x1={cx + shoulderWidth}
           y1={headR * 2 + 18}
@@ -272,7 +326,6 @@ export default function AvatarDisplay({ compact }: AvatarDisplayProps) {
         <ellipse cx={cx + shoulderWidth * 0.6} cy={h * 0.9} rx={5} ry={3} fill="#e8e8f0" opacity={style.bodyOpacity * 0.7} />
       </svg>
 
-      {/* Tier badge */}
       <div className="mt-2 flex items-center gap-2">
         <span className="rounded-full bg-card2 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-muted border border-border">
           {tier}
@@ -283,4 +336,15 @@ export default function AvatarDisplay({ compact }: AvatarDisplayProps) {
       </div>
     </div>
   )
+}
+
+/**
+ * Main avatar display component
+ * Supports both old procedural system and new sprite-based system
+ */
+export default function AvatarDisplay({ compact, useSpriteAnimation }: AvatarDisplayProps) {
+  if (useSpriteAnimation) {
+    return <SpriteAvatarDisplay compact={compact} />
+  }
+  return <ProceduralAvatarDisplay compact={compact} />
 }

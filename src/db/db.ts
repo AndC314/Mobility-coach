@@ -176,6 +176,7 @@ export interface BjjClassLog {
 
 export type MobilityGoal = 'bjj' | 'calisthenics' | 'general'
 export type SessionDuration = 10 | 20 | 30
+export type AvatarVariant = 'lean' | 'muscular' | 'balanced'
 
 export interface UserPreferences {
   id?: number // singleton row, id = 1
@@ -185,6 +186,7 @@ export interface UserPreferences {
   darkMode: boolean
   weeklyGoalDays: number // target number of days/week with a logged session
   soundEnabled: boolean // midpoint/end timer dings
+  avatarVariant: AvatarVariant // character body type
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -298,7 +300,8 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   goal: 'bjj',
   darkMode: false,
   weeklyGoalDays: 4,
-  soundEnabled: true
+  soundEnabled: true,
+  avatarVariant: 'balanced'
 }
 
 export const DEFAULT_PHASE_PROGRESS: Omit<PhaseProgress, 'id'>[] = [
