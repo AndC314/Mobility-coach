@@ -11,7 +11,6 @@ import {
 import { db as firestoreDb } from '../lib/firebase'
 import { db as dexieDb, type SessionType } from '../db/db'
 import { WorkoutDoc } from '../types/firebase'
-import { isoDate } from '../lib/date'
 
 export interface UseSyncState {
   allWorkouts: WorkoutDoc[]
@@ -29,7 +28,7 @@ export interface UseSyncState {
 export function useFirebaseSync(user: User | null): UseSyncState {
   const [allWorkouts, setAllWorkouts] = useState<WorkoutDoc[]>([])
   const [conflictDays, setConflictDays] = useState<string[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(!!user)
   const unsubscribeRef = useRef<(() => void) | null>(null)
 
   // Set up real-time listener
@@ -44,9 +43,12 @@ export function useFirebaseSync(user: User | null): UseSyncState {
       return
     }
 
-    const setupSync = async () => {
-      const fsRef = collection(firestoreDb, `users/${user.uid}/workouts`)
-      const unsub = onSnapshot(fsRef, async (snapshot) => {
+    setIsLoading(true)
+
+    const fsRef = collection(firestoreDb, `users/${user.uid}/workouts`)
+    const unsub = onSnapshot(
+      fsRef,
+      async (snapshot) => {
         const workouts = snapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
@@ -54,7 +56,11 @@ export function useFirebaseSync(user: User | null): UseSyncState {
         setAllWorkouts(workouts)
 
         // Sync Firestore workouts into local Dexie for display
-        await syncFirestoreToLocal(workouts)
+        try {
+          await syncFirestoreToLocal(workouts)
+        } catch (err) {
+          console.error('[useFirebaseSync] Failed to sync Firestore workouts to local DB:', err)
+        }
 
         // Calculate conflict days
         const conflictSet = new Set<string>()
@@ -65,11 +71,13 @@ export function useFirebaseSync(user: User | null): UseSyncState {
         })
         setConflictDays(Array.from(conflictSet).sort())
         setIsLoading(false)
-      })
-      unsubscribeRef.current = unsub
-    }
-
-    setupSync()
+      },
+      (error) => {
+        console.error('[useFirebaseSync] Firestore snapshot error:', error)
+        setIsLoading(false)
+      }
+    )
+    unsubscribeRef.current = unsub
 
     return () => {
       if (unsubscribeRef.current) {

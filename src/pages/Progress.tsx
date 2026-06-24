@@ -1,13 +1,9 @@
 import { useState } from 'react'
 import SkillTree from '../components/SkillTree'
 import SkillRadar from '../components/SkillRadar'
-import { useAuth } from '../hooks/useAuth'
-import { useFirebaseSync } from '../hooks/useFirebaseSync'
 
 export default function Progress() {
   const [view, setView] = useState<'tree' | 'trends'>('tree')
-  const { user } = useAuth()
-  useFirebaseSync(user)
 
   return (
     <div className="space-y-5 pb-4 fade-in">

@@ -1,36 +1,34 @@
-import { useState } from 'react'
-import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth'
+import { useState, useEffect } from 'react'
+import { signInWithRedirect, getRedirectResult, GoogleAuthProvider } from 'firebase/auth'
 import { auth } from '../lib/firebase'
 
 export function LoginScreen() {
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // Handle the redirect result when the page loads after Google auth
+  useEffect(() => {
+    getRedirectResult(auth)
+      .then(() => setLoading(false))
+      .catch((err) => {
+        if (err instanceof Error && !err.message.includes('no-redirect-action')) {
+          setError(err.message)
+        }
+        setLoading(false)
+      })
+  }, [])
 
   const handleGoogleSignIn = async () => {
     try {
       setLoading(true)
       setError(null)
-
       const provider = new GoogleAuthProvider()
-      await signInWithPopup(auth, provider)
+      await signInWithRedirect(auth, provider)
+      // Page will redirect — code below won't execute
     } catch (err) {
-      // Handle specific Firebase auth errors
       if (err instanceof Error) {
-        let errorMessage = err.message
-
-        if (err.message.includes('popup-blocked')) {
-          errorMessage = 'Pop-up was blocked. Please allow pop-ups and try again.'
-        } else if (err.message.includes('popup-closed-by-user')) {
-          errorMessage = 'Sign-in was cancelled.'
-        } else if (err.message.includes('network-request-failed')) {
-          errorMessage = 'Network error. Please check your connection and try again.'
-        }
-
-        setError(errorMessage)
-      } else {
-        setError('An unexpected error occurred. Please try again.')
+        setError(err.message)
       }
-    } finally {
       setLoading(false)
     }
   }
