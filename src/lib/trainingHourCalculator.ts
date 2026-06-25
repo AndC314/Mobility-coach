@@ -96,6 +96,11 @@ export function getNudgeMessage(training: TrainingHours): string {
     mobility: 'Mobility'
   }[training.category]
 
+  // Handle never-trained case (very high days since Unix epoch)
+  if (training.lastActivityDaysAgo > 1000) {
+    return `Start logging ${categoryName} to begin tracking your progress.`
+  }
+
   if (training.lastActivityDaysAgo === 0) {
     return `Great! Keep the streak going — log 1 more hour of ${categoryName} this week.`
   }
