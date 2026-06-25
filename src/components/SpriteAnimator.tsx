@@ -18,6 +18,7 @@ interface SpriteAnimatorProps {
 
 /**
  * SpriteAnimator: renders a single frame from a sprite sheet and cycles through them.
+ * Uses CSS background-image with background-position for reliable sprite cropping.
  * Use for idle animations, level-up sequences, etc.
  */
 export function SpriteAnimator({
@@ -60,23 +61,17 @@ export function SpriteAnimator({
 
   return (
     <div
-      className={`inline-block overflow-hidden ${className}`}
+      className={`inline-block ${className}`}
       style={{
-        width: config.frameWidth,
-        height: config.frameHeight,
+        width: `${config.frameWidth}px`,
+        height: `${config.frameHeight}px`,
+        backgroundImage: `url('${src}')`,
+        backgroundPosition: `${-offsetX}px ${-offsetY}px`,
+        backgroundRepeat: 'no-repeat',
+        backgroundSize: `${config.frameCols * config.frameWidth}px ${Math.ceil(config.frameCount / config.frameCols) * config.frameHeight}px`,
+        imageRendering: 'pixelated',
+        WebkitImageRendering: 'pixelated',
       }}
-    >
-      <img
-        src={src}
-        alt="sprite"
-        style={{
-          width: config.frameCols * config.frameWidth,
-          height: Math.ceil(config.frameCount / config.frameCols) * config.frameHeight,
-          objectPosition: `${-offsetX}px ${-offsetY}px`,
-          objectFit: 'none',
-          imageRendering: 'pixelated', // crisp pixel look
-        }}
-      />
-    </div>
+    />
   )
 }
