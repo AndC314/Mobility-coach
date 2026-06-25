@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useAvatarStats, type AvatarMilestone } from '../hooks/useAvatarStats'
 import { useAvatarProgression } from '../hooks/useAvatarProgression'
 import { getAvatarDescription } from '../lib/avatarProgression'
-import { SpriteAnimator, type SpriteSheetConfig } from './SpriteAnimator'
+import { SpriteAnimator } from './SpriteAnimator'
 import { Card } from './Card'
 
 interface AvatarDisplayProps {
@@ -58,9 +58,9 @@ const TIER_STYLES: Record<AvatarTier, { bodyOpacity: number; limbWidth: number; 
  * New sprite-based avatar display component
  */
 function SpriteAvatarDisplay({ compact = false }: { compact?: boolean }) {
-  const { state, spriteUrl, hoursUntilNext, isLoading } = useAvatarProgression()
+  const { state, spriteUrl, hoursUntilNext, isLoading, spriteConfig } = useAvatarProgression()
 
-  if (isLoading || !state || !spriteUrl) {
+  if (isLoading || !state || !spriteUrl || !spriteConfig) {
     return (
       <div className="flex items-center justify-center h-32 text-muted">
         Loading avatar...
@@ -69,15 +69,6 @@ function SpriteAvatarDisplay({ compact = false }: { compact?: boolean }) {
   }
 
   const scale = compact ? 1.5 : 3
-  const spriteConfig: SpriteSheetConfig = {
-    frameWidth: 64,
-    frameHeight: 64,
-    frameCols: 4,
-    frameCount: 4,
-    fps: 8,
-    loop: true
-  }
-
   const description = getAvatarDescription(state)
   const progressPercent = hoursUntilNext === Infinity
     ? 100

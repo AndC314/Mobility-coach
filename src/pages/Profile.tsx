@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { Card } from '../components/Card'
+import AvatarDisplay from '../components/AvatarDisplay'
 import { usePreferences } from '../hooks/usePreferences'
 import { downloadExport, importData, readFileAsJson, type ImportMode } from '../lib/dataTransfer'
 import { runFullRepair } from '../lib/dataRepair'
@@ -87,6 +88,10 @@ export default function Profile() {
         <p className="text-sm text-muted">Settings</p>
         <h1 className="text-2xl font-extrabold">Profile</h1>
       </div>
+
+      <Card>
+        <AvatarDisplay useSpriteAnimation={true} compact={false} />
+      </Card>
 
       <Card>
         <h2 className="mb-3 text-base font-bold">BJJ days</h2>
