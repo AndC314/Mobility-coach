@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAvatarStats, type AvatarMilestone } from '../hooks/useAvatarStats'
 import { useAvatarProgression } from '../hooks/useAvatarProgression'
+import { useTrainingBars } from '../hooks/useTrainingBars'
 import { getAvatarDescription } from '../lib/avatarProgression'
 import { SpriteAnimator } from './SpriteAnimator'
 import { Card } from './Card'
@@ -54,11 +55,40 @@ const TIER_STYLES: Record<AvatarTier, { bodyOpacity: number; limbWidth: number; 
   elite: { bodyOpacity: 1.0, limbWidth: 6, glowColor: 'rgba(167, 139, 250, 0.25)' }
 }
 
+interface VerticalBarProps {
+  value: number   // 0–100
+  color: string
+  label: string
+  height: number  // px
+}
+
+function VerticalBar({ value, color, label, height }: VerticalBarProps) {
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <div
+        className="relative w-2.5 rounded-full overflow-hidden bg-border"
+        style={{ height }}
+      >
+        <div
+          className="absolute bottom-0 left-0 right-0 rounded-full transition-all duration-700 ease-out"
+          style={{
+            height: `${value}%`,
+            backgroundColor: color,
+            boxShadow: `inset 0 2px 4px rgba(255,255,255,0.15)`,
+          }}
+        />
+      </div>
+      <span className="text-[9px] font-bold uppercase text-muted">{label}</span>
+    </div>
+  )
+}
+
 /**
  * New sprite-based avatar display component
  */
 function SpriteAvatarDisplay({ compact = false }: { compact?: boolean }) {
   const { state, spriteUrl, hoursUntilNext, isLoading, spriteConfig } = useAvatarProgression()
+  const { mobilityPct, calisthenicsPct } = useTrainingBars()
 
   if (isLoading || !state || !spriteUrl || !spriteConfig) {
     return (
@@ -69,6 +99,7 @@ function SpriteAvatarDisplay({ compact = false }: { compact?: boolean }) {
   }
 
   const scale = compact ? 2.5 : 3
+  const spriteRenderedHeight = spriteConfig.frameHeight * scale  // 64 * 2.5 = 160px compact
   const description = getAvatarDescription(state)
   const progressPercent = !hoursUntilNext || hoursUntilNext === Infinity
     ? 100
@@ -76,16 +107,36 @@ function SpriteAvatarDisplay({ compact = false }: { compact?: boolean }) {
 
   return (
     <div className={compact ? 'space-y-2' : 'space-y-3'}>
-      <div className="flex flex-col items-center gap-3">
-        <div style={{ transform: `scale(${scale})`, transformOrigin: 'center', lineHeight: 0 }}>
-          <SpriteAnimator src={spriteUrl} config={spriteConfig} />
+      {/* Sprite row with flanking bars */}
+      <div className="flex items-center justify-center gap-2">
+        <VerticalBar
+          value={mobilityPct}
+          color="#22c55e"
+          label="MOB"
+          height={spriteRenderedHeight}
+        />
+
+        <div className="flex flex-col items-center gap-3">
+          <div style={{ transform: `scale(${scale})`, transformOrigin: 'center', lineHeight: 0 }}>
+            <SpriteAnimator src={spriteUrl} config={spriteConfig} />
+          </div>
+          <div className="text-center">
+            <div className={compact ? 'text-sm font-semibold text-ink' : 'text-sm font-semibold text-ink'}>
+              {description}
+            </div>
+            <div className="text-xs text-muted">{state.totalHours}h trained</div>
+          </div>
         </div>
-        <div className="text-center">
-          <div className={compact ? 'text-sm font-semibold text-ink' : 'text-sm font-semibold text-ink'}>{description}</div>
-          <div className="text-xs text-muted">{state.totalHours}h trained</div>
-        </div>
+
+        <VerticalBar
+          value={calisthenicsPct}
+          color="#3b82f6"
+          label="CAL"
+          height={spriteRenderedHeight}
+        />
       </div>
 
+      {/* BJJ belt progression bar — unchanged */}
       {hoursUntilNext !== Infinity && (
         <Card className={compact ? 'p-2' : 'p-3'}>
           <div className="text-xs font-semibold text-muted mb-1.5">Next milestone</div>
