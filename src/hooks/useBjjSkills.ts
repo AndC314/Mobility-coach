@@ -54,7 +54,7 @@ export function useBjjClassLogs() {
     // Also create a session entry for consistency with other workout types
     // and sync to Firestore (non-blocking)
     try {
-      const durationMin = 75 // standard 1h 15min BJJ class
+      const durationMin = 60 // standard BJJ class
       const durationSec = durationMin * 60
       const session: CompletedSession = {
         date: entry.date,
