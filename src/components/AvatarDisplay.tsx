@@ -70,7 +70,7 @@ function SpriteAvatarDisplay({ compact = false }: { compact?: boolean }) {
 
   const scale = compact ? 1.5 : 3
   const description = getAvatarDescription(state)
-  const progressPercent = hoursUntilNext === Infinity
+  const progressPercent = !hoursUntilNext || hoursUntilNext === Infinity
     ? 100
     : Math.max(0, 100 - (hoursUntilNext / 40) * 100)
 

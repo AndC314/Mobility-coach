@@ -11,7 +11,6 @@ import {
 import { db as firestoreDb } from '../lib/firebase'
 import { db as dexieDb, type SessionType } from '../db/db'
 import { WorkoutDoc } from '../types/firebase'
-import { mergeWorkouts } from '../lib/merge'
 
 export interface UseSyncState {
   allWorkouts: WorkoutDoc[]
@@ -130,10 +129,7 @@ export function useFirebaseSync(user: User | null): UseSyncState {
 }
 
 async function syncFirestoreToLocal(workouts: WorkoutDoc[]): Promise<void> {
-  const dexieSessions = await dexieDb.sessions.toArray()
-  const {merged} = mergeWorkouts(workouts, dexieSessions)
-
-  for (const workout of merged) {
+  for (const workout of workouts) {
     const sessionType = mapWorkoutTypeToSessionType(workout.type)
     const session = {
       date: workout.date,
@@ -155,8 +151,10 @@ async function syncFirestoreToLocal(workouts: WorkoutDoc[]): Promise<void> {
       .first()
 
     if (existing) {
-      // Update with merged data (Firestore wins on conflict via mergeWorkouts)
-      await dexieDb.sessions.update(existing.id!, session)
+      // Update if Firestore version is newer
+      if (workout.updatedAt > (new Date(existing.createdAt).getTime())) {
+        await dexieDb.sessions.update(existing.id!, session)
+      }
     } else {
       // New row from Firestore
       await dexieDb.sessions.add(session)
