@@ -16,6 +16,7 @@ export type SorenessArea =
   | 'general_fatigue'
 
 export type SessionType =
+  | 'bjj'
   | 'morning'
   | 'bjj_release'
   | 'hip_mobility'
