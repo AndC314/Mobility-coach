@@ -70,8 +70,7 @@ export function SpriteAnimator({
         backgroundRepeat: 'no-repeat',
         backgroundSize: `${config.frameCols * config.frameWidth}px ${Math.ceil(config.frameCount / config.frameCols) * config.frameHeight}px`,
         imageRendering: 'pixelated',
-        WebkitImageRendering: 'pixelated',
-      }}
+      } as React.CSSProperties}
     />
   )
 }
