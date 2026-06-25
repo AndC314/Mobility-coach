@@ -39,10 +39,10 @@ export async function computeTrainingHours(category: TrainingCategory): Promise<
   const totalHours = Math.round(categorySessionsMs / 3600 * 100) / 100
 
   // Find last activity
-  const lastSession = sessions
+  const categorySessions = sessions
     .filter(s => getCategory(s.type) === category)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .at(0)
+  const lastSession = categorySessions.length > 0 ? categorySessions[0] : null
 
   const now = new Date()
   const lastActivityDate = lastSession ? new Date(lastSession.date) : new Date(0)
