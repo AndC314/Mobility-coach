@@ -140,7 +140,8 @@ export const MOBILITY_EXERCISES: MobilityExercise[] = [
     maxHoldSec: 60,
     description: 'Lat and spine decompression',
     setup: 'Grip pull-up bar. Let feet leave floor. Relax shoulders.',
-    cue: 'Breathe into the sides of your ribs. Let gravity lengthen you.'
+    cue: 'Breathe into the sides of your ribs. Let gravity lengthen you.',
+    feel: 'Spine lengthening. Relief in lower back.'
   },
   {
     id: 'pelvic_clock',
