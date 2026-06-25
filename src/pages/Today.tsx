@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import ProgressRing from '../components/ProgressRing'
+import AvatarDisplay from '../components/AvatarDisplay'
 import { Card, Tag } from '../components/Card'
 import SkillRadar from '../components/SkillRadar'
 import { useTodayPlan } from '../hooks/useTodayPlan'
@@ -107,6 +108,10 @@ export default function Today() {
           </div>
           <p className="text-xs leading-relaxed text-ink/70">{plan.rationale}</p>
         </div>
+      </Card>
+
+      <Card>
+        <AvatarDisplay useSpriteAnimation={true} compact={true} />
       </Card>
 
       <div>

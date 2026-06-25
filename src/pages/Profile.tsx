@@ -113,10 +113,11 @@ export default function Profile() {
                 mobility: 'Mobility'
               }[training.category]
 
-              // Compute total logged hours (before decay)
+              // Compute total logged hours (before decay) and consistency ratio
               const decayRate = 0.05
               const weeksInactive = training.lastActivityDaysAgo / 7
               const totalLoggedHours = Math.round(training.totalHours / (1 - decayRate * weeksInactive) * 100) / 100
+              const consistencyPercent = totalLoggedHours > 0 ? Math.round((training.totalHours / totalLoggedHours) * 100) : 0
 
               const progressPercent = Math.min(100, (training.totalHours / 40) * 100)
               const nudgeMsg = getNudgeMessage(training)
@@ -128,7 +129,9 @@ export default function Profile() {
                       <span className="text-lg">{categoryEmoji}</span>
                       <div>
                         <div className="text-sm font-semibold">{categoryName}</div>
-                        <div className="text-xs text-muted">{training.totalHours}h / {totalLoggedHours}h logged</div>
+                        <div className="text-xs text-muted">
+                          {totalLoggedHours === 0 ? '0h logged' : `${training.totalHours}h • ${consistencyPercent}% consistent`}
+                        </div>
                       </div>
                     </div>
                     <div className="text-xs text-muted">{training.hoursThisWeek}h this week</div>
