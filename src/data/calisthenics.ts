@@ -251,9 +251,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     cue: 'Take a very wide push-up stance. Lower your chest toward your right hand while keeping your left arm completely straight and locked out. Push back to center and alternate.',
     bjjTransfer: 'You rarely push with both arms evenly in BJJ. You are almost always framing or posting heavily on one arm while the other attacks, defends, or grabs a collar.',
     feelIt: 'Intense load on the pushing chest/triceps, and a stretching/stabilizing load on the straight arm\'s shoulder.'
-  }
-]
-
+  },
   {
     id: 'side_plank',
     name: 'Side Plank',
@@ -279,7 +277,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     cue: 'Round your upper back. Shift weight forward slowly until feet lift. Squeeze knees into arms.',
     bjjTransfer: 'Builds the wrist stability and protraction strength used in framing and posting on all fours.',
     feelIt: 'Wrists, front deltoids, and deep core compression.'
-  },
+  }
 ]
 
 export function getExerciseDef(id: CalisthenicsExerciseId): CalisthenicsExerciseDef | undefined {
