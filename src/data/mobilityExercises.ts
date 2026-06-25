@@ -193,6 +193,103 @@ export const MOBILITY_EXERCISES: MobilityExercise[] = [
     setup: 'Lie on back. Arms to ceiling, knees bent 90° in air. Press low back flat.',
     cue: 'Lower one arm and opposite leg slowly. Keep low back flat.',
     feel: 'Deep core engagement. Low back stays glued to floor.'
+  },
+
+  // Hip mobility — extra
+  {
+    id: 'butterfly',
+    name: 'Butterfly Stretch',
+    icon: '🦋',
+    category: 'hip',
+    defaultHoldSec: 60,
+    maxHoldSec: 300,
+    description: 'Inner thigh and groin opener',
+    setup: 'Sit on floor. Press soles of feet together, knees falling out to sides.',
+    cue: 'Sit tall, anterior tilt your pelvis, then hinge chest forward. Press knees gently toward floor with elbows.',
+    feel: 'Inner thighs, groin, and hip adductors.',
+    sides: false
+  },
+  {
+    id: 'deep_squat',
+    name: 'Deep Squat Hold',
+    icon: '🏋️',
+    category: 'hip',
+    defaultHoldSec: 60,
+    maxHoldSec: 180,
+    description: 'Full-depth hip, ankle and groin mobility',
+    setup: 'Feet shoulder-width apart, toes angled out. Lower into full squat, heels on floor.',
+    cue: 'Use elbows to push knees out. Keep chest tall. Breathe deeply.',
+    feel: 'Hip flexors, groin, ankles, and low back — all decompressing.',
+    sides: false
+  },
+  {
+    id: 'lizard',
+    name: 'Lizard Pose',
+    icon: '🦎',
+    category: 'hip',
+    defaultHoldSec: 60,
+    maxHoldSec: 180,
+    description: 'Deep hip flexor, groin, and inner thigh release',
+    setup: 'From a low lunge, step front foot to the outside of the same-side hand.',
+    cue: 'Drop back knee down. Sink hips toward the floor. Keep chest open.',
+    feel: 'Deep hip flexor of back leg and inner thigh of front leg.',
+    sides: true
+  },
+  {
+    id: 'half_forward_fold',
+    name: 'Half Forward Fold',
+    icon: '🫄',
+    category: 'hip',
+    defaultHoldSec: 45,
+    maxHoldSec: 120,
+    description: 'Hamstring warm-up and spinal lengthening',
+    setup: 'Stand, hinge at hips. Rest hands on shins. Spine long and parallel to floor.',
+    cue: 'Lift your chest away from the floor. Flatten your back — not rounded.',
+    feel: 'Hamstrings and a long, flat back. Spine elongating.',
+    sides: false
+  },
+
+  // Spine mobility — extra
+  {
+    id: 'lunge_rotation',
+    name: 'Lunge + Rotation',
+    icon: '🔄',
+    category: 'spine',
+    defaultHoldSec: 45,
+    maxHoldSec: 120,
+    description: 'Thoracic rotation in a hip-open position',
+    setup: 'Step into a low lunge. Front foot flat, back knee down.',
+    cue: 'Rotate torso toward the front leg. Reach top arm to the ceiling. Hold, then switch.',
+    feel: 'Thoracic spine rotating, hip flexor of back leg opening.',
+    sides: true
+  },
+  {
+    id: 'shoulder_stand',
+    name: 'Shoulder Stand',
+    icon: '🙃',
+    category: 'spine',
+    defaultHoldSec: 30,
+    maxHoldSec: 90,
+    description: 'Spinal inversion and shoulder opening',
+    setup: 'Lie on back. Lift legs to ceiling, support lower back with hands, weight on upper back.',
+    cue: 'Stack ankles over hips over shoulders. Breathe slowly. Press hands into back for support.',
+    feel: 'Gentle traction along the spine. Neck and upper back supporting.',
+    sides: false
+  },
+
+  // Full body — extra
+  {
+    id: 'downward_dog',
+    name: 'Downward Dog',
+    icon: '🐕',
+    category: 'full_body',
+    defaultHoldSec: 60,
+    maxHoldSec: 180,
+    description: 'Full posterior chain stretch and shoulder opener',
+    setup: 'From all fours, tuck toes, lift hips up and back. Arms and legs straight.',
+    cue: 'Push the floor away with your hands. Sink heels toward the floor. Relax your neck.',
+    feel: 'Hamstrings, calves, spine lengthening, and shoulders opening.',
+    sides: false
   }
 ]
 

@@ -9,6 +9,24 @@ import { db } from '../db/db'
 import { todayIso } from '../lib/date'
 import type { CalisthenicsExerciseId } from '../db/db'
 
+function ExerciseThumb({ id, icon, className }: { id: string; icon: string; className?: string }) {
+  const [showImg, setShowImg] = useState(true)
+  return (
+    <div className={`flex items-center justify-center bg-card2 ${className ?? ''}`}>
+      {showImg ? (
+        <img
+          src={`/exercises/${id}.png`}
+          alt=""
+          className="h-full w-full object-cover"
+          onError={() => setShowImg(false)}
+        />
+      ) : (
+        <span className="text-2xl">{icon}</span>
+      )}
+    </div>
+  )
+}
+
 type Tab = 'log' | 'bulk' | 'muscle_map'
 
 const TABS: { id: Tab; label: string }[] = [
@@ -147,6 +165,7 @@ function LogTab() {
             <Tag color="#a78bfa">Best: {best}{exercise.unit}</Tag>
           )}
         </div>
+        <ExerciseThumb id={selected} icon={exercise.icon} className="mb-3 h-32 w-full rounded-xl overflow-hidden" />
         <p className="mb-3 text-xs text-muted">{exercise.description}</p>
         {exercise.equipmentNote && (
           <p className="mb-3 text-[11px] font-semibold text-gold">{'⚠'} {exercise.equipmentNote}</p>
@@ -294,7 +313,7 @@ const EXERCISE_CATEGORIES: { id: string; label: string; ids: CalisthenicsExercis
   {
     id: 'core',
     label: 'Core',
-    ids: ['plank', 'hollow_body', 'hollow_body_hold', 'tuck_lsit', 'lsit', 'gymnastics_bridge'],
+    ids: ['plank', 'side_plank', 'hollow_body', 'hollow_body_hold', 'tuck_lsit', 'lsit', 'gymnastics_bridge', 'crow_pose'],
   },
   {
     id: 'legs',
@@ -384,10 +403,9 @@ function BulkTab() {
                   const isHold = ex.metric === 'hold_sec'
                   return (
                     <div key={entry.id} className="rounded-lg bg-card2 p-3">
-                      <div className="mb-2 flex items-center justify-between">
-                        <span className="text-sm font-semibold text-ink">
-                          {ex.icon} {ex.name}
-                        </span>
+                      <div className="mb-2 flex items-center gap-2">
+                        <ExerciseThumb id={entry.id} icon={ex.icon} className="h-10 w-10 flex-shrink-0 rounded-lg overflow-hidden" />
+                        <span className="flex-1 text-sm font-semibold text-ink">{ex.name}</span>
                         <button onClick={() => remove(entry.id)} className="text-xs text-muted hover:text-red">✕</button>
                       </div>
                       <div className="grid grid-cols-3 gap-2 text-xs">
@@ -471,13 +489,13 @@ function BulkTab() {
                   <button
                     key={ex.id}
                     onClick={() => toggleExercise(ex.id)}
-                    className={`flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors ${
+                    className={`flex flex-col items-center gap-1.5 rounded-xl p-2 transition-colors ${
                       isSelected
                         ? 'bg-purple/20 border border-purple/50'
                         : 'bg-card2 border border-border'
                     }`}
                   >
-                    <span className="text-2xl">{ex.icon}</span>
+                    <ExerciseThumb id={ex.id} icon={ex.icon} className="h-14 w-full rounded-lg overflow-hidden" />
                     <span className={`text-[10px] font-semibold text-center leading-tight ${
                       isSelected ? 'text-purple' : 'text-muted'
                     }`}>

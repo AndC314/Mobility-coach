@@ -4,6 +4,24 @@ import { MOBILITY_EXERCISES, type MobilityExerciseId } from '../data/mobilityExe
 import { upsertTodaySession } from '../hooks/useSessions'
 import { todayIso } from '../lib/date'
 
+function ExerciseThumb({ id, icon, className }: { id: string; icon: string; className?: string }) {
+  const [showImg, setShowImg] = useState(true)
+  return (
+    <div className={`flex items-center justify-center bg-card ${className ?? ''}`}>
+      {showImg ? (
+        <img
+          src={`/exercises/${id}.png`}
+          alt=""
+          className="h-full w-full object-cover"
+          onError={() => setShowImg(false)}
+        />
+      ) : (
+        <span className="text-2xl">{icon}</span>
+      )}
+    </div>
+  )
+}
+
 interface SelectedExercise {
   id: MobilityExerciseId
   holdSec: number
@@ -115,13 +133,13 @@ export default function MobilityPage() {
                       <button
                         key={ex.id}
                         onClick={() => toggleExercise(ex.id)}
-                        className={`flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors ${
+                        className={`flex flex-col items-center gap-1.5 rounded-xl p-2 transition-colors ${
                           isSelected
                             ? 'bg-teal/20 border border-teal/50'
                             : 'bg-card2 border border-border hover:bg-card2/80'
                         }`}
                       >
-                        <span className="text-2xl">{ex.icon}</span>
+                        <ExerciseThumb id={ex.id} icon={ex.icon} className="h-14 w-full rounded-lg overflow-hidden" />
                         <span className={`text-[10px] font-semibold text-center leading-tight ${
                           isSelected ? 'text-teal' : 'text-muted'
                         }`}>
@@ -210,7 +228,10 @@ export default function MobilityPage() {
                     const ex = MOBILITY_EXERCISES.find((e) => e.id === sel.id)!
                     return (
                       <div key={sel.id} className="rounded-lg bg-card2 p-3">
-                        <div className="mb-2 text-sm font-semibold text-ink">{ex.name}</div>
+                        <div className="mb-2 flex items-center gap-2">
+                          <ExerciseThumb id={sel.id} icon={ex.icon} className="h-10 w-10 flex-shrink-0 rounded-lg overflow-hidden" />
+                          <span className="text-sm font-semibold text-ink">{ex.name}</span>
+                        </div>
                         <div className="grid grid-cols-3 gap-2 text-xs">
                           <div>
                             <label className="block text-muted mb-1">Hold (sec)</label>

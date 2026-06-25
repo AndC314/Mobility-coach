@@ -127,6 +127,8 @@ export type CalisthenicsExerciseId =
   | 'scapular_pullups'
   | 'squats'
   | 'tuck_lsit'
+  | 'side_plank'
+  | 'crow_pose'
 
 export type CalisthenicsMetric = 'hold_sec' | 'reps'
 

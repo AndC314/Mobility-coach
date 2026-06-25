@@ -254,6 +254,34 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
   }
 ]
 
+  {
+    id: 'side_plank',
+    name: 'Side Plank',
+    type: 'hold',
+    metric: 'hold_sec',
+    unit: 's',
+    icon: '📏',
+    description: 'Total hold time per side. Keep hips stacked and body in a straight line.',
+    setup: 'Lie on your side. Stack feet, prop on forearm. Lift hips to form a straight line.',
+    cue: 'Drive your hip to the ceiling. Squeeze your oblique. Do not let hips sag or rotate.',
+    bjjTransfer: 'Lateral stability is essential for maintaining side control and escaping bottom positions.',
+    feelIt: 'Obliques and the lateral hip stabilizers of the working side.'
+  },
+  {
+    id: 'crow_pose',
+    name: 'Crow Pose',
+    type: 'hold',
+    metric: 'hold_sec',
+    unit: 's',
+    icon: '🐦',
+    description: 'Total hold time balanced on both hands, knees resting on triceps.',
+    setup: 'Squat, place hands flat shoulder-width apart. Lean forward, place knees on triceps.',
+    cue: 'Round your upper back. Shift weight forward slowly until feet lift. Squeeze knees into arms.',
+    bjjTransfer: 'Builds the wrist stability and protraction strength used in framing and posting on all fours.',
+    feelIt: 'Wrists, front deltoids, and deep core compression.'
+  },
+]
+
 export function getExerciseDef(id: CalisthenicsExerciseId): CalisthenicsExerciseDef | undefined {
   return CALISTHENICS_EXERCISES.find((e) => e.id === id)
 }
