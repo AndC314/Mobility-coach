@@ -68,7 +68,7 @@ function SpriteAvatarDisplay({ compact = false }: { compact?: boolean }) {
     )
   }
 
-  const scale = compact ? 1.5 : 3
+  const scale = compact ? 2.5 : 3
   const description = getAvatarDescription(state)
   const progressPercent = !hoursUntilNext || hoursUntilNext === Infinity
     ? 100
@@ -76,12 +76,12 @@ function SpriteAvatarDisplay({ compact = false }: { compact?: boolean }) {
 
   return (
     <div className={compact ? 'space-y-2' : 'space-y-3'}>
-      <div className="flex flex-col items-center gap-1">
+      <div className="flex flex-col items-center gap-3">
         <div style={{ transform: `scale(${scale})`, transformOrigin: 'center', lineHeight: 0 }}>
           <SpriteAnimator src={spriteUrl} config={spriteConfig} />
         </div>
         <div className="text-center">
-          <div className={compact ? 'text-xs font-semibold text-ink' : 'text-sm font-semibold text-ink'}>{description}</div>
+          <div className={compact ? 'text-sm font-semibold text-ink' : 'text-sm font-semibold text-ink'}>{description}</div>
           <div className="text-xs text-muted">{state.totalHours}h trained</div>
         </div>
       </div>
