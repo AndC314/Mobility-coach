@@ -2,6 +2,8 @@ import { useRef, useState } from 'react'
 import { Card } from '../components/Card'
 import AvatarDisplay from '../components/AvatarDisplay'
 import { usePreferences } from '../hooks/usePreferences'
+import { useTrainingHours } from '../hooks/useTrainingHours'
+import { getNudgeMessage } from '../lib/trainingHourCalculator'
 import { downloadExport, importData, readFileAsJson, type ImportMode } from '../lib/dataTransfer'
 import { runFullRepair } from '../lib/dataRepair'
 import { primeAudio, playCompleteDing } from '../lib/sound'
@@ -17,6 +19,7 @@ const GOALS: { id: MobilityGoal; label: string; icon: string }[] = [
 
 export default function Profile() {
   const { preferences, update } = usePreferences()
+  const trainingHours = useTrainingHours()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [importMode, setImportMode] = useState<ImportMode>('merge')
   const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
@@ -92,6 +95,59 @@ export default function Profile() {
       <Card>
         <AvatarDisplay useSpriteAnimation={true} compact={false} />
       </Card>
+
+      {trainingHours && trainingHours.length > 0 && (
+        <Card>
+          <h2 className="mb-4 text-base font-bold">Training consistency</h2>
+          <div className="space-y-4">
+            {trainingHours.map((training) => {
+              const categoryEmoji = {
+                bjj: '🥋',
+                calisthenics: '💪',
+                mobility: '🧘'
+              }[training.category]
+
+              const categoryName = {
+                bjj: 'BJJ',
+                calisthenics: 'Calisthenics',
+                mobility: 'Mobility'
+              }[training.category]
+
+              const progressPercent = Math.min(100, (training.totalHours / 40) * 100)
+              const nudgeMsg = getNudgeMessage(training)
+
+              return (
+                <div key={training.category}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{categoryEmoji}</span>
+                      <div>
+                        <div className="text-sm font-semibold">{categoryName}</div>
+                        <div className="text-xs text-muted">{training.totalHours}h (with decay)</div>
+                      </div>
+                    </div>
+                    <div className="text-xs text-muted">{training.hoursThisWeek}h this week</div>
+                  </div>
+                  <div className="bg-border rounded-full h-2 overflow-hidden">
+                    <div
+                      className={`h-full transition-all ${
+                        training.needsNudge ? 'bg-orange-500' : 'bg-accent'
+                      }`}
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                  </div>
+                  {nudgeMsg && (
+                    <div className="text-xs text-orange-600 mt-2 italic">{nudgeMsg}</div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+          <p className="mt-4 text-xs text-muted">
+            Skills decay 5% per week of inactivity. Log 1h/week to maintain your score.
+          </p>
+        </Card>
+      )}
 
       <Card>
         <h2 className="mb-3 text-base font-bold">BJJ days</h2>
