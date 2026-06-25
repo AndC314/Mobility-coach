@@ -59,10 +59,8 @@ export async function computeAvatarState(variant: AvatarVariant): Promise<Avatar
  * Assumes sprites are stored in /public/avatars/[variant]/[tier].png
  */
 export function getAvatarSpriteUrl(state: AvatarState): string {
-  const tierLabel = state.tier === 'white' && state.stripes > 0
+  const tierLabel = state.tier === 'white'
     ? `white_belt_${state.stripes}`
-    : state.tier === 'white'
-    ? 'white_belt'
     : `${state.tier}_belt`
   return `/avatars/${state.variant}/${tierLabel}.png`
 }
