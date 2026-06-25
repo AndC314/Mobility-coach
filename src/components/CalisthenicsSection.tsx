@@ -4,12 +4,18 @@ import { Card, Tag } from './Card'
 import BodyMap from './BodyMap'
 import { CALISTHENICS_EXERCISES } from '../data/calisthenics'
 import { MUSCLE_LABELS, computeMuscleScores } from '../data/muscleMap'
-import { useCalisthenics, useCalisthenicsLogs } from '../hooks/useCalisthenics'
+import { useCalisthenics, useCalisthenicsLogs, logCalisthenicsBase } from '../hooks/useCalisthenics'
 import { db } from '../db/db'
 import { todayIso } from '../lib/date'
 import type { CalisthenicsExerciseId } from '../db/db'
 
-type Tab = 'log' | 'muscle_map'
+type Tab = 'log' | 'bulk' | 'muscle_map'
+
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'log', label: '📋 Log' },
+  { id: 'bulk', label: '📦 Bulk' },
+  { id: 'muscle_map', label: '💪 Muscle Map' },
+]
 
 export default function CalisthenicsSection() {
   const [tab, setTab] = useState<Tab>('log')
@@ -17,22 +23,23 @@ export default function CalisthenicsSection() {
   return (
     <div className="space-y-4">
       <div className="flex gap-1.5">
-        {(['log', 'muscle_map'] as Tab[]).map((t) => (
+        {TABS.map((t) => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={t.id}
+            onClick={() => setTab(t.id)}
             className={`flex-1 rounded-full py-2.5 text-sm font-semibold transition-colors ${
-              tab === t
+              tab === t.id
                 ? 'bg-purple/20 text-purple border border-purple/40'
                 : 'bg-card text-muted border border-border'
             }`}
           >
-            {t === 'log' ? '📋 Log' : '💪 Muscle Map'}
+            {t.label}
           </button>
         ))}
       </div>
 
       {tab === 'log' && <LogTab />}
+      {tab === 'bulk' && <BulkTab />}
       {tab === 'muscle_map' && <MuscleMapTab />}
     </div>
   )
@@ -266,6 +273,250 @@ function LogTab() {
             </div>
           </div>
         </div>
+      )}
+    </>
+  )
+}
+
+// ─── BULK TAB ─────────────────────────────────────────────────────────────
+
+const EXERCISE_CATEGORIES: { id: string; label: string; ids: CalisthenicsExerciseId[] }[] = [
+  {
+    id: 'push',
+    label: 'Push',
+    ids: ['pushups', 'dips', 'pike_pushups', 'archer_pushups', 'hindu_pushups', 'planche_leans'],
+  },
+  {
+    id: 'pull',
+    label: 'Pull',
+    ids: ['pullups', 'australian_pullups', 'ring_rows', 'scapular_pullups', 'hanging_knee_to_chest'],
+  },
+  {
+    id: 'core',
+    label: 'Core',
+    ids: ['plank', 'hollow_body', 'hollow_body_hold', 'tuck_lsit', 'lsit', 'gymnastics_bridge'],
+  },
+  {
+    id: 'legs',
+    label: 'Legs',
+    ids: ['squats', 'bulgarian_squat', 'pistol_squat', 'pistol_squats'],
+  },
+]
+
+interface BulkEntry {
+  id: CalisthenicsExerciseId
+  value: number
+  sets: number
+  restSec: number
+}
+
+function BulkTab() {
+  const [selected, setSelected] = useState<BulkEntry[]>([])
+  const [view, setView] = useState<'picker' | 'config'>('picker')
+  const [date, setDate] = useState(todayIso())
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  function toggleExercise(id: CalisthenicsExerciseId) {
+    if (selected.some((s) => s.id === id)) {
+      setSelected(selected.filter((s) => s.id !== id))
+    } else {
+      const ex = CALISTHENICS_EXERCISES.find((e) => e.id === id)!
+      setSelected([...selected, { id, value: ex.metric === 'hold_sec' ? 30 : 10, sets: 3, restSec: 60 }])
+    }
+  }
+
+  function update(id: CalisthenicsExerciseId, patch: Partial<BulkEntry>) {
+    setSelected(selected.map((s) => (s.id === id ? { ...s, ...patch } : s)))
+  }
+
+  function remove(id: CalisthenicsExerciseId) {
+    setSelected(selected.filter((s) => s.id !== id))
+  }
+
+  async function handleLogBulk() {
+    if (selected.length === 0) return
+    setSaving(true)
+    try {
+      for (const entry of selected) {
+        const ex = CALISTHENICS_EXERCISES.find((e) => e.id === entry.id)!
+        await logCalisthenicsBase({
+          exerciseId: entry.id,
+          metric: ex.metric,
+          value: entry.value,
+          sets: entry.sets,
+          date,
+          restSeconds: entry.restSec,
+        })
+      }
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+      setSelected([])
+      setView('picker')
+    } catch (err) {
+      console.error('Bulk log failed:', err)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (view === 'config') {
+    return (
+      <>
+        <Card>
+          <h2 className="mb-3 text-base font-bold">Session details</h2>
+          <div className="space-y-3">
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-muted">Date</label>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="w-full rounded-lg border border-border bg-card2 px-3 py-2 text-sm text-ink"
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-xs font-semibold text-muted">Adjust exercise details</label>
+              <div className="space-y-2">
+                {selected.map((entry) => {
+                  const ex = CALISTHENICS_EXERCISES.find((e) => e.id === entry.id)!
+                  const isHold = ex.metric === 'hold_sec'
+                  return (
+                    <div key={entry.id} className="rounded-lg bg-card2 p-3">
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="text-sm font-semibold text-ink">
+                          {ex.icon} {ex.name}
+                        </span>
+                        <button onClick={() => remove(entry.id)} className="text-xs text-muted hover:text-red">✕</button>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 text-xs">
+                        <div>
+                          <label className="block text-muted mb-1">{isHold ? 'Hold (sec)' : 'Reps'}</label>
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min="1"
+                            value={entry.value}
+                            onChange={(e) => update(entry.id, { value: Number(e.target.value) })}
+                            className="w-full rounded border border-border bg-card px-2 py-1 text-ink"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-muted mb-1">Sets</label>
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min="1"
+                            max="10"
+                            value={entry.sets}
+                            onChange={(e) => update(entry.id, { sets: Number(e.target.value) })}
+                            className="w-full rounded border border-border bg-card px-2 py-1 text-ink"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-muted mb-1">Rest (sec)</label>
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min="0"
+                            max="300"
+                            value={entry.restSec}
+                            onChange={(e) => update(entry.id, { restSec: Number(e.target.value) })}
+                            className="w-full rounded border border-border bg-card px-2 py-1 text-ink"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={() => setView('picker')}
+                className="flex-1 rounded-lg bg-card2 py-2.5 text-sm font-bold text-muted border border-border"
+              >
+                Back
+              </button>
+              <button
+                onClick={handleLogBulk}
+                disabled={saving || selected.length === 0}
+                className="flex-1 rounded-lg bg-purple/20 py-2.5 text-sm font-bold text-purple border border-purple/40 disabled:opacity-50"
+              >
+                {saved ? '✓ Logged' : saving ? 'Saving…' : `Log ${selected.length} exercises`}
+              </button>
+            </div>
+          </div>
+        </Card>
+      </>
+    )
+  }
+
+  return (
+    <>
+      {EXERCISE_CATEGORIES.map((cat) => {
+        const exercises = cat.ids
+          .map((id) => CALISTHENICS_EXERCISES.find((e) => e.id === id))
+          .filter(Boolean) as typeof CALISTHENICS_EXERCISES
+        if (exercises.length === 0) return null
+        return (
+          <div key={cat.id}>
+            <h2 className="mb-2 text-sm font-bold text-muted">{cat.label}</h2>
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              {exercises.map((ex) => {
+                const isSelected = selected.some((s) => s.id === ex.id)
+                return (
+                  <button
+                    key={ex.id}
+                    onClick={() => toggleExercise(ex.id)}
+                    className={`flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors ${
+                      isSelected
+                        ? 'bg-purple/20 border border-purple/50'
+                        : 'bg-card2 border border-border'
+                    }`}
+                  >
+                    <span className="text-2xl">{ex.icon}</span>
+                    <span className={`text-[10px] font-semibold text-center leading-tight ${
+                      isSelected ? 'text-purple' : 'text-muted'
+                    }`}>
+                      {ex.name}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })}
+
+      {selected.length > 0 && (
+        <Card>
+          <h2 className="mb-3 text-base font-bold">Your session ({selected.length} exercises)</h2>
+          <div className="space-y-1.5 mb-4">
+            {selected.map((entry) => {
+              const ex = CALISTHENICS_EXERCISES.find((e) => e.id === entry.id)!
+              return (
+                <div key={entry.id} className="flex items-center justify-between rounded-lg bg-card2 px-3 py-2">
+                  <span className="text-sm text-ink">{ex.icon} {ex.name}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted">
+                      {entry.sets} × {entry.value}{ex.unit}
+                    </span>
+                    <button onClick={() => remove(entry.id)} className="text-xs text-muted hover:text-red">✕</button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          <button
+            onClick={() => setView('config')}
+            className="w-full rounded-lg bg-purple/20 py-2.5 text-sm font-bold text-purple border border-purple/40"
+          >
+            Configure & Log Session →
+          </button>
+        </Card>
       )}
     </>
   )
