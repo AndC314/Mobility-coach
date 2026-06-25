@@ -227,6 +227,17 @@ export const EXERCISE_MUSCLES: Record<CalisthenicsExerciseId, MuscleActivation[]
     { muscle: 'hip_flexors', level: 'primary' },
     { muscle: 'triceps', level: 'secondary' },
     { muscle: 'front_delt', level: 'secondary' }
+  ],
+  side_plank: [
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'glutes', level: 'secondary' },
+    { muscle: 'front_delt', level: 'secondary' }
+  ],
+  crow_pose: [
+    { muscle: 'triceps', level: 'primary' },
+    { muscle: 'front_delt', level: 'primary' },
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'forearms', level: 'secondary' }
   ]
 }
 
