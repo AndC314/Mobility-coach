@@ -32,20 +32,39 @@ function getCategory(sessionType: string): TrainingCategory | null {
  */
 export async function computeTrainingHours(category: TrainingCategory): Promise<TrainingHours> {
   const sessions = await db.sessions.toArray()
-  const categorySessionsMs = sessions
+
+  // For BJJ, include both sessions AND bjjClassLogs (75 min = 4500 sec each)
+  let categorySessionsSec = sessions
     .filter(s => getCategory(s.type) === category)
     .reduce((sum, s) => sum + (s.actualSec || 0), 0)
 
-  const totalHours = Math.round(categorySessionsMs / 3600 * 100) / 100
+  let lastActivityDate = new Date(0)
+  let allDates: string[] = []
 
-  // Find last activity
+  if (category === 'bjj') {
+    const bjjLogs = await db.bjjClassLogs.toArray()
+    const bjjSeconds = bjjLogs.reduce((sum) => sum + 4500, 0) // 75 min per class
+    categorySessionsSec += bjjSeconds
+    allDates = bjjLogs.map(l => l.date)
+    if (bjjLogs.length > 0) {
+      const lastLog = bjjLogs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
+      lastActivityDate = new Date(lastLog.date)
+    }
+  }
+
+  // Get dates from sessions
   const categorySessions = sessions
     .filter(s => getCategory(s.type) === category)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-  const lastSession = categorySessions.length > 0 ? categorySessions[0] : null
+
+  allDates = [...allDates, ...categorySessions.map(s => s.date)]
+  if (categorySessions.length > 0 && new Date(categorySessions[0].date) > lastActivityDate) {
+    lastActivityDate = new Date(categorySessions[0].date)
+  }
+
+  const totalHours = Math.round(categorySessionsSec / 3600 * 100) / 100
 
   const now = new Date()
-  const lastActivityDate = lastSession ? new Date(lastSession.date) : new Date(0)
   const daysInactive = Math.floor((now.getTime() - lastActivityDate.getTime()) / (1000 * 60 * 60 * 24))
   const weeksInactive = daysInactive / 7
 
@@ -55,10 +74,17 @@ export async function computeTrainingHours(category: TrainingCategory): Promise<
 
   // Hours in past 7 days (no decay)
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-  const hoursThisWeekMs = sessions
+  let hoursThisWeekSec = sessions
     .filter(s => getCategory(s.type) === category && s.date >= sevenDaysAgo)
     .reduce((sum, s) => sum + (s.actualSec || 0), 0)
-  const hoursThisWeek = Math.round(hoursThisWeekMs / 3600 * 100) / 100
+
+  if (category === 'bjj') {
+    const bjjLogs = await db.bjjClassLogs.toArray()
+    const recentBjj = bjjLogs.filter(l => l.date >= sevenDaysAgo).length
+    hoursThisWeekSec += recentBjj * 4500
+  }
+
+  const hoursThisWeek = Math.round(hoursThisWeekSec / 3600 * 100) / 100
 
   // Nudge if less than 1 hour in past 7 days
   const needsNudge = hoursThisWeek < 1 && daysInactive > 0
