@@ -15,9 +15,8 @@ export interface TrainingHours {
  * Map session types to training categories
  */
 function getCategory(sessionType: string): TrainingCategory | null {
-  if (sessionType === 'recovery' || sessionType === 'bjj_release') return 'bjj'
   if (sessionType === 'calisthenics') return 'calisthenics'
-  if (['morning', 'hip_mobility', 'pancake', 'pike', 'ninety_ninety', 'custom'].includes(sessionType)) {
+  if (['morning', 'bjj_release', 'recovery', 'hip_mobility', 'pancake', 'pike', 'ninety_ninety', 'custom'].includes(sessionType)) {
     return 'mobility'
   }
   return null

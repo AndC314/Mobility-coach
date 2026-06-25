@@ -263,12 +263,12 @@ function LogClassView() {
 
       {editingId && (
         <div className="fixed inset-0 z-50 flex items-end bg-black/50">
-          <div className="w-full rounded-t-2xl bg-card p-4 pb-6">
-            <div className="mb-3 flex items-center justify-between">
+          <div className="w-full rounded-t-2xl bg-card p-4 pb-6 flex flex-col max-h-[90vh]">
+            <div className="mb-3 flex items-center justify-between flex-shrink-0">
               <h3 className="text-base font-bold">Edit class</h3>
               <button onClick={closeEdit} className="text-muted">✕</button>
             </div>
-            <div className="space-y-3 max-h-[70vh] overflow-y-auto">
+            <div className="space-y-3 overflow-y-auto flex-1 mb-3">
               <div>
                 <label className="mb-1 block text-xs font-semibold text-muted">Date</label>
                 <input
@@ -329,13 +329,13 @@ function LogClassView() {
                   className="w-full rounded-lg border border-border bg-card2 px-3 py-2 text-sm text-ink placeholder:text-muted"
                 />
               </div>
-              <button
-                onClick={handleSave}
-                className="w-full rounded-full bg-accent/20 py-2.5 text-sm font-bold text-accent border border-accent/40"
-              >
-                {saved ? '✓ Updated' : 'Update class'}
-              </button>
             </div>
+            <button
+              onClick={handleSave}
+              className="w-full rounded-full bg-accent/20 py-2.5 text-sm font-bold text-accent border border-accent/40 flex-shrink-0"
+            >
+              {saved ? '✓ Updated' : 'Update class'}
+            </button>
           </div>
         </div>
       )}

@@ -93,7 +93,7 @@ export default function Profile() {
       </div>
 
       <Card>
-        <AvatarDisplay useSpriteAnimation={true} compact={false} />
+        <AvatarDisplay useSpriteAnimation={true} compact={true} />
       </Card>
 
       {trainingHours && trainingHours.length > 0 && (
@@ -113,6 +113,11 @@ export default function Profile() {
                 mobility: 'Mobility'
               }[training.category]
 
+              // Compute total logged hours (before decay)
+              const decayRate = 0.05
+              const weeksInactive = training.lastActivityDaysAgo / 7
+              const totalLoggedHours = Math.round(training.totalHours / (1 - decayRate * weeksInactive) * 100) / 100
+
               const progressPercent = Math.min(100, (training.totalHours / 40) * 100)
               const nudgeMsg = getNudgeMessage(training)
 
@@ -123,7 +128,7 @@ export default function Profile() {
                       <span className="text-lg">{categoryEmoji}</span>
                       <div>
                         <div className="text-sm font-semibold">{categoryName}</div>
-                        <div className="text-xs text-muted">{training.totalHours}h (with decay)</div>
+                        <div className="text-xs text-muted">{training.totalHours}h / {totalLoggedHours}h logged</div>
                       </div>
                     </div>
                     <div className="text-xs text-muted">{training.hoursThisWeek}h this week</div>

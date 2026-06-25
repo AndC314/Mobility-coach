@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { HashRouter, Routes, Route } from 'react-router-dom'
 import BottomNav from './components/BottomNav'
 import Today from './pages/Today'
-import Mobility from './pages/Mobility'
+import MobilityPage from './pages/MobilityPage'
 import Bjj from './pages/Bjj'
 import CalisthenicsPage from './pages/CalisthenicsPage'
 import Recovery from './pages/Recovery'
@@ -53,7 +53,7 @@ function AppContent() {
           {!isLoading && <ConflictWarning conflictDays={conflictDays} />}
           <Routes>
             <Route path="/" element={<Today />} />
-            <Route path="/mobility" element={<Mobility />} />
+            <Route path="/mobility" element={<MobilityPage />} />
             <Route path="/bjj" element={<Bjj />} />
             <Route path="/calisthenics" element={<CalisthenicsPage />} />
             <Route path="/recovery" element={<Recovery />} />

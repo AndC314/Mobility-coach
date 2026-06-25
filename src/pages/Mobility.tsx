@@ -84,6 +84,8 @@ export default function Mobility() {
           soundEnabled={preferences.soundEnabled}
         />
       )}
+
+      <QuickLog tab={tab} />
     </div>
   )
 }
@@ -239,5 +241,72 @@ function ProgressionView({
         </Card>
       )}
     </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// QUICK LOG
+// Log mobility time without using the timer — for sessions where you know
+// how long you spent but don't want to start a formal timer.
+// ─────────────────────────────────────────────────────────────────────────
+
+function QuickLog({ tab }: { tab: Tab }) {
+  const [minutes, setMinutes] = useState('')
+  const [status, setStatus] = useState<'idle' | 'saving'>('idle')
+
+  const getCategoryLabel = (): { label: string; sessionType: 'morning' | 'bjj_release' } | null => {
+    if (tab === 'morning') return { label: 'Morning mobility', sessionType: 'morning' }
+    if (tab === 'bjj_release') return { label: 'Post-BJJ release', sessionType: 'bjj_release' }
+    return null
+  }
+
+  const category = getCategoryLabel()
+
+  async function handleQuickLog() {
+    if (!minutes || !category) return
+    const mins = parseInt(minutes, 10)
+    if (isNaN(mins) || mins <= 0) return
+
+    setStatus('saving')
+    try {
+      await upsertTodaySession({
+        type: category.sessionType,
+        label: `${category.label} (quick log)`,
+        plannedSec: mins * 60,
+        actualSec: mins * 60,
+        exerciseIds: []
+      })
+      setMinutes('')
+      setStatus('idle')
+    } catch (err) {
+      console.error('Quick log failed:', err)
+      setStatus('idle')
+    }
+  }
+
+  if (!category) return null
+
+  return (
+    <Card>
+      <h2 className="mb-3 text-sm font-bold">Quick log</h2>
+      <p className="mb-3 text-xs text-muted">Log mobility time without the timer</p>
+      <div className="flex gap-2">
+        <input
+          type="number"
+          min="1"
+          value={minutes}
+          onChange={(e) => setMinutes(e.target.value)}
+          placeholder="Minutes"
+          className="flex-1 rounded-lg bg-card2 px-3 py-2 text-sm font-semibold border border-border"
+        />
+        <button
+          onClick={handleQuickLog}
+          disabled={!minutes || status === 'saving'}
+          className="rounded-lg bg-teal/15 px-4 py-2 text-sm font-bold text-teal border border-teal/40 disabled:opacity-50"
+        >
+          {status === 'saving' ? 'Saving…' : 'Log'}
+        </button>
+      </div>
+    </Card>
   )
 }
