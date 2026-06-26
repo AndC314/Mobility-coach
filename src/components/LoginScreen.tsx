@@ -1,30 +1,18 @@
-import { useState, useEffect } from 'react'
-import { signInWithRedirect, getRedirectResult, GoogleAuthProvider } from 'firebase/auth'
+import { useState } from 'react'
+import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth'
 import { auth } from '../lib/firebase'
 
 export function LoginScreen() {
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  // Handle the redirect result when the page loads after Google auth
-  useEffect(() => {
-    getRedirectResult(auth)
-      .then(() => setLoading(false))
-      .catch((err) => {
-        if (err instanceof Error && !err.message.includes('no-redirect-action')) {
-          setError(err.message)
-        }
-        setLoading(false)
-      })
-  }, [])
 
   const handleGoogleSignIn = async () => {
     try {
       setLoading(true)
       setError(null)
       const provider = new GoogleAuthProvider()
-      await signInWithRedirect(auth, provider)
-      // Page will redirect — code below won't execute
+      await signInWithPopup(auth, provider)
+      // onAuthStateChanged in useAuth will pick up the new user automatically
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message)

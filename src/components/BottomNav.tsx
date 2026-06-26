@@ -16,15 +16,15 @@ export default function BottomNav() {
       className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-surface/95 backdrop-blur-md"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <div className="mx-auto flex w-full justify-center">
-        <div className="flex gap-2 px-3 py-2">
+      <div className="flex w-full overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <div className="flex gap-1 px-2 py-2 mx-auto">
           {TABS.map((tab) => (
             <NavLink
               key={tab.to}
               to={tab.to}
               end={tab.to === '/'}
               className={({ isActive }) =>
-                `flex flex-col items-center justify-center gap-1 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
+                `flex flex-col items-center justify-center gap-1 rounded-lg px-2.5 py-2 text-xs font-medium transition-colors shrink-0 ${
                   isActive ? 'text-accent bg-accent/10' : 'text-muted'
                 }`
               }
