@@ -14,6 +14,7 @@ interface ExerciseCardProps {
   feel: string
   checkpoint?: string
   caution?: string
+  image?: string
   timerSec: number
   /** If true, timerSec is per side — timer auto-restarts for side 2 */
   sides?: boolean
@@ -25,7 +26,7 @@ interface ExerciseCardProps {
 
 export default function ExerciseCard(props: ExerciseCardProps) {
   const {
-    index, name, sets, setup, cue, feel, checkpoint, caution,
+    index, name, sets, setup, cue, feel, checkpoint, caution, image,
     timerSec, sides = false, color = '#2ec4b6',
     completed = false, onComplete, soundEnabled = true
   } = props
@@ -76,6 +77,14 @@ export default function ExerciseCard(props: ExerciseCardProps) {
 
       {open && (
         <div className="space-y-2.5 p-4 pt-3 fade-in">
+          {image && (
+            <img
+              src={image}
+              alt={name}
+              className="w-full rounded-lg object-cover"
+              style={{ maxHeight: 200 }}
+            />
+          )}
           <InfoBlock label="🧘 Setup" value={setup} color="#2ec4b6" />
           <InfoBlock label="🎯 Cue" value={cue} color={color} />
           <InfoBlock label="💬 Feel" value={feel} color="#f5c842" />

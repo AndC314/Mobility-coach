@@ -19,6 +19,9 @@ export interface ExerciseItem {
    * back-to-back (Left/Right or Side 1/Side 2), auto-restarting between
    * them, instead of a single countdown. */
   sides?: boolean
+  /** Optional path to a demo image or animated GIF, relative to /public.
+   * e.g. '/exercises/cat_cow.gif' */
+  image?: string
 }
 
 export const MORNING_ROUTINE: ExerciseItem[] = [
