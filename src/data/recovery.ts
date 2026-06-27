@@ -1,4 +1,5 @@
 import type { SorenessArea } from '../db/db'
+import type { MuscleGroup } from './muscleMap'
 import { ALL_EXERCISES } from './exercises'
 
 export interface RecoverySequence {
@@ -74,4 +75,26 @@ export const SORENESS_OPTIONS: { area: SorenessArea; label: string; icon: string
 
 export function getSequenceExercises(area: SorenessArea) {
   return RECOVERY_SEQUENCES[area].exerciseIds.map((id) => ALL_EXERCISES[id]).filter(Boolean)
+}
+
+// Maps each muscle group to 1-2 ExerciseItem IDs from ALL_EXERCISES.
+// Used by useSmartRecovery to build a prioritised stretch routine.
+export const MUSCLE_STRETCHES: Partial<Record<MuscleGroup, string[]>> = {
+  abs:         ['pelvic_clock', 'cat_cow'],
+  lower_back:  ['pelvic_clock', 'cat_cow', 'childs_pose_lat'],
+  hip_flexors: ['hip_flexor_lunge', 'hip_flexor_lunge_ext'],
+  inner_thigh: ['ninety_ninety_fold'],
+  glutes:      ['supine_figure_4', 'ninety_ninety_fold'],
+  hamstrings:  ['supine_figure_4', 'lat_hang_bjj'],
+  lats:        ['childs_pose_lat', 'thread_the_needle'],
+  forearms:    ['wrist_conditioning', 'lat_hang_bjj'],
+  chest:       ['doorway_pec_stretch'],
+  front_delt:  ['doorway_pec_stretch', 'shoulder_cars'],
+  rear_delt:   ['thread_the_needle', 'shoulder_cars'],
+  rhomboids:   ['thread_the_needle'],
+  traps:       ['shoulder_cars'],
+  biceps:      ['lat_hang_bjj'],
+  triceps:     ['childs_pose_lat'],
+  quads:       ['hip_flexor_lunge'],
+  calves:      ['lat_hang_bjj'],
 }
