@@ -80,7 +80,7 @@ export interface SmartRecovery {
 export function useSmartRecovery(): SmartRecovery
 ```
 
-- Uses `useLiveQuery` to subscribe to both `db.calisthenicsLogs` and `db.bjjClassLogs`.
+- Uses `useLiveQuery` to subscribe to both `db.calisthenicsLogs` and `db.bjjLogs`.
 - Returns loading default `{ exercises: [], label: 'Loading…', muscleChips: [], source: 'none' }` while Dexie hydrates.
 - Pure derivation — no writes.
 

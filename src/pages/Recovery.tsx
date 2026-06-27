@@ -21,7 +21,7 @@ export default function Recovery() {
   const smartRecovery = useSmartRecovery()
 
   function estimateDurationMin(exercises: ExerciseItem[]): number {
-    const totalSec = exercises.reduce((s, ex) => s + ex.timerSec, 0)
+    const totalSec = exercises.reduce((s, ex) => s + ex.timerSec * (ex.sides ? 2 : 1), 0)
     return Math.max(1, Math.ceil(totalSec / 60))
   }
 
