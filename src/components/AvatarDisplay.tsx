@@ -98,8 +98,8 @@ function SpriteAvatarDisplay({ compact = false }: { compact?: boolean }) {
     )
   }
 
-  const scale = compact ? 2.5 : 3
-  const spriteRenderedHeight = spriteConfig.frameHeight * scale  // 64 * 2.5 = 160px compact
+  const scale = compact ? 2 : 2.5
+  const spriteRenderedHeight = spriteConfig.frameHeight * scale
   const description = getAvatarDescription(state)
   const progressPercent = !hoursUntilNext || hoursUntilNext === Infinity
     ? 100
@@ -107,33 +107,31 @@ function SpriteAvatarDisplay({ compact = false }: { compact?: boolean }) {
 
   return (
     <div className={compact ? 'space-y-2' : 'space-y-3'}>
-      {/* Sprite row with flanking bars */}
-      <div className="flex items-center justify-center gap-2">
-        <VerticalBar
-          value={mobilityPct}
-          color="#22c55e"
-          label="MOB"
-          height={spriteRenderedHeight}
-        />
+      {/* Bars at card edges, avatar centered on top */}
+      <div
+        className="relative w-full flex justify-center"
+        style={{ height: spriteRenderedHeight + 28 }}
+      >
+        <div className="absolute left-0 top-0">
+          <VerticalBar value={mobilityPct} color="#22c55e" label="MOB" height={spriteRenderedHeight} />
+        </div>
 
-        <div className="flex flex-col items-center gap-3">
-          <div style={{ transform: `scale(${scale})`, transformOrigin: 'center', lineHeight: 0 }}>
+        <div className="relative z-10 flex flex-col items-center">
+          <div style={{ transform: `scale(${scale})`, transformOrigin: 'top center', lineHeight: 0 }}>
             <SpriteAnimator src={spriteUrl} config={spriteConfig} />
           </div>
-          <div className="text-center">
-            <div className={compact ? 'text-sm font-semibold text-ink' : 'text-sm font-semibold text-ink'}>
-              {description}
-            </div>
+          <div
+            className="text-center"
+            style={{ marginTop: spriteRenderedHeight - spriteConfig.frameHeight }}
+          >
+            <div className="text-sm font-semibold text-ink">{description}</div>
             <div className="text-xs text-muted">{state.totalHours}h trained</div>
           </div>
         </div>
 
-        <VerticalBar
-          value={calisthenicsPct}
-          color="#3b82f6"
-          label="CAL"
-          height={spriteRenderedHeight}
-        />
+        <div className="absolute right-0 top-0">
+          <VerticalBar value={calisthenicsPct} color="#3b82f6" label="CAL" height={spriteRenderedHeight} />
+        </div>
       </div>
 
       {/* BJJ belt progression bar — unchanged */}
