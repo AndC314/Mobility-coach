@@ -30,7 +30,7 @@ New constant `MUSCLE_STRETCHES: Partial<Record<MuscleGroup, string[]>>` added to
 | `inner_thigh` | `ninety_ninety_fold` |
 | `glutes` | `supine_figure_4`, `ninety_ninety_fold` |
 | `hamstrings` | `supine_figure_4`, `lat_hang_bjj` |
-| `lats` | `lat_hang_bjj`, `lat_hang` |
+| `lats` | `childs_pose_lat`, `thread_the_needle` |
 | `forearms` | `wrist_conditioning`, `lat_hang_bjj` |
 | `chest` | `doorway_pec_stretch` |
 | `front_delt` | `doorway_pec_stretch`, `shoulder_cars` |
