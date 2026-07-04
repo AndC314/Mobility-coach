@@ -277,6 +277,78 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     cue: 'Round your upper back. Shift weight forward slowly until feet lift. Squeeze knees into arms.',
     bjjTransfer: 'Builds the wrist stability and protraction strength used in framing and posting on all fours.',
     feelIt: 'Wrists, front deltoids, and deep core compression.'
+  },
+  {
+    id: 'sit_ups',
+    name: 'Sit-Ups',
+    type: 'dynamic',
+    metric: 'reps',
+    unit: 'reps',
+    icon: '⬆️',
+    description: 'Max reps with controlled movement, feet anchored. Full crunch from back to sitting position.'
+  },
+  {
+    id: 'glute_bridge',
+    name: 'Glute Bridge',
+    type: 'dynamic',
+    metric: 'reps',
+    unit: 'reps',
+    icon: '🌉',
+    description: 'Max reps driving hips upward, feet flat on floor, shoulders on ground. Squeeze glutes at top.'
+  },
+  {
+    id: 'leg_raise',
+    name: 'Leg Raise',
+    type: 'dynamic',
+    metric: 'reps',
+    unit: 'reps',
+    icon: '🦵',
+    description: 'Max reps lying on back, raise straight legs from floor to 90 degrees. Lower without touching floor.'
+  },
+  {
+    id: 'v_up',
+    name: 'V-Up',
+    type: 'dynamic',
+    metric: 'reps',
+    unit: 'reps',
+    icon: '✌️',
+    description: 'Max reps folding body into V shape, hands and feet touch at peak contraction. Explosive movement.'
+  },
+  {
+    id: 'dog_bird',
+    name: 'Dog Bird (Bird-Dog)',
+    type: 'dynamic',
+    metric: 'reps',
+    unit: 'reps',
+    icon: '🐕',
+    description: 'Max reps per side in quadruped position, extend opposite arm and leg. Core stabilization exercise.'
+  },
+  {
+    id: 'diamond_push_ups',
+    name: 'Diamond Push-Ups',
+    type: 'dynamic',
+    metric: 'reps',
+    unit: 'reps',
+    icon: '💎',
+    description: 'Max reps with hands forming diamond shape, triceps-focused push-up. Chest nearly touches hands at bottom.'
+  },
+  {
+    id: 'wide_push_ups',
+    name: 'Wide Push-Ups',
+    type: 'dynamic',
+    metric: 'reps',
+    unit: 'reps',
+    icon: '💪',
+    description: 'Max reps with hands wider than shoulder width, emphasizes chest over triceps. Full range of motion.'
+  },
+  {
+    id: 'dead_bug',
+    name: 'Dead Bug',
+    type: 'dynamic',
+    metric: 'reps',
+    unit: 'reps',
+    icon: '🐛',
+    description: 'Max reps lying on back, alternating opposite arm and leg extension. Core control and stability.'
   }
 ]
 
