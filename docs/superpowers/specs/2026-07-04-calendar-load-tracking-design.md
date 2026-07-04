@@ -41,22 +41,39 @@ Max: 120 mins equivalent
 ```
 
 #### Calisthenics Load Calculation
+
+**Step 1: Per-muscle load %**
 ```
 Per-muscle load % = min(total_reps_per_muscle / 60, 100%)
-Exercise-level stagnation penalty applied (see Section 6)
+```
 
-Overall calisthenics load = max(all muscle groups' load %)
+**Step 2: Group muscles into 3 categories**
+- **Push**: chest, shoulders, triceps
+- **Pull**: back, biceps
+- **Legs**: quadriceps, hamstrings, glutes, calves
+
+**Step 3: Average within each category**
+```
+Push load % = average(chest %, shoulders %, triceps %)
+Pull load % = average(back %, biceps %)
+Legs load % = average(quads %, hamstrings %, glutes %, calves %)
+```
+
+**Step 4: Overall calisthenics load**
+```
+Overall calisthenics load % = (Push % + Pull % + Legs %) / 3
 ```
 
 **Target**: 45–60 reps per muscle per day for hypertrophy.
 
 **Example**:
-- 4×15 pushups (60 reps) = 100% chest
-- 3×10 wide pushups (30 reps) = adds to chest total
-- 3×12 diamond pushups (36 reps) = adds to chest total
-- Total chest: 126 reps → capped at 100%
-- If another muscle (back) only has 30 reps → 50% back load
-- Overall calisthenics load = 100% (max of all muscles)
+- 4×15 pushups (60 reps chest) + 3×10 wide pushups (30 reps chest) + 3×12 diamond pushups (36 reps chest) = 126 reps chest → 100% chest
+- No other push exercise → shoulders 0%, triceps 0% → Push avg = 33%
+- Back, biceps untrained → Pull avg = 0%
+- Legs untrained → Legs avg = 0%
+- **Overall calisthenics load = (33 + 0 + 0) / 3 = 11%**
+
+This rewards balanced training across push/pull/legs.
 
 #### Mobility Load Calculation
 ```
@@ -186,11 +203,22 @@ User provides:
 muscle_load % = min(total_reps_for_muscle / 60, 100%)
 ```
 
-**Example**:
+**Example** (per-muscle calculation):
 - 4×15 pushups (60 reps chest) + 3×10 wide pushups (30 reps chest) = 90 reps chest
 - Chest load % = min(90 / 60, 100%) = 100%
+- Shoulders untrained = 0%
+- Triceps untrained = 0%
+- Back untrained = 0%
+- Biceps untrained = 0%
+- Quads untrained = 0%, etc.
 
-**Step 3**: Apply stagnation penalty (see below).
+**Step 3**: Calculate category averages
+- Push = (100 + 0 + 0) / 3 = 33%
+- Pull = (0 + 0) / 2 = 0%
+- Legs = (0 + 0 + 0 + 0) / 4 = 0%
+- Overall = (33 + 0 + 0) / 3 = 11%
+
+**Step 4**: Apply stagnation penalty (see below)
 
 ### Stagnation Detection (Progressive Overload)
 
@@ -209,10 +237,14 @@ muscle_load % = min(total_reps_for_muscle / 60, 100%)
 
 ### Overall Calisthenics Load
 ```
-overall_load % = max(all_muscle_groups' load %)
+Push avg % = average(chest, shoulders, triceps)
+Pull avg % = average(back, biceps)
+Legs avg % = average(quads, hamstrings, glutes, calves)
+
+overall_load % = (Push avg % + Pull avg % + Legs avg %) / 3
 ```
 
-The highest-trained muscle determines the day's calisthenics load %.
+This incentivizes balanced training. A day with only push gets ~33% load, even if push is fully trained.
 
 ---
 
