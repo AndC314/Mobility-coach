@@ -66,9 +66,13 @@ Target: 30 mins/day = 100%
 ```
 
 #### Overall Ring Visualization
-- Ring displays **blended color** representing the highest load across all three activities
-- Color intensity increases with load %
-- Possible color scheme: light (0–30%), medium (30–70%), intense (70–100%)
+- Ring displays **blended color** based on highest load across all three activities
+- Color algorithm:
+  - **Intense** (orange/red): any activity ≥ 70%
+  - **Medium** (amber/tan): any activity 30–69%
+  - **Light** (gray/beige): all activities < 30%
+- Ring fills from 0° to 360° proportional to overall load %
+- Hover shows tooltip with breakdown (see Section 1 hover)
 
 ---
 
@@ -201,7 +205,7 @@ muscle_load % = min(total_reps_for_muscle / 60, 100%)
 - Day 7: same → 60 × 0.9² = 48.6 reps
 - After ~10 days of stagnation, that exercise contributes ~30 reps to load (vs. full 60)
 
-**Recalculation**: Happens daily, feeding into the muscle group's total load %.
+**Recalculation**: Triggers on each new workout log or daily refresh. Penalty is applied retroactively to today's load % calculation, then stored in cache.
 
 ### Overall Calisthenics Load
 ```
