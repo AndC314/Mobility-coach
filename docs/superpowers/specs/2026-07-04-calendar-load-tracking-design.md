@@ -301,7 +301,30 @@ The highest-trained muscle determines the day's calisthenics load %.
 
 ---
 
-## 10. Future Enhancements (Out of Scope)
+## 10. Radar Visualization (Training Readiness)
+
+**Current Issue**: The radar shows stale/phantom values for mobility because:
+1. `useRecoveryReadiness` hardcodes mobility to always be 100% (not calculated from actual sessions)
+2. Axis mapping in `SkillRadar.tsx` is incorrect (mobility and grappling wired wrong)
+
+**Fix**: Refactor to show **weekly averages** (last 7 days) for all axes:
+
+| Axis | Calculation |
+|------|-------------|
+| Push Strength | Best pushup/dip volume last 7 days |
+| Pull Strength | Best pullup volume last 7 days |
+| Static Core | Best hold duration last 7 days |
+| Mobility | Total mobility sessions last 7 days (minutes) |
+| Grappling | Total BJJ class hours last 7 days |
+
+**Implementation**:
+- Update `useRecoveryReadiness` to calculate mobility from actual session logs (not hardcoded 100%)
+- Create a new `useWeeklyTrainingVolume` hook that computes 7-day rolling averages
+- Correct axis mapping in `SkillRadar.tsx`
+
+---
+
+## 11. Future Enhancements (Out of Scope)
 
 - Weekly/monthly load trends graph
 - Custom muscle group definitions per user
