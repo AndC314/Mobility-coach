@@ -27,6 +27,15 @@ export type SessionType =
   | 'calisthenics'
   | 'custom'
 
+// ─────────────────────────────────────────────────────────────────────────
+// BRANDED TYPES
+// ─────────────────────────────────────────────────────────────────────────
+
+export type CustomExerciseId = string & { readonly __brand: 'CustomExerciseId' }
+export function customExerciseId(s: string): CustomExerciseId {
+  return s as CustomExerciseId
+}
+
 export interface CompletedSession {
   id?: number
   date: string // YYYY-MM-DD
@@ -144,6 +153,29 @@ export interface CalisthenicsLog {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// CUSTOM EXERCISES
+// User-defined exercises for calisthenics (with primary muscles) and mobility
+// (with body areas). Can be saved to global library or session-only.
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface CustomExercise {
+  id: CustomExerciseId
+  userId: string
+  name: string
+  type: 'dynamic' | 'hold'
+  icon: string
+  exerciseType: 'calisthenics' | 'mobility'
+  // For calisthenics
+  primaryMuscles?: string[] // e.g., ['chest', 'shoulders']
+  // For mobility
+  bodyArea?: string // 'hip', 'spine', 'shoulder', 'full_body'
+  // Shared
+  isGlobal: boolean // true = saved to user's global library, false = session-only
+  createdAt: string // ISO date
+  updatedAt?: string
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // BJJ SKILL MAP
 // A personal, growing taxonomy of BJJ concepts/positions. The gym schedules
 // classes with a "theme" (e.g. "Armlock Variations"); the user tags each
@@ -228,6 +260,7 @@ export class MobilityDB extends Dexie {
   bjjClassLogs!: Table<BjjClassLog, number>
   holdLogs!: Table<HoldLog, number>
   calisthenicsLogs!: Table<CalisthenicsLog, number>
+  customExercises!: Table<CustomExercise, string>
 
   constructor() {
     super('mobilityCoachDB')
@@ -287,6 +320,9 @@ export class MobilityDB extends Dexie {
             )
           })
       })
+    this.version(5).stores({
+      customExercises: '++id, userId, isGlobal, exerciseType'
+    })
   }
 }
 
