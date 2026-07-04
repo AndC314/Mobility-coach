@@ -39,7 +39,7 @@ export function getExerciseMuscles(exerciseId: CalisthenicsExerciseId): MuscleGr
 /**
  * Get the movement category (push/pull/legs/core) for a muscle
  */
-export function getMuscleCategory(muscle: MuscleGroup): MovementCategory | 'core' | undefined {
+export function getMuscleGroup(muscle: MuscleGroup): MovementCategory | 'core' | undefined {
   return MUSCLE_TO_GROUP[muscle]
 }
 
