@@ -290,6 +290,86 @@ export const MOBILITY_EXERCISES: MobilityExercise[] = [
     cue: 'Push the floor away with your hands. Sink heels toward the floor. Relax your neck.',
     feel: 'Hamstrings, calves, spine lengthening, and shoulders opening.',
     sides: false
+  },
+
+  // New exercises
+  {
+    id: 'pelvic_tilt',
+    name: 'Pelvic Tilt',
+    icon: '🫀',
+    category: 'spine',
+    defaultHoldSec: 60,
+    maxHoldSec: 120,
+    description: 'Lumbar spine control and pelvic stability',
+    setup: 'Lie on back with knees bent and feet flat on floor, hip-width apart. Arms at sides.',
+    cue: 'Tilt pelvis under, flattening lower back. Hold, then return to neutral. Move slowly.',
+    feel: 'Gentle engagement of lower abdominals and lower back stabilizers.',
+    sides: false
+  },
+  {
+    id: 'pigeon_pose',
+    name: 'Pigeon Pose',
+    icon: '🐦',
+    category: 'hip',
+    defaultHoldSec: 90,
+    maxHoldSec: 180,
+    description: 'Deep hip external rotator and glute stretch',
+    setup: 'From all fours, bring right shin forward toward hands, flex foot. Hips level.',
+    cue: 'Square hips forward. Fold chest forward to deepen. Keep spine long.',
+    feel: 'Deep stretch in the hip and outer glute of the forward leg.',
+    sides: true
+  },
+  {
+    id: 'couch_stretch',
+    name: 'Couch Stretch',
+    icon: '🛋️',
+    category: 'hip',
+    defaultHoldSec: 60,
+    maxHoldSec: 180,
+    description: 'Hip flexor and quad stretch',
+    setup: 'Kneel facing away from couch. Place back foot on couch behind you. Front leg steps forward.',
+    cue: 'Square hips forward. Squeeze back glute. Lean torso upright or slightly back.',
+    feel: 'Deep stretch in hip flexor and front of thigh of back leg.',
+    sides: true
+  },
+  {
+    id: 'calf_stretch',
+    name: 'Calf Stretch',
+    icon: '🦵',
+    category: 'hip',
+    defaultHoldSec: 45,
+    maxHoldSec: 120,
+    description: 'Calf and Achilles tendon release',
+    setup: 'Step one foot forward, hands on wall. Keep back heel down, back leg straight.',
+    cue: 'Front knee bends slightly. Feel a gentle pull up the back of the calf. Relax.',
+    feel: 'Gentle stretch in the calf muscle and Achilles tendon.',
+    sides: true
+  },
+  {
+    id: 'standing_hamstring_stretch',
+    name: 'Standing Hamstring Stretch',
+    icon: '🧘',
+    category: 'hip',
+    defaultHoldSec: 60,
+    maxHoldSec: 180,
+    description: 'Hamstring lengthening and hip flexibility',
+    setup: 'Stand. Place one heel on low bench or step. Keep leg straight.',
+    cue: 'Hinge at hips, maintain neutral spine. Let gravity do the work. Breathe deeply.',
+    feel: 'Stretch along the back of the hamstring and into the hip.',
+    sides: true
+  },
+  {
+    id: 'low_lunge_hip_flexor',
+    name: 'Low Lunge Hip Flexor',
+    icon: '🏃',
+    category: 'hip',
+    defaultHoldSec: 60,
+    maxHoldSec: 180,
+    description: 'Hip flexor and psoas release in deep lunge',
+    setup: 'Low lunge position. Back knee down, front foot forward. Hands on front thigh or blocks.',
+    cue: 'Squeeze back glute. Shift hips forward and down. Keep torso upright.',
+    feel: 'Deep stretch in front of hip and hip flexor of the back leg.',
+    sides: true
   }
 ]
 
