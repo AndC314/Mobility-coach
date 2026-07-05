@@ -5,8 +5,10 @@ import { useAllSessions } from '../hooks/useSessions'
 import { useStreak, useLongestStreak } from '../hooks/useStreak'
 import { usePreferences } from '../hooks/usePreferences'
 import { isoDate, startOfWeek, todayIso } from '../lib/date'
-import { db, type CompletedSession } from '../db/db'
+import { db, type CompletedSession, type BjjLog, type CalisthenicsLog, type Session } from '../db/db'
 import { computeMuscleScores, MUSCLE_LABELS, type MuscleGroup } from '../data/muscleMap'
+import { calculateDailyLoad, type DailyLoad } from '../lib/loadCalculation'
+import CalendarDay from './CalendarDay'
 
 const WEEKDAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 const SESSION_TYPE_LABELS: Record<string, string> = {
@@ -19,17 +21,6 @@ const SESSION_TYPE_LABELS: Record<string, string> = {
   recovery: 'Recovery',
   calisthenics: 'Calisthenics',
   custom: 'Session'
-}
-
-// Ring colors
-const RING_MOBILITY = '#3b82f6' // blue
-const RING_BJJ = '#ef4444' // red
-const RING_CALISTHENICS = '#22c55e' // green
-
-interface DayRings {
-  mobility: number // 0-1 completion
-  bjj: number // 0 or 1
-  calisthenics: number // 0-1 (10% per muscle group at 100%)
 }
 
 function buildMonthGrid(year: number, month: number): Date[] {
@@ -86,35 +77,25 @@ export default function TrainingCalendar({ conflictDays = [] }: TrainingCalendar
     []
   )
 
-  // Compute ring data per day
-  function getRingsForDate(dateStr: string): DayRings {
-    const daySessions = (sessions ?? []).filter((s) => s.date === dateStr)
-
-    // Mobility: sum actualSec / sum plannedSec for non-calisthenics sessions
-    const mobilitySessions = daySessions.filter((s) => s.type !== 'calisthenics')
-    let mobility = 0
-    if (mobilitySessions.length > 0) {
-      const totalPlanned = mobilitySessions.reduce((s, x) => s + x.plannedSec, 0)
-      const totalActual = mobilitySessions.reduce((s, x) => s + x.actualSec, 0)
-      mobility = totalPlanned > 0 ? Math.min(1, totalActual / totalPlanned) : (totalActual > 0 ? 1 : 0)
+  // Get daily load for a date using the comprehensive load calculation
+  function getDailyLoadForDate(dateStr: string): DailyLoad {
+    if (!bjjLogs || !calLogs || !sessions) {
+      return {
+        date: dateStr,
+        bjjLoad: 0,
+        calisthenicsLoad: 0,
+        mobilityLoad: 0,
+        overallLoad: 0,
+        breakdown: {
+          bjjTechnicalMins: 0,
+          bjjSparringMins: 0,
+          calisthenicsMinutes: 0,
+          mobilityMinutes: 0,
+          muscleLoads: {}
+        }
+      }
     }
-
-    // BJJ: 1 if any BJJ class logged that day
-    const bjj = (bjjLogs ?? []).some((l) => l.date === dateStr) ? 1 : 0
-
-    // Calisthenics: 10% per muscle group at 100% load
-    const dayCalLogs = (calLogs ?? []).filter((l) => l.date === dateStr)
-    let calisthenics = 0
-    if (dayCalLogs.length > 0) {
-      const scores = computeMuscleScores(
-        dayCalLogs.map((l) => ({ exerciseId: l.exerciseId, value: l.value, date: l.date })),
-        dateStr
-      )
-      const fullGroups = scores.filter((s) => s.score >= 100).length
-      calisthenics = Math.min(1, fullGroups * 0.1)
-    }
-
-    return { mobility, bjj, calisthenics }
+    return calculateDailyLoad(dateStr, bjjLogs as BjjLog[], calLogs as CalisthenicsLog[], sessions as Session[])
   }
 
   const sessionsThisMonth = (sessions ?? [])
@@ -221,17 +202,30 @@ export default function TrainingCalendar({ conflictDays = [] }: TrainingCalendar
             const dStr = isoDate(d)
             const inMonth = d.getMonth() === month
             const isToday = dStr === todayStr
-            const rings = inMonth ? getRingsForDate(dStr) : { mobility: 0, bjj: 0, calisthenics: 0 }
-            const hasAny = rings.mobility > 0 || rings.bjj > 0 || rings.calisthenics > 0
+            const load = inMonth ? getDailyLoadForDate(dStr) : {
+              date: dStr,
+              bjjLoad: 0,
+              calisthenicsLoad: 0,
+              mobilityLoad: 0,
+              overallLoad: 0,
+              breakdown: {
+                bjjTechnicalMins: 0,
+                bjjSparringMins: 0,
+                calisthenicsMinutes: 0,
+                mobilityMinutes: 0,
+                muscleLoads: {}
+              }
+            }
             const hasConflict = conflictDays.includes(dStr)
 
             return (
               <div key={i} className="flex items-center justify-center py-0.5">
-                <DayCell
-                  day={d.getDate()}
-                  inMonth={inMonth}
+                <CalendarDay
+                  date={d}
+                  dateIso={dStr}
+                  load={load}
+                  isCurrentMonth={inMonth}
                   isToday={isToday}
-                  rings={rings}
                   hasConflict={hasConflict}
                 />
               </div>
@@ -260,93 +254,6 @@ export default function TrainingCalendar({ conflictDays = [] }: TrainingCalendar
   )
 }
 
-// ─── Day cell with concentric progress rings ────────────────────────────────
-
-interface DayCellProps {
-  day: number
-  inMonth: boolean
-  isToday: boolean
-  rings: DayRings
-  hasConflict?: boolean
-}
-
-function DayCell({ day, inMonth, isToday, rings, hasConflict }: DayCellProps) {
-  const size = 40
-  const cx = size / 2
-  const cy = size / 2
-
-  // Three concentric rings: outer=mobility, middle=bjj, inner=calisthenics
-  // Radii chosen so numbers (even 2-digit) fit comfortably inside
-  const ringDefs = [
-    { radius: 17, value: rings.mobility, color: RING_MOBILITY, width: 2.5 },
-    { radius: 13.5, value: rings.bjj, color: RING_BJJ, width: 2.5 },
-    { radius: 10, value: rings.calisthenics, color: RING_CALISTHENICS, width: 2.5 }
-  ]
-
-  const hasAnyRing = rings.mobility > 0 || rings.bjj > 0 || rings.calisthenics > 0
-
-  return (
-    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
-      {hasAnyRing && inMonth && (
-        <svg
-          width={size}
-          height={size}
-          className="absolute inset-0"
-          style={{ transform: 'rotate(-90deg)' }}
-        >
-          {ringDefs.map(({ radius, value, color, width }, i) => {
-            if (value <= 0) return null
-            const circumference = 2 * Math.PI * radius
-            const offset = circumference * (1 - value)
-            return (
-              <circle
-                key={i}
-                cx={cx}
-                cy={cy}
-                r={radius}
-                fill="none"
-                stroke={color}
-                strokeWidth={width}
-                strokeDasharray={circumference}
-                strokeDashoffset={offset}
-                strokeLinecap="round"
-                opacity={0.85}
-              />
-            )
-          })}
-        </svg>
-      )}
-
-      {/* Today ring (thin accent border) */}
-      {isToday && inMonth && (
-        <svg width={size} height={size} className="absolute inset-0">
-          <circle
-            cx={cx}
-            cy={cy}
-            r={18.5}
-            fill="none"
-            stroke="#e8622a"
-            strokeWidth={1.5}
-            opacity={0.9}
-          />
-        </svg>
-      )}
-
-      {/* Conflict indicator */}
-      {hasConflict && inMonth && (
-        <span className="absolute top-0 right-0 text-red-600 font-bold text-lg leading-none">!</span>
-      )}
-
-      <span
-        className={`relative z-10 text-[13px] font-semibold ${
-          !inMonth ? 'text-border' : isToday ? 'text-accent font-bold' : 'text-ink/85'
-        }`}
-      >
-        {day}
-      </span>
-    </div>
-  )
-}
 
 function LegendDot({ color, label }: { color: string; label: string }) {
   return (
