@@ -42,6 +42,13 @@ export function useRecoveryReadiness(): AxisReadiness[] {
     []
   )
 
+  // Get sessions for mobility readiness calculation
+  const sessions = useLiveQuery(
+    () => db.sessions.where('date').between(sevenDaysAgo, today, true, true).toArray(),
+    [sevenDaysAgo, today],
+    []
+  )
+
   const nowMs = Date.now()
 
   // Transform calisthenics logs into DecayInput format
@@ -84,6 +91,13 @@ export function useRecoveryReadiness(): AxisReadiness[] {
 
   const categorySoreness = computeCategorySoreness(muscleSoreness)
 
+  // Calculate mobility readiness from actual session logs
+  let mobilityReadiness = 100
+  if (sessions) {
+    const mobilitySessions = sessions.filter((s) => s.type !== 'calisthenics' && s.type !== 'custom').length
+    mobilityReadiness = Math.min(100, Math.round((mobilitySessions / 3) * 100))
+  }
+
   // Convert to 5 axes
   const axes: AxisReadiness[] = [
     {
@@ -109,13 +123,13 @@ export function useRecoveryReadiness(): AxisReadiness[] {
     {
       axis: 'Mobility',
       sorenessPercent: 0,
-      readinessPercent: 100,
+      readinessPercent: mobilityReadiness,
     },
   ]
 
-  // Calculate readiness as inverse of soreness
+  // Calculate readiness as inverse of soreness (except for Mobility which is calculated from sessions)
   return axes.map((axis) => ({
     ...axis,
-    readinessPercent: Math.max(0, 100 - axis.sorenessPercent),
+    readinessPercent: axis.axis === 'Mobility' ? axis.readinessPercent : Math.max(0, 100 - axis.sorenessPercent),
   }))
 }

@@ -71,8 +71,8 @@ export default function SkillRadar({ axes, size = 260, recoveryReadiness }: Skil
         if (axis.key === 'push') readinessValue = recoveryReadiness.Push
         else if (axis.key === 'pull') readinessValue = recoveryReadiness.Pull
         else if (axis.key === 'core') readinessValue = recoveryReadiness.Core
-        else if (axis.key === 'mobility') readinessValue = recoveryReadiness.Legs
-        else if (axis.key === 'grappling') readinessValue = recoveryReadiness.Mobility
+        else if (axis.key === 'mobility') readinessValue = recoveryReadiness.Mobility ?? 100
+        else if (axis.key === 'grappling') readinessValue = recoveryReadiness.Legs ?? 100
 
         const r = (readinessValue / 100) * radius
         return polarToXY(angle, r)
