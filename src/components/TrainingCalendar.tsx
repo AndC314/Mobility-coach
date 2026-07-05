@@ -230,7 +230,7 @@ export default function TrainingCalendar({ conflictDays = [] }: TrainingCalendar
                   load={load}
                   isCurrentMonth={inMonth}
                   isToday={isToday}
-                  hasConflict={hasConflict}
+
                 />
               </div>
             )

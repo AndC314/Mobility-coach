@@ -7,7 +7,7 @@ interface CalendarDayProps {
   load: DailyLoad
   isCurrentMonth: boolean
   isToday: boolean
-  isSelected: boolean
+  isSelected?: boolean
   onClick?: () => void
 }
 

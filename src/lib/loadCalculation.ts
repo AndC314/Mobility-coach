@@ -71,7 +71,7 @@ export function calculateCalisthenicsLoad(
  * Minutes / 30 = load %
  */
 export function calculateMobilityLoad(sessions: Session[]): number {
-  const mobilitySessions = sessions.filter((s) => s.type === 'mobility')
+  const mobilitySessions = sessions.filter((s) => s.type !== 'bjj' && s.type !== 'calisthenics' && s.type !== 'custom')
   const totalMinutes = mobilitySessions.reduce((sum, s) => sum + (s.durationSeconds ?? 0), 0) / 60
 
   const load = Math.min(100, Math.round((totalMinutes / 30) * 100))

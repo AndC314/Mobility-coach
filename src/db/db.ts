@@ -144,6 +144,14 @@ export type CalisthenicsExerciseId =
   | 'tuck_lsit'
   | 'side_plank'
   | 'crow_pose'
+  | 'sit_ups'
+  | 'glute_bridge'
+  | 'leg_raise'
+  | 'v_up'
+  | 'dog_bird'
+  | 'diamond_push_ups'
+  | 'wide_push_ups'
+  | 'dead_bug'
 
 export type CalisthenicsMetric = 'hold_sec' | 'reps'
 
