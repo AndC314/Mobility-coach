@@ -8,6 +8,7 @@ import CalisthenicsPage from './pages/CalisthenicsPage'
 import Recovery from './pages/Recovery'
 import Progress from './pages/Progress'
 import Profile from './pages/Profile'
+import Calendar from './pages/Calendar'
 import { usePreferences } from './hooks/usePreferences'
 import { useAuth } from './hooks/useAuth'
 import { useFirebaseSync } from './hooks/useFirebaseSync'
@@ -59,6 +60,7 @@ function AppContent() {
             <Route path="/recovery" element={<Recovery />} />
             <Route path="/progress" element={<Progress />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/calendar" element={<Calendar />} />
           </Routes>
         </div>
         <BottomNav />
