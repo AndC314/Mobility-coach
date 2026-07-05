@@ -47,7 +47,11 @@ export interface CompletedSession {
   percent: number // round(actualSec / plannedSec * 100), clamped 0-100
   exerciseIds: string[]
   createdAt: string // ISO timestamp
+  durationSeconds?: number // alias for actualSec (load calculation engine)
 }
+
+// Alias for load calculation engine compatibility
+export type Session = CompletedSession
 
 // ─────────────────────────────────────────────────────────────────────────
 // HOLD LOGS
@@ -102,6 +106,8 @@ export interface BjjLog {
   id?: number
   date: string
   attended: boolean
+  technical_mins?: number // minutes spent on technique work
+  sparring_mins?: number // minutes spent sparring
 }
 
 // ─────────────────────────────────────────────────────────────────────────
