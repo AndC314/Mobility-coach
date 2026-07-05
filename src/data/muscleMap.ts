@@ -238,6 +238,43 @@ export const EXERCISE_MUSCLES: Record<CalisthenicsExerciseId, MuscleActivation[]
     { muscle: 'front_delt', level: 'primary' },
     { muscle: 'abs', level: 'primary' },
     { muscle: 'forearms', level: 'secondary' }
+  ],
+  sit_ups: [
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'hip_flexors', level: 'secondary' }
+  ],
+  glute_bridge: [
+    { muscle: 'glutes', level: 'primary' },
+    { muscle: 'hamstrings', level: 'secondary' },
+    { muscle: 'lower_back', level: 'secondary' }
+  ],
+  leg_raise: [
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'hip_flexors', level: 'primary' }
+  ],
+  v_up: [
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'hip_flexors', level: 'secondary' }
+  ],
+  dog_bird: [
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'lower_back', level: 'primary' },
+    { muscle: 'glutes', level: 'secondary' }
+  ],
+  diamond_push_ups: [
+    { muscle: 'triceps', level: 'primary' },
+    { muscle: 'chest', level: 'primary' },
+    { muscle: 'front_delt', level: 'secondary' }
+  ],
+  wide_push_ups: [
+    { muscle: 'chest', level: 'primary' },
+    { muscle: 'front_delt', level: 'secondary' },
+    { muscle: 'abs', level: 'secondary' }
+  ],
+  dead_bug: [
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'lower_back', level: 'secondary' },
+    { muscle: 'hip_flexors', level: 'secondary' }
   ]
 }
 
