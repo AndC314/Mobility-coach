@@ -23,6 +23,10 @@ const SESSION_TYPE_LABELS: Record<string, string> = {
   custom: 'Session'
 }
 
+const RING_BJJ = '#2ec4b6'
+const RING_CALISTHENICS = '#e8622a'
+const RING_MOBILITY = '#a78bfa'
+
 function buildMonthGrid(year: number, month: number): Date[] {
   const first = new Date(year, month, 1)
   const last = new Date(year, month + 1, 0)
