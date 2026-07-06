@@ -5,7 +5,7 @@ import { useAllSessions } from '../hooks/useSessions'
 import { useStreak, useLongestStreak } from '../hooks/useStreak'
 import { usePreferences } from '../hooks/usePreferences'
 import { isoDate, startOfWeek, todayIso } from '../lib/date'
-import { db, type CompletedSession, type BjjLog, type CalisthenicsLog, type Session } from '../db/db'
+import { db, type CompletedSession, type BjjClassLog, type CalisthenicsLog, type Session } from '../db/db'
 import { computeMuscleScores, MUSCLE_LABELS, type MuscleGroup } from '../data/muscleMap'
 import { calculateDailyLoad, type DailyLoad } from '../lib/loadCalculation'
 import CalendarDay from './CalendarDay'
@@ -99,7 +99,7 @@ export default function TrainingCalendar({ conflictDays = [] }: TrainingCalendar
         }
       }
     }
-    return calculateDailyLoad(dateStr, bjjLogs as BjjLog[], calLogs as CalisthenicsLog[], sessions as Session[])
+    return calculateDailyLoad(dateStr, bjjLogs as BjjClassLog[], calLogs as CalisthenicsLog[], sessions as Session[])
   }
 
   const sessionsThisMonth = (sessions ?? [])

@@ -1,4 +1,4 @@
-import type { CalisthenicsLog, BjjLog, Session } from '../db/db'
+import type { CalisthenicsLog, BjjClassLog, Session } from '../db/db'
 import { calculateOverallCalisthenicsLoad, calculateCategoryLoad } from './muscleGrouping'
 import { applyStagnationPenalty } from './stagnationDetection'
 import { EXERCISE_MUSCLES, type MuscleGroup } from '../data/muscleMap'
@@ -20,20 +20,23 @@ export interface DailyLoad {
 
 /**
  * Calculate BJJ load for a day
- * (technical_mins + sparring_mins × 3) / 120
+ * (technicalMins + sparringMins × 3) / 120
  */
-export function calculateBjjLoad(bjjLogs: BjjLog[]): number {
-  let technicalMins = 0
-  let sparringMins = 0
+export function calculateBjjLoad(bjjLogs: BjjClassLog[]): number {
+  let technical = 0
+  let sparring = 0
 
   for (const log of bjjLogs) {
-    if (log.attended) {
-      technicalMins += log.technical_mins ?? 0
-      sparringMins += log.sparring_mins ?? 0
-    }
+    technical += log.technicalMins ?? 0
+    sparring += log.sparringMins ?? 0
   }
 
-  const equivalent = technicalMins + sparringMins * 3
+  // If neither field set, treat a logged class as 60 mins technical
+  if (technical === 0 && sparring === 0 && bjjLogs.length > 0) {
+    technical = 60
+  }
+
+  const equivalent = technical + sparring * 3
   const load = Math.min(100, Math.round((equivalent / 120) * 100))
   return load
 }
@@ -72,7 +75,7 @@ export function calculateCalisthenicsLoad(
  */
 export function calculateMobilityLoad(sessions: Session[]): number {
   const mobilitySessions = sessions.filter((s) => s.type !== 'bjj' && s.type !== 'calisthenics' && s.type !== 'custom')
-  const totalMinutes = mobilitySessions.reduce((sum, s) => sum + (s.durationSeconds ?? 0), 0) / 60
+  const totalMinutes = mobilitySessions.reduce((sum, s) => sum + s.durationMin, 0)
 
   const load = Math.min(100, Math.round((totalMinutes / 30) * 100))
   return load
@@ -97,7 +100,7 @@ function getMusclesForExercise(exerciseId: string): MuscleGroup[] {
  */
 export function calculateDailyLoad(
   date: string,
-  bjjLogs: BjjLog[],
+  bjjLogs: BjjClassLog[],
   calLogs: CalisthenicsLog[],
   sessions: Session[]
 ): DailyLoad {
@@ -109,13 +112,15 @@ export function calculateDailyLoad(
   const { load: calisthenicsLoad, muscleLoads } = calculateCalisthenicsLoad(calForDate)
   const mobilityLoad = calculateMobilityLoad(sessionsForDate)
 
-  const bjjTechnicalMins = bjjForDate.reduce((sum, l) => sum + (l.technical_mins ?? 0), 0)
-  const bjjSparringMins = bjjForDate.reduce((sum, l) => sum + (l.sparring_mins ?? 0), 0)
+  const bjjTechnicalMins = bjjForDate.reduce((sum, l) => sum + (l.technicalMins ?? 0), 0)
+  const bjjSparringMins = bjjForDate.reduce((sum, l) => sum + (l.sparringMins ?? 0), 0)
   const calisthenicsMinutes = calForDate.reduce(
     (sum, l) => sum + estimateCalisthenicsDuration(l),
     0
   )
-  const mobilityMinutes = sessionsForDate.reduce((sum, s) => sum + ((s.durationSeconds ?? 0) / 60), 0)
+  const mobilityMinutes = sessionsForDate
+    .filter((s) => s.type !== 'bjj' && s.type !== 'calisthenics' && s.type !== 'custom')
+    .reduce((sum, s) => sum + s.durationMin, 0)
 
   const overallLoad = Math.max(bjjLoad, calisthenicsLoad, mobilityLoad)
 

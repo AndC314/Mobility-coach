@@ -1,9 +1,15 @@
 import { useState } from 'react'
+import {
+  BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Legend
+} from 'recharts'
 import SkillTree from '../components/SkillTree'
 import SkillRadar from '../components/SkillRadar'
+import { Card } from '../components/Card'
+import { useActivityTimeseries } from '../hooks/useActivityTimeseries'
 
 export default function Progress() {
-  const [view, setView] = useState<'tree' | 'trends'>('tree')
+  const [view, setView] = useState<'tree' | 'trends' | 'activity'>('tree')
+  const timeseries = useActivityTimeseries(12)
 
   return (
     <div className="space-y-5 pb-4 fade-in">
@@ -16,7 +22,8 @@ export default function Progress() {
         {(
           [
             { id: 'tree', label: 'Skill Tree' },
-            { id: 'trends', label: 'Trends' },
+            { id: 'trends', label: 'Readiness' },
+            { id: 'activity', label: 'Activity' },
           ] as const
         ).map((t) => (
           <button
@@ -36,6 +43,81 @@ export default function Progress() {
       {view === 'trends' && (
         <div className="space-y-4">
           <SkillRadar />
+        </div>
+      )}
+
+      {view === 'activity' && (
+        <div className="space-y-4">
+          <Card>
+            <h2 className="mb-1 text-base font-bold">Weekly training minutes</h2>
+            <p className="mb-3 text-xs text-muted">Last 12 weeks — BJJ, Calisthenics, Mobility</p>
+            {timeseries.every((w) => w.bjjMins === 0 && w.calisthenicsMins === 0 && w.mobilityMins === 0) ? (
+              <p className="py-6 text-center text-sm text-muted">No sessions logged yet</p>
+            ) : (
+              <div style={{ height: 240 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={timeseries} margin={{ left: -16, right: 4 }}>
+                    <XAxis
+                      dataKey="weekLabel"
+                      tick={{ fill: '#7a7d96', fontSize: 10 }}
+                      axisLine={false}
+                      tickLine={false}
+                      interval={1}
+                    />
+                    <YAxis
+                      tick={{ fill: '#7a7d96', fontSize: 10 }}
+                      axisLine={false}
+                      tickLine={false}
+                      unit="m"
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        background: '#22263a',
+                        border: '1px solid #2e3248',
+                        borderRadius: 8,
+                        fontSize: 12
+                      }}
+                      labelStyle={{ color: '#e8e8f0', fontWeight: 600 }}
+                      formatter={(value: number, name: string) => [`${value} min`, name]}
+                    />
+                    <Legend
+                      wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
+                      formatter={(value) => <span style={{ color: '#b0b3c6' }}>{value}</span>}
+                    />
+                    <Bar dataKey="bjjMins" name="BJJ" stackId="a" fill="#2ec4b6" radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="calisthenicsMins" name="Calisthenics" stackId="a" fill="#e8622a" radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="mobilityMins" name="Mobility" stackId="a" fill="#a78bfa" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </Card>
+
+          <Card>
+            <h2 className="mb-2 text-base font-bold">Totals (last 12 weeks)</h2>
+            <div className="space-y-2">
+              {[
+                { label: 'BJJ', color: '#2ec4b6', key: 'bjjMins' as const },
+                { label: 'Calisthenics', color: '#e8622a', key: 'calisthenicsMins' as const },
+                { label: 'Mobility', color: '#a78bfa', key: 'mobilityMins' as const }
+              ].map(({ label, color, key }) => {
+                const total = timeseries.reduce((s, w) => s + w[key], 0)
+                const hrs = Math.floor(total / 60)
+                const mins = total % 60
+                return (
+                  <div key={key} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2.5 w-2.5 rounded-full" style={{ background: color }} />
+                      <span className="text-sm text-ink">{label}</span>
+                    </div>
+                    <span className="text-sm font-semibold">
+                      {hrs > 0 ? `${hrs}h ` : ''}{mins}m
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          </Card>
         </div>
       )}
     </div>

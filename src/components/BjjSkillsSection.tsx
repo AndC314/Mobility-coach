@@ -50,6 +50,8 @@ function LogClassView() {
   const [className, setClassName] = useState('')
   const [theme, setTheme] = useState('')
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([])
+  const [technicalMins, setTechnicalMins] = useState('')
+  const [sparringMins, setSparringMins] = useState('')
   const [notes, setNotes] = useState('')
   const [newTagName, setNewTagName] = useState('')
   const [saved, setSaved] = useState(false)
@@ -72,6 +74,8 @@ function LogClassView() {
     setClassName(log.className || '')
     setTheme(log.theme || '')
     setSelectedTagIds(log.tagIds || [])
+    setTechnicalMins(log.technicalMins != null ? String(log.technicalMins) : '')
+    setSparringMins(log.sparringMins != null ? String(log.sparringMins) : '')
     setNotes(log.notes || '')
   }
 
@@ -81,16 +85,22 @@ function LogClassView() {
     setClassName('')
     setTheme('')
     setSelectedTagIds([])
+    setTechnicalMins('')
+    setSparringMins('')
     setNotes('')
   }
 
   async function handleSave() {
+    const techNum = technicalMins !== '' ? Number(technicalMins) : undefined
+    const sparNum = sparringMins !== '' ? Number(sparringMins) : undefined
     if (editingId) {
       await updateClassLog(editingId, {
         date,
         className: className.trim() || undefined,
         theme: theme.trim() || undefined,
         tagIds: selectedTagIds,
+        technicalMins: techNum,
+        sparringMins: sparNum,
         notes: notes.trim() || undefined
       })
       closeEdit()
@@ -100,11 +110,15 @@ function LogClassView() {
         className: className.trim() || undefined,
         theme: theme.trim() || undefined,
         tagIds: selectedTagIds,
+        technicalMins: techNum,
+        sparringMins: sparNum,
         notes: notes.trim() || undefined
       })
       setClassName('')
       setTheme('')
       setSelectedTagIds([])
+      setTechnicalMins('')
+      setSparringMins('')
       setNotes('')
     }
     setSaved(true)
@@ -148,6 +162,38 @@ function LogClassView() {
               className="w-full rounded-lg border border-border bg-card2 px-3 py-2 text-sm text-ink placeholder:text-muted"
             />
           </div>
+
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <label className="mb-1 block text-xs font-semibold text-muted">Technical (mins)</label>
+              <input
+                type="number"
+                min="0"
+                max="180"
+                value={technicalMins}
+                onChange={(e) => setTechnicalMins(e.target.value)}
+                placeholder="e.g. 45"
+                className="w-full rounded-lg border border-border bg-card2 px-3 py-2 text-sm text-ink placeholder:text-muted"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="mb-1 block text-xs font-semibold text-muted">Sparring (mins)</label>
+              <input
+                type="number"
+                min="0"
+                max="180"
+                value={sparringMins}
+                onChange={(e) => setSparringMins(e.target.value)}
+                placeholder="e.g. 15"
+                className="w-full rounded-lg border border-border bg-card2 px-3 py-2 text-sm text-ink placeholder:text-muted"
+              />
+            </div>
+          </div>
+          {(technicalMins || sparringMins) && (
+            <p className="text-[11px] text-muted -mt-1">
+              Load equivalent: {(Number(technicalMins) || 0) + (Number(sparringMins) || 0) * 3} mins · sparring counts ×3 for intensity
+            </p>
+          )}
 
           <div>
             <label className="mb-1 block text-xs font-semibold text-muted">Your skill tags</label>
@@ -240,6 +286,11 @@ function LogClassView() {
                 <div className="mb-1.5 text-xs text-muted">
                   {new Date(log.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
                   {log.className && log.theme ? ` · ${log.className}` : ''}
+                  {(log.technicalMins != null || log.sparringMins != null) && (
+                    <span className="ml-1">
+                      · {log.technicalMins ?? 0}T / {log.sparringMins ?? 0}S mins
+                    </span>
+                  )}
                 </div>
                 {log.tagIds.length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
@@ -297,6 +348,32 @@ function LogClassView() {
                   placeholder="e.g. Armlock Variations"
                   className="w-full rounded-lg border border-border bg-card2 px-3 py-2 text-sm text-ink placeholder:text-muted"
                 />
+              </div>
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label className="mb-1 block text-xs font-semibold text-muted">Technical (mins)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="180"
+                    value={technicalMins}
+                    onChange={(e) => setTechnicalMins(e.target.value)}
+                    placeholder="e.g. 45"
+                    className="w-full rounded-lg border border-border bg-card2 px-3 py-2 text-sm text-ink placeholder:text-muted"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="mb-1 block text-xs font-semibold text-muted">Sparring (mins)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="180"
+                    value={sparringMins}
+                    onChange={(e) => setSparringMins(e.target.value)}
+                    placeholder="e.g. 15"
+                    className="w-full rounded-lg border border-border bg-card2 px-3 py-2 text-sm text-ink placeholder:text-muted"
+                  />
+                </div>
               </div>
               <div>
                 <label className="mb-1 block text-xs font-semibold text-muted">Skill tags</label>

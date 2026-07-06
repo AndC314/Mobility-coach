@@ -1,5 +1,4 @@
 import BjjSkillsSection from '../components/BjjSkillsSection'
-import BjjSplitTimer from '../components/BjjSplitTimer'
 
 export default function Bjj() {
   return (
@@ -8,8 +7,6 @@ export default function Bjj() {
         <p className="text-sm text-muted">Your training</p>
         <h1 className="text-2xl font-extrabold">BJJ</h1>
       </div>
-
-      <BjjSplitTimer />
 
       <BjjSkillsSection />
     </div>

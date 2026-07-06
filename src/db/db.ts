@@ -212,6 +212,8 @@ export interface BjjClassLog {
   className?: string // e.g. "Beginners & Intermediates"
   theme?: string // the gym's stated lesson theme, e.g. "Armlock Variations"
   tagIds: number[] // references BjjSkillTag.id
+  technicalMins?: number // minutes of technical drilling/instruction
+  sparringMins?: number // minutes of live sparring (counts 3× for load)
   notes?: string
   createdAt: string
 }
