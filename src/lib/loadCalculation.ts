@@ -12,6 +12,7 @@ export interface DailyLoad {
   breakdown: {
     bjjTechnicalMins: number
     bjjSparringMins: number
+    bjjClassCount: number
     calisthenicsMinutes: number
     mobilityMinutes: number
     muscleLoads: Record<string, number>
@@ -133,6 +134,7 @@ export function calculateDailyLoad(
     breakdown: {
       bjjTechnicalMins,
       bjjSparringMins,
+      bjjClassCount: bjjForDate.length,
       calisthenicsMinutes,
       mobilityMinutes,
       muscleLoads

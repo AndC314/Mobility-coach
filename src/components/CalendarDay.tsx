@@ -46,7 +46,7 @@ export default function CalendarDay({
       onMouseLeave={() => setShowTooltip(false)}
     >
       {/* Load ring SVG */}
-      <svg width="60" height="60" viewBox="0 0 60 60" className="absolute inset-0">
+      <svg viewBox="0 0 60 60" className="absolute inset-0 w-full h-full">
         {/* Background ring */}
         <circle
           cx="30"
@@ -80,11 +80,24 @@ export default function CalendarDay({
       </div>
 
       {/* Hover tooltip */}
-      {showTooltip && (
+      {showTooltip && (load.overallLoad > 0 || load.breakdown.bjjClassCount > 0) && (
         <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-ink text-bg rounded-lg p-2 text-xs whitespace-nowrap z-50 shadow-lg">
-          <div>BJJ: {load.breakdown.bjjTechnicalMins} min</div>
-          <div>Calisthenics: {Math.round(load.breakdown.calisthenicsMinutes)} min ({load.calisthenicsLoad}%)</div>
-          <div>Mobility: {Math.round(load.breakdown.mobilityMinutes)} min</div>
+          {(load.bjjLoad > 0 || load.breakdown.bjjClassCount > 0) && (
+            <div>
+              BJJ:{' '}
+              {load.breakdown.bjjTechnicalMins + load.breakdown.bjjSparringMins > 0
+                ? `${load.breakdown.bjjTechnicalMins + load.breakdown.bjjSparringMins} min`
+                : load.breakdown.bjjClassCount > 0
+                ? `${load.breakdown.bjjClassCount} class${load.breakdown.bjjClassCount > 1 ? 'es' : ''} (~60 min)`
+                : '—'}
+            </div>
+          )}
+          {load.calisthenicsLoad > 0 && (
+            <div>Calisthenics: {Math.round(load.breakdown.calisthenicsMinutes)} min ({load.calisthenicsLoad}%)</div>
+          )}
+          {load.mobilityLoad > 0 && (
+            <div>Mobility: {Math.round(load.breakdown.mobilityMinutes)} min</div>
+          )}
         </div>
       )}
     </div>

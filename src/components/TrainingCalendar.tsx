@@ -93,6 +93,7 @@ export default function TrainingCalendar({ conflictDays = [] }: TrainingCalendar
         breakdown: {
           bjjTechnicalMins: 0,
           bjjSparringMins: 0,
+          bjjClassCount: 0,
           calisthenicsMinutes: 0,
           mobilityMinutes: 0,
           muscleLoads: {}
@@ -215,6 +216,7 @@ export default function TrainingCalendar({ conflictDays = [] }: TrainingCalendar
               breakdown: {
                 bjjTechnicalMins: 0,
                 bjjSparringMins: 0,
+                bjjClassCount: 0,
                 calisthenicsMinutes: 0,
                 mobilityMinutes: 0,
                 muscleLoads: {}

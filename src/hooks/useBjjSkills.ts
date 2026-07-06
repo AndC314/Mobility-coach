@@ -69,9 +69,14 @@ export function useBjjClassLogs() {
         exerciseIds: [`bjj_class_${id}`],
         createdAt: new Date().toISOString()
       }
-      await syncSessionToFirebase(session).catch(err => {
-        console.error('[addClassLog] Failed to sync to Firestore:', err)
-      })
+      // Write to local db so the calendar/load system sees it as BJJ
+      const sessionId = await db.sessions.add(session)
+      const saved = await db.sessions.get(sessionId)
+      if (saved) {
+        syncSessionToFirebase(saved).catch(err => {
+          console.error('[addClassLog] Failed to sync to Firestore:', err)
+        })
+      }
     } catch (err) {
       console.error('[addClassLog] Error creating session:', err)
     }
