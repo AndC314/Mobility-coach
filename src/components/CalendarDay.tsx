@@ -79,18 +79,26 @@ export default function CalendarDay({
         <div className="text-[10px] text-muted">{monthAbbr}</div>
       </div>
 
+      {/* Activity indicator dots */}
+      {isCurrentMonth && (load.bjjLoad > 0 || load.breakdown.bjjClassCount > 0 || load.calisthenicsLoad > 0 || load.mobilityLoad > 0) && (
+        <div className="absolute bottom-1 flex gap-0.5 justify-center z-10">
+          {(load.bjjLoad > 0 || load.breakdown.bjjClassCount > 0) && (
+            <div className="h-1.5 w-1.5 rounded-full" style={{ background: '#2ec4b6' }} />
+          )}
+          {load.calisthenicsLoad > 0 && (
+            <div className="h-1.5 w-1.5 rounded-full" style={{ background: '#e8622a' }} />
+          )}
+          {load.mobilityLoad > 0 && (
+            <div className="h-1.5 w-1.5 rounded-full" style={{ background: '#a78bfa' }} />
+          )}
+        </div>
+      )}
+
       {/* Hover tooltip */}
       {showTooltip && (load.overallLoad > 0 || load.breakdown.bjjClassCount > 0) && (
         <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-ink text-bg rounded-lg p-2 text-xs whitespace-nowrap z-50 shadow-lg">
           {(load.bjjLoad > 0 || load.breakdown.bjjClassCount > 0) && (
-            <div>
-              BJJ:{' '}
-              {load.breakdown.bjjTechnicalMins + load.breakdown.bjjSparringMins > 0
-                ? `${load.breakdown.bjjTechnicalMins + load.breakdown.bjjSparringMins} min`
-                : load.breakdown.bjjClassCount > 0
-                ? `${load.breakdown.bjjClassCount} class${load.breakdown.bjjClassCount > 1 ? 'es' : ''} (~60 min)`
-                : '—'}
-            </div>
+            <div>BJJ: {load.breakdown.bjjTechnicalMins}T / {load.breakdown.bjjSparringMins}S min</div>
           )}
           {load.calisthenicsLoad > 0 && (
             <div>Calisthenics: {Math.round(load.breakdown.calisthenicsMinutes)} min ({load.calisthenicsLoad}%)</div>

@@ -27,7 +27,7 @@ export function useActivityTimeseries(weeksBack = 12): WeeklyActivityData[] {
     const wsStr = weekStart.toISOString().split('T')[0]
     const weStr = weekEnd.toISOString().split('T')[0]
 
-    // BJJ: sum technicalMins + sparringMins (fallback 60 if neither set)
+    // BJJ: sum technicalMins + sparringMins (fallback 50T+10S=60 for old logs)
     const bjjMins = bjjLogs
       .filter((l) => l.date >= wsStr && l.date <= weStr)
       .reduce((sum, l) => {

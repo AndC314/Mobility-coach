@@ -32,9 +32,10 @@ export function calculateBjjLoad(bjjLogs: BjjClassLog[]): number {
     sparring += log.sparringMins ?? 0
   }
 
-  // If neither field set, treat a logged class as 60 mins technical
+  // Default assumption for old logs without explicit minutes
   if (technical === 0 && sparring === 0 && bjjLogs.length > 0) {
-    technical = 60
+    technical = 50 * bjjLogs.length
+    sparring = 10 * bjjLogs.length
   }
 
   const equivalent = technical + sparring * 3
@@ -113,12 +114,17 @@ export function calculateDailyLoad(
   const { load: calisthenicsLoad, muscleLoads } = calculateCalisthenicsLoad(calForDate)
   const mobilityLoad = calculateMobilityLoad(sessionsForDate)
 
-  const bjjTechnicalMins = bjjForDate.reduce((sum, l) => sum + (l.technicalMins ?? 0), 0)
-  const bjjSparringMins = bjjForDate.reduce((sum, l) => sum + (l.sparringMins ?? 0), 0)
-  const calisthenicsMinutes = calForDate.reduce(
-    (sum, l) => sum + estimateCalisthenicsDuration(l),
-    0
-  )
+  let bjjTechnicalMins = bjjForDate.reduce((sum, l) => sum + (l.technicalMins ?? 0), 0)
+  let bjjSparringMins = bjjForDate.reduce((sum, l) => sum + (l.sparringMins ?? 0), 0)
+  // Apply same assumption as load calculation for old logs
+  if (bjjTechnicalMins === 0 && bjjSparringMins === 0 && bjjForDate.length > 0) {
+    bjjTechnicalMins = bjjForDate.length * 50
+    bjjSparringMins = bjjForDate.length * 10
+  }
+  // Use actual session duration (from timer), not rep estimation
+  const calisthenicsMinutes = sessionsForDate
+    .filter((s) => s.type === 'calisthenics')
+    .reduce((sum, s) => sum + s.durationMin, 0)
   const mobilityMinutes = sessionsForDate
     .filter((s) => s.type !== 'bjj' && s.type !== 'calisthenics' && s.type !== 'custom')
     .reduce((sum, s) => sum + s.durationMin, 0)
