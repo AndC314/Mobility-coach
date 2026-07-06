@@ -1,26 +1,21 @@
 import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import ProgressRing from '../components/ProgressRing'
 import AvatarDisplay from '../components/AvatarDisplay'
+import TrainingCalendar from '../components/TrainingCalendar'
 import { Card, Tag } from '../components/Card'
 import SkillRadar from '../components/SkillRadar'
 import { useTodayPlan } from '../hooks/useTodayPlan'
-import { useStreak } from '../hooks/useStreak'
 import { useAvatarStats } from '../hooks/useAvatarStats'
+import { useTrainingHours } from '../hooks/useTrainingHours'
+import { getNudgeMessage } from '../lib/trainingHourCalculator'
 import { db } from '../db/db'
 import { todayIso } from '../lib/date'
 import type { PlanItem } from '../lib/recommendation'
 
-function scoreColor(score: number) {
-  if (score >= 80) return '#2ec4b6'
-  if (score >= 60) return '#f5c842'
-  return '#e8622a'
-}
-
 export default function Today() {
   const plan = useTodayPlan()
-  const streak = useStreak()
   const avatarStats = useAvatarStats()
+  const trainingHours = useTrainingHours()
   const navigate = useNavigate()
 
   const today = new Date()
@@ -35,25 +30,6 @@ export default function Today() {
     () => db.bjjLogs.where('date').equals(todayStr).first(),
     [todayStr],
     undefined
-  )
-
-  const calendar = useLiveQuery(
-    async () => {
-      const thirtyDaysAgo = new Date()
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-      const sessions = await db.sessions
-        .where('date')
-        .above(thirtyDaysAgo.toISOString().split('T')[0])
-        .toArray()
-
-      const byDate: Record<string, number> = {}
-      sessions.forEach(s => {
-        byDate[s.date] = (byDate[s.date] || 0) + 1
-      })
-      return byDate
-    },
-    [],
-    {}
   )
 
   async function toggleBjjToday() {
@@ -90,29 +66,51 @@ export default function Today() {
         <h1 className="text-2xl font-extrabold">Today</h1>
       </div>
 
-      <Card className="flex items-center gap-4">
-        <ProgressRing
-          value={plan.recoveryScore}
-          color={scoreColor(plan.recoveryScore)}
-          label={`${plan.recoveryScore}%`}
-          sublabel="Recovery"
-          size={104}
-        />
-        <div className="flex-1 space-y-2">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">{'🔥'}</span>
-            <div>
-              <div className="text-lg font-extrabold leading-none">{streak ?? 0}</div>
-              <div className="text-xs text-muted">day streak</div>
-            </div>
-          </div>
-          <p className="text-xs leading-relaxed text-ink/70">{plan.rationale}</p>
-        </div>
-      </Card>
-
       <Card>
         <AvatarDisplay useSpriteAnimation={true} compact={true} />
       </Card>
+
+      {trainingHours && trainingHours.length > 0 && (
+        <Card>
+          <h2 className="mb-4 text-base font-bold">Training consistency</h2>
+          <div className="space-y-4">
+            {trainingHours.map((training) => {
+              const categoryEmoji = { bjj: '🥋', calisthenics: '💪', mobility: '🧘' }[training.category]
+              const categoryName = { bjj: 'BJJ', calisthenics: 'Calisthenics', mobility: 'Mobility' }[training.category]
+              const decayRate = 0.05
+              const weeksInactive = training.lastActivityDaysAgo / 7
+              const totalLoggedHours = Math.round(training.totalHours / (1 - decayRate * weeksInactive) * 100) / 100
+              const consistencyPercent = totalLoggedHours > 0 ? Math.round((training.totalHours / totalLoggedHours) * 100) : 0
+              const progressPercent = Math.min(100, (training.totalHours / 40) * 100)
+              const nudgeMsg = getNudgeMessage(training)
+              return (
+                <div key={training.category}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{categoryEmoji}</span>
+                      <div>
+                        <div className="text-sm font-semibold">{categoryName}</div>
+                        <div className="text-xs text-muted">
+                          {totalLoggedHours === 0 ? '0h logged' : `${training.totalHours}h • ${consistencyPercent}% consistent`}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-xs text-muted">{training.hoursThisWeek}h this week</div>
+                  </div>
+                  <div className="bg-border rounded-full h-2 overflow-hidden">
+                    <div
+                      className={`h-full transition-all ${training.needsNudge ? 'bg-orange-500' : 'bg-accent'}`}
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                  </div>
+                  {nudgeMsg && <div className="text-xs text-orange-600 mt-2 italic">{nudgeMsg}</div>}
+                </div>
+              )
+            })}
+          </div>
+          <p className="mt-4 text-xs text-muted">Skills decay 5% per week of inactivity. Log 1h/week to maintain your score.</p>
+        </Card>
+      )}
 
       <div>
         <div className="mb-2 flex items-center justify-between">
@@ -173,30 +171,7 @@ export default function Today() {
         </button>
       </Card>
 
-      <Card>
-        <h2 className="mb-3 text-base font-bold">Activity</h2>
-        <div className="grid grid-cols-7 gap-2">
-          {Array.from({ length: 35 }).map((_, i) => {
-            const date = new Date()
-            date.setDate(date.getDate() - (34 - i))
-            const dateStr = date.toISOString().split('T')[0]
-            const count = (calendar as Record<string, number>)[dateStr] || 0
-            let bg = 'bg-border'
-            let ring = ''
-            if (count >= 3) { bg = 'bg-teal'; ring = 'ring-2 ring-teal/50' }
-            else if (count === 2) { bg = 'bg-teal/60'; ring = 'ring-1 ring-teal/40' }
-            else if (count === 1) { bg = 'bg-teal/30'; ring = 'ring-1 ring-teal/30' }
-            return (
-              <div
-                key={i}
-                className={`h-8 w-8 rounded-md ${bg} ${ring} border border-border/50 transition-all`}
-                title={`${dateStr}: ${count} sessions`}
-              />
-            )
-          })}
-        </div>
-        <p className="mt-3 text-xs text-muted">Past 35 days - squares show activity level</p>
-      </Card>
+      <TrainingCalendar />
 
       {avatarStats?.recoveryReadiness && (
         <Card>

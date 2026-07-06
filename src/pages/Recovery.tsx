@@ -1,18 +1,29 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import ExerciseCard from '../components/ExerciseCard'
+import ProgressRing from '../components/ProgressRing'
 import { Card } from '../components/Card'
 import { SORENESS_OPTIONS, RECOVERY_SEQUENCES, getSequenceExercises } from '../data/recovery'
 import { db, type SorenessArea } from '../db/db'
 import { upsertTodaySession } from '../hooks/useSessions'
 import { usePreferences } from '../hooks/usePreferences'
+import { useTodayPlan } from '../hooks/useTodayPlan'
+import { useStreak } from '../hooks/useStreak'
 import { todayIso } from '../lib/date'
 import { useSmartRecovery } from '../hooks/useSmartRecovery'
 import type { ExerciseItem } from '../data/exercises'
 
+function scoreColor(score: number) {
+  if (score >= 80) return '#2ec4b6'
+  if (score >= 60) return '#f5c842'
+  return '#e8622a'
+}
+
 export default function Recovery() {
   const [searchParams] = useSearchParams()
   const [mode, setMode] = useState<'smart' | 'manual'>('smart')
+  const plan = useTodayPlan()
+  const streak = useStreak()
   const [selected, setSelected] = useState<SorenessArea[]>([])
   const [active, setActive] = useState<SorenessArea | null>(null)
   const [smartActive, setSmartActive] = useState(false)
@@ -192,6 +203,29 @@ export default function Recovery() {
         <p className="text-sm text-muted">Active recovery</p>
         <h1 className="text-2xl font-extrabold">Recovery</h1>
       </div>
+
+      {/* Recovery readiness card */}
+      {plan && (
+        <Card className="flex items-center gap-4">
+          <ProgressRing
+            value={plan.recoveryScore}
+            color={scoreColor(plan.recoveryScore)}
+            label={`${plan.recoveryScore}%`}
+            sublabel="Recovery"
+            size={104}
+          />
+          <div className="flex-1 space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">🔥</span>
+              <div>
+                <div className="text-lg font-extrabold leading-none">{streak ?? 0}</div>
+                <div className="text-xs text-muted">day streak</div>
+              </div>
+            </div>
+            <p className="text-xs leading-relaxed text-ink/70">{plan.rationale}</p>
+          </div>
+        </Card>
+      )}
 
       {/* Mode switcher */}
       <div className="flex gap-1 rounded-xl bg-card2 p-1">
