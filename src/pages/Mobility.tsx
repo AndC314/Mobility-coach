@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { useLiveQuery } from 'dexie-react-hooks'
 import ExerciseCard from '../components/ExerciseCard'
 import ProgressionHeader from '../components/ProgressionHeader'
 import { Card } from '../components/Card'
-import { MORNING_ROUTINE, BJJ_RELEASE, PROGRESSIONS, PROGRESSION_LABELS } from '../data/exercises'
+import { MORNING_ROUTINE, BJJ_RELEASE, PROGRESSIONS, PROGRESSION_LABELS, ALL_EXERCISES } from '../data/exercises'
 import { usePhaseProgress } from '../hooks/usePhaseProgress'
 import { upsertTodaySession } from '../hooks/useSessions'
 import { logHold } from '../hooks/useHoldLogs'
 import { usePreferences } from '../hooks/usePreferences'
 import type { ProgressionKey } from '../db/db'
+import { db } from '../db/db'
 
 type Tab = 'morning' | 'bjj_release' | ProgressionKey
 
@@ -86,6 +88,7 @@ export default function Mobility() {
       )}
 
       <QuickLog tab={tab} />
+      <RecentMobilitySessions />
     </div>
   )
 }
@@ -306,6 +309,85 @@ function QuickLog({ tab }: { tab: Tab }) {
         >
           {status === 'saving' ? 'Saving…' : 'Log'}
         </button>
+      </div>
+    </Card>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// RECENT MOBILITY SESSIONS
+// ─────────────────────────────────────────────────────────────────────────
+
+const SESSION_TYPE_LABEL: Record<string, string> = {
+  morning: 'Morning',
+  bjj_release: 'Post-BJJ release',
+  hip_mobility: 'Hip mobility',
+  pancake: 'Straddle',
+  pike: 'Pike',
+  ninety_ninety: '90/90',
+  recovery: 'Recovery',
+}
+
+function RecentMobilitySessions() {
+  const sessions = useLiveQuery(
+    () =>
+      db.sessions
+        .orderBy('date')
+        .reverse()
+        .filter(
+          (s) =>
+            s.type !== 'bjj' &&
+            s.type !== 'calisthenics' &&
+            s.type !== 'custom'
+        )
+        .limit(12)
+        .toArray(),
+    [],
+    []
+  )
+
+  if (!sessions || sessions.length === 0) return null
+
+  return (
+    <Card>
+      <h2 className="mb-3 text-sm font-bold">Recent sessions</h2>
+      <div className="space-y-3">
+        {sessions.map((s) => {
+          const d = new Date(s.date)
+          const dateLabel = d.toLocaleDateString(undefined, {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+          })
+          const typeLabel = SESSION_TYPE_LABEL[s.type] ?? s.label
+          const exercises = s.exerciseIds
+            .map((id) => ALL_EXERCISES[id]?.name)
+            .filter(Boolean) as string[]
+
+          return (
+            <div key={s.id} className="rounded-xl bg-card2 px-3 py-2.5 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-sm font-semibold text-ink/90">{typeLabel}</span>
+                  <span className="ml-2 text-xs text-muted">{dateLabel}</span>
+                </div>
+                <span className="text-xs font-bold text-muted">{s.durationMin} min</span>
+              </div>
+              {exercises.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {exercises.map((name) => (
+                    <span
+                      key={name}
+                      className="rounded-full bg-teal/10 px-2 py-0.5 text-[10px] font-medium text-teal/80"
+                    >
+                      {name}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
     </Card>
   )
