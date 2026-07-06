@@ -49,7 +49,7 @@ export function useSmartRecovery(): SmartRecovery {
   )
 
   const bjjLogs = useLiveQuery(
-    () => db.bjjLogs.where('date').between(cutoff24h, today, true, true).toArray(),
+    () => db.bjjClassLogs.where('date').between(cutoff24h, today, true, true).toArray(),
     [cutoff24h, today],
     null
   )
@@ -58,8 +58,7 @@ export function useSmartRecovery(): SmartRecovery {
 
   const nowMs = now.getTime()
   const hasCalisthenics = calisthenicsLogs.length > 0
-  const attendedBjjLogs = bjjLogs.filter((l) => l.attended)
-  const hasAttendedBjj = attendedBjjLogs.length > 0
+  const hasAttendedBjj = bjjLogs.length > 0
 
   // Build decay inputs from calisthenics logs
   const decayInputs: DecayInput[] = calisthenicsLogs.map((log) => ({
@@ -73,7 +72,7 @@ export function useSmartRecovery(): SmartRecovery {
 
   // Add BJJ contribution from the most recent attended class
   if (hasAttendedBjj) {
-    const latestBjj = attendedBjjLogs.sort((a, b) => b.date.localeCompare(a.date))[0]
+    const latestBjj = bjjLogs.sort((a, b) => b.date.localeCompare(a.date))[0]
     const bjjMs = new Date(latestBjj.date + 'T12:00:00').getTime()
     const elapsedHours = Math.max(0, (nowMs - bjjMs) / 3600000)
     for (const activation of BJJ_MUSCLE_ACTIVATIONS) {
@@ -117,6 +116,7 @@ export function useSmartRecovery(): SmartRecovery {
     hasAttendedBjj ? 'bjj' :
     hasCalisthenics ? 'calisthenics' :
     'none'
+
 
   const label =
     source === 'bjj'          ? 'Post-BJJ recovery' :

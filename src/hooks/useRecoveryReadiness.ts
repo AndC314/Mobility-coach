@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
-import type { CalisthenicsLog, BjjLog } from '../db/db'
+import type { CalisthenicsLog } from '../db/db'
 import {
   computeMuscleSorenessDecay,
   computeCategorySoreness,
@@ -37,7 +37,7 @@ export function useRecoveryReadiness(): AxisReadiness[] {
   )
 
   const bjjLogs = useLiveQuery(
-    () => db.bjjLogs.where('date').between(sevenDaysAgo, today, true, true).toArray(),
+    () => db.bjjClassLogs.where('date').between(sevenDaysAgo, today, true, true).toArray(),
     [sevenDaysAgo, today],
     []
   )
@@ -70,20 +70,15 @@ export function useRecoveryReadiness(): AxisReadiness[] {
   // Add BJJ soreness contribution
   if (bjjLogs) {
     for (const log of bjjLogs) {
-      if (log.attended) {
-        const date = new Date(log.date)
-        const elapsedHours = Math.max(0, (nowMs - date.getTime()) / 3600000)
+      const date = new Date(log.date)
+      const elapsedHours = Math.max(0, (nowMs - date.getTime()) / 3600000)
 
-        // BJJ contributes a fixed load (80%) to each of its primary muscles
-        for (const activation of BJJ_MUSCLE_ACTIVATIONS) {
-          const peakLoad = activation.level === 'primary' ? 80 : 40
-          const bjjSoreness = peakLoad * Math.exp(-DEFAULT_LAMBDA * elapsedHours)
-
-          // Find the muscle entry and add BJJ contribution
-          const muscleEntry = muscleSoreness.find((m) => m.muscle === activation.muscle)
-          if (muscleEntry) {
-            muscleEntry.soreness = Math.min(100, Math.round(muscleEntry.soreness + bjjSoreness))
-          }
+      for (const activation of BJJ_MUSCLE_ACTIVATIONS) {
+        const peakLoad = activation.level === 'primary' ? 80 : 40
+        const bjjSoreness = peakLoad * Math.exp(-DEFAULT_LAMBDA * elapsedHours)
+        const muscleEntry = muscleSoreness.find((m) => m.muscle === activation.muscle)
+        if (muscleEntry) {
+          muscleEntry.soreness = Math.min(100, Math.round(muscleEntry.soreness + bjjSoreness))
         }
       }
     }

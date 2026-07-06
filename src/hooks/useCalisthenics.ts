@@ -4,6 +4,7 @@ import { todayIso } from '../lib/date'
 import { upsertTodaySession } from './useSessions'
 import { getExerciseDef, estimateCalisthenicsduration } from '../data/calisthenics'
 import { usePreferences } from './usePreferences'
+import { syncCalisthenicsLogToFirebase } from '../lib/firebase-workout-sync'
 
 export async function logCalisthenicsBase(params: {
   exerciseId: CalisthenicsExerciseId
@@ -24,6 +25,12 @@ export async function logCalisthenicsBase(params: {
     notes: params.notes,
     createdAt: new Date().toISOString()
   })
+  const savedLog = await db.calisthenicsLogs.get(id)
+  if (savedLog) {
+    syncCalisthenicsLogToFirebase(savedLog).catch((err) => {
+      console.error('[logCalisthenicsBase] Failed to sync to Firestore:', err)
+    })
+  }
 
   // Estimate duration based on exercise type and reps/sets
   const estimatedSec = estimateCalisthenicsduration(

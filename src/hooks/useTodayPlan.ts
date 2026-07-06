@@ -7,7 +7,7 @@ export function useTodayPlan() {
     // depend on relevant tables so plan recomputes on changes
     await db.sessions.toArray()
     await db.sorenessLogs.toArray()
-    await db.bjjLogs.toArray()
+    await db.bjjClassLogs.toArray()
     await db.phaseProgress.toArray()
     await db.preferences.toArray()
     return generateTodayPlan()

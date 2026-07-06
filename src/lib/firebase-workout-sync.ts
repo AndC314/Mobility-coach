@@ -4,71 +4,113 @@
  * and provides sync callbacks for logging functions
  */
 
-import { WorkoutDoc } from '../types/firebase'
-import { CompletedSession } from '../db/db'
+import type { WorkoutDoc, BjjClassLogDoc, CalisthenicsLogDoc } from '../types/firebase'
+import type { CompletedSession, BjjClassLog, CalisthenicsLog } from '../db/db'
 
 /**
  * Converts a CompletedSession (Dexie) to a WorkoutDoc (Firestore)
- * Used when syncing logged workouts to Firestore
+ * originalType preserves the Dexie SessionType so sync-back is lossless.
  */
 export function sessionToWorkoutDoc(session: CompletedSession): Omit<WorkoutDoc, 'id'> {
   const now = new Date(session.createdAt).getTime()
   return {
     type: mapSessionTypeToWorkoutType(session.type),
+    originalType: session.type,
     date: session.date,
     createdAt: now,
     updatedAt: now,
     exerciseIds: session.exerciseIds,
-    data: {}, // populated from specific exercise logs if available
+    data: {},
     plannedSec: session.plannedSec,
     actualSec: session.actualSec,
     label: session.label
   }
 }
 
-/**
- * Maps SessionType from Dexie to WorkoutType for Firestore
- */
 function mapSessionTypeToWorkoutType(sessionType: string): 'calisthenics' | 'bjj' | 'mobility' {
   if (sessionType === 'calisthenics') return 'calisthenics'
-  if (sessionType === 'bjj_release' || sessionType === 'recovery') return 'bjj'
-  // morning, ninety_ninety, pancake, pike, hip_mobility, custom default to mobility
+  if (sessionType === 'bjj' || sessionType === 'bjj_release' || sessionType === 'recovery') return 'bjj'
   return 'mobility'
 }
 
-/**
- * Global sync context for logging functions
- * Set this in App.tsx to enable Firestore sync
- */
-let globalAddWorkoutToFirestore: ((workout: Omit<WorkoutDoc, 'id'>) => Promise<string>) | null = null
+// ─────────────────────────────────────────────────────────────────────────
+// Global sync callbacks — set by App.tsx once useFirebaseSync initialises
+// ─────────────────────────────────────────────────────────────────────────
 
-export function setFirebaseSyncCallback(
-  callback: ((workout: Omit<WorkoutDoc, 'id'>) => Promise<string>) | null
-) {
+type AddWorkoutFn = (workout: Omit<WorkoutDoc, 'id'>) => Promise<string>
+type AddBjjClassLogFn = (log: Omit<BjjClassLogDoc, 'id'>) => Promise<string>
+type AddCalisthenicsLogFn = (log: Omit<CalisthenicsLogDoc, 'id'>) => Promise<string>
+
+let globalAddWorkoutToFirestore: AddWorkoutFn | null = null
+let globalAddBjjClassLog: AddBjjClassLogFn | null = null
+let globalAddCalisthenicsLog: AddCalisthenicsLogFn | null = null
+
+export function setFirebaseSyncCallback(callback: AddWorkoutFn | null) {
   globalAddWorkoutToFirestore = callback
+}
+
+export function setBjjClassLogSyncCallback(callback: AddBjjClassLogFn | null) {
+  globalAddBjjClassLog = callback
+}
+
+export function setCalisthenicsLogSyncCallback(callback: AddCalisthenicsLogFn | null) {
+  globalAddCalisthenicsLog = callback
 }
 
 export function getFirebaseSyncCallback() {
   return globalAddWorkoutToFirestore
 }
 
-/**
- * Call this after logging a session to sync it to Firestore
- * Safe to call even if callback is not set (logs warning)
- */
+// ─────────────────────────────────────────────────────────────────────────
+// Sync helpers — called after each local write
+// ─────────────────────────────────────────────────────────────────────────
+
 export async function syncSessionToFirebase(session: CompletedSession) {
   if (!globalAddWorkoutToFirestore) {
-    console.warn('[Firebase Sync] No callback set; skipping Firestore sync for session', session.date)
+    console.warn('[Firebase Sync] No callback set; skipping session sync', session.date)
     return
   }
-
   try {
     const workoutDoc = sessionToWorkoutDoc(session)
     const docId = await globalAddWorkoutToFirestore(workoutDoc)
-    console.debug('[Firebase Sync] Session synced to Firestore:', docId, session.date)
+    console.debug('[Firebase Sync] Session synced:', docId, session.date)
     return docId
   } catch (err) {
-    console.error('[Firebase Sync] Failed to sync session to Firestore:', err)
-    // Don't throw — let logging continue even if sync fails
+    console.error('[Firebase Sync] Failed to sync session:', err)
+  }
+}
+
+export async function syncBjjClassLogToFirebase(log: BjjClassLog) {
+  if (!globalAddBjjClassLog) return
+  try {
+    await globalAddBjjClassLog({
+      date: log.date,
+      className: log.className,
+      theme: log.theme,
+      tagIds: log.tagIds,
+      technicalMins: log.technicalMins,
+      sparringMins: log.sparringMins,
+      notes: log.notes,
+      createdAt: log.createdAt
+    })
+  } catch (err) {
+    console.error('[Firebase Sync] Failed to sync BJJ class log:', err)
+  }
+}
+
+export async function syncCalisthenicsLogToFirebase(log: CalisthenicsLog) {
+  if (!globalAddCalisthenicsLog) return
+  try {
+    await globalAddCalisthenicsLog({
+      date: log.date,
+      exerciseId: log.exerciseId,
+      metric: log.metric,
+      value: log.value,
+      sets: log.sets,
+      notes: log.notes,
+      createdAt: log.createdAt
+    })
+  } catch (err) {
+    console.error('[Firebase Sync] Failed to sync calisthenics log:', err)
   }
 }

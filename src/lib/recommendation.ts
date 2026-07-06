@@ -64,13 +64,13 @@ export async function generateTodayPlan(
   const prefs = await db.preferences.get(1)
   const bjjDays = prefs?.bjjDays ?? ['Mon', 'Wed']
 
-  const bjjLogYesterday = await db.bjjLogs.where('date').equals(yesterdayStr).first()
-  const bjjYesterday = bjjLogYesterday
-    ? bjjLogYesterday.attended
+  const bjjLogYesterday = await db.bjjClassLogs.where('date').equals(yesterdayStr).first()
+  const bjjYesterday = bjjLogYesterday != null
+    ? true
     : bjjDays.includes(dayName(yesterday))
 
-  const bjjLogToday = await db.bjjLogs.where('date').equals(todayStr).first()
-  const bjjToday = bjjLogToday ? bjjLogToday.attended : bjjDays.includes(dayName(today))
+  const bjjLogToday = await db.bjjClassLogs.where('date').equals(todayStr).first()
+  const bjjToday = bjjLogToday != null ? true : bjjDays.includes(dayName(today))
 
   const sorenessToday = await db.sorenessLogs.where('date').equals(todayStr).first()
   const soreAreasToday: SorenessArea[] = sorenessToday?.areas ?? []

@@ -31,6 +31,9 @@ export interface WorkoutDoc {
   // Conflict handling
   conflicted?: boolean
 
+  // Preserved original Dexie SessionType for faithful round-trip
+  originalType?: string
+
   // Calisthenics specific
   plannedSec?: number
   actualSec?: number
@@ -41,6 +44,29 @@ export interface WorkoutDoc {
   // Mobility specific
   area?: MobilityArea
   label?: string
+}
+
+export interface BjjClassLogDoc {
+  id?: string        // Firestore document ID
+  date: string       // YYYY-MM-DD
+  className?: string
+  theme?: string
+  tagIds: number[]
+  technicalMins?: number
+  sparringMins?: number
+  notes?: string
+  createdAt: string  // ISO string — used as dedup key on sync
+}
+
+export interface CalisthenicsLogDoc {
+  id?: string
+  date: string       // YYYY-MM-DD
+  exerciseId: string
+  metric: 'hold_sec' | 'reps'
+  value: number
+  sets?: number
+  notes?: string
+  createdAt: string  // ISO string — used as dedup key on sync
 }
 
 export interface UserMetadata {

@@ -34,7 +34,7 @@ export function useWeeklyTrainingVolume(): WeeklyTrainingVolume {
 
   // Get BJJ sessions in the past 7 days
   const bjjLogs = useLiveQuery(
-    () => db.bjjLogs.where('date').between(sevenDaysAgo, today, true, true).toArray(),
+    () => db.bjjClassLogs.where('date').between(sevenDaysAgo, today, true, true).toArray(),
     [sevenDaysAgo, today],
     []
   )
@@ -52,7 +52,7 @@ export function useWeeklyTrainingVolume(): WeeklyTrainingVolume {
   const mobility = sessions.filter((s) => s.type !== 'calisthenics' && s.type !== 'custom').length
 
   // Grappling: BJJ sessions in the past 7 days
-  const grappling = bjjLogs.filter((log) => log.attended).length
+  const grappling = bjjLogs.length
 
   return { push, pull, core, mobility, grappling }
 }

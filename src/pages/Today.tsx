@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom'
-import { useLiveQuery } from 'dexie-react-hooks'
 import AvatarDisplay from '../components/AvatarDisplay'
 import TrainingCalendar from '../components/TrainingCalendar'
 import { Card, Tag } from '../components/Card'
@@ -8,8 +7,6 @@ import { useTodayPlan } from '../hooks/useTodayPlan'
 import { useAvatarStats } from '../hooks/useAvatarStats'
 import { useTrainingHours } from '../hooks/useTrainingHours'
 import { getNudgeMessage } from '../lib/trainingHourCalculator'
-import { db } from '../db/db'
-import { todayIso } from '../lib/date'
 import type { PlanItem } from '../lib/recommendation'
 
 export default function Today() {
@@ -19,27 +16,11 @@ export default function Today() {
   const navigate = useNavigate()
 
   const today = new Date()
-  const todayStr = todayIso()
   const dateLabel = today.toLocaleDateString(undefined, {
     weekday: 'long',
     month: 'short',
     day: 'numeric'
   })
-
-  const bjjToday = useLiveQuery(
-    () => db.bjjLogs.where('date').equals(todayStr).first(),
-    [todayStr],
-    undefined
-  )
-
-  async function toggleBjjToday() {
-    const existing = await db.bjjLogs.where('date').equals(todayStr).first()
-    if (existing) {
-      await db.bjjLogs.update(existing.id!, { attended: !existing.attended })
-    } else {
-      await db.bjjLogs.add({ date: todayStr, attended: true })
-    }
-  }
 
   async function handleItemTap(item: PlanItem) {
     if (item.target.tab === 'recovery') {
@@ -152,23 +133,6 @@ export default function Today() {
           <div className="text-xs text-muted">Estimated duration</div>
         </div>
         <div className="text-2xl font-extrabold text-accent">{plan.totalMin} min</div>
-      </Card>
-
-      <Card className="flex items-center justify-between">
-        <div>
-          <div className="text-sm font-bold text-ink">Trained BJJ today?</div>
-          <div className="text-xs text-muted">Used to plan tomorrow recovery</div>
-        </div>
-        <button
-          onClick={toggleBjjToday}
-          className={`rounded-full px-4 py-2 text-sm font-bold transition-colors ${
-            bjjToday?.attended
-              ? 'bg-accent/20 text-accent border border-accent/40'
-              : 'bg-card2 text-muted border border-border'
-          }`}
-        >
-          {bjjToday?.attended ? '🥋 Yes' : 'No'}
-        </button>
       </Card>
 
       <TrainingCalendar />

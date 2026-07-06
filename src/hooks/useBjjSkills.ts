@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type BjjSkillTag, type BjjClassLog, type CompletedSession } from '../db/db'
 import { todayIso } from '../lib/date'
-import { syncSessionToFirebase } from '../lib/firebase-workout-sync'
+import { syncSessionToFirebase, syncBjjClassLogToFirebase } from '../lib/firebase-workout-sync'
 
 export function useBjjSkillTags() {
   const tags = useLiveQuery(() => db.bjjSkillTags.toArray(), [], [])
@@ -52,6 +52,12 @@ export function useBjjClassLogs() {
     notes?: string
   }) {
     const id = await db.bjjClassLogs.add({ ...entry, createdAt: new Date().toISOString() })
+    const savedLog = await db.bjjClassLogs.get(id)
+    if (savedLog) {
+      syncBjjClassLogToFirebase(savedLog).catch((err) => {
+        console.error('[addClassLog] Failed to sync class log to Firestore:', err)
+      })
+    }
 
     // Compute actual duration from logged mins, fall back to 60 if neither set
     const totalMins = (entry.technicalMins ?? 0) + (entry.sparringMins ?? 0)
