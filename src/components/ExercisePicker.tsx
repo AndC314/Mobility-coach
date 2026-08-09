@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { CALISTHENICS_EXERCISES, type ExerciseCategory } from '../data/calisthenics'
+import { CALISTHENICS_EXERCISES, type ExerciseCategory, type Equipment } from '../data/calisthenics'
 import type { CalisthenicsExerciseId } from '../db/db'
 
 interface ExercisePickerProps {
@@ -18,21 +18,38 @@ const CATEGORIES: { id: ExerciseCategory | 'all'; label: string }[] = [
 
 const CATEGORY_ORDER: ExerciseCategory[] = ['push', 'pull', 'legs', 'core']
 
+const EQUIPMENT_OPTIONS: { id: Equipment; label: string }[] = [
+  { id: 'parallettes', label: 'Parallettes' },
+  { id: 'parallel_bars', label: 'Parallel Bars' },
+  { id: 'pull_up_bar', label: 'Pull-up Bar' },
+]
+
 export default function ExercisePicker({ mode, selected, onToggle }: ExercisePickerProps) {
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState<ExerciseCategory | 'all'>('all')
+  const [activeEquipment, setActiveEquipment] = useState<Equipment[]>([])
+
+  function toggleEquipment(eq: Equipment) {
+    setActiveEquipment((prev) =>
+      prev.includes(eq) ? prev.filter((e) => e !== eq) : [...prev, eq]
+    )
+  }
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase()
     return CALISTHENICS_EXERCISES.filter((ex) => {
       const matchesCategory = activeCategory === 'all' || ex.category === activeCategory
       if (!matchesCategory) return false
+      if (activeEquipment.length > 0) {
+        const hasEquipment = activeEquipment.some((eq) => ex.equipment?.includes(eq))
+        if (!hasEquipment) return false
+      }
       if (!query) return true
       const nameMatch = ex.name.toLowerCase().includes(query)
       const muscleMatch = ex.primaryMuscles.some((m) => m.toLowerCase().includes(query))
       return nameMatch || muscleMatch
     })
-  }, [search, activeCategory])
+  }, [search, activeCategory, activeEquipment])
 
   const isEmpty = filtered.length === 0
 
@@ -75,6 +92,28 @@ export default function ExercisePicker({ mode, selected, onToggle }: ExercisePic
               }
             >
               {cat.label}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Equipment filter */}
+      <div className="flex flex-wrap gap-2">
+        {EQUIPMENT_OPTIONS.map((eq) => {
+          const isActive = activeEquipment.includes(eq.id)
+          return (
+            <button
+              key={eq.id}
+              type="button"
+              onClick={() => toggleEquipment(eq.id)}
+              className={
+                'rounded-full border px-3 py-1 text-xs font-medium transition-colors ' +
+                (isActive
+                  ? 'border-teal/40 bg-teal/20 text-teal'
+                  : 'border-border bg-card2 text-muted hover:border-border')
+              }
+            >
+              {eq.label}
             </button>
           )
         })}

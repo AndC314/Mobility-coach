@@ -1,6 +1,7 @@
 import type { CalisthenicsExerciseId, CalisthenicsMetric } from '../db/db'
 
 export type ExerciseCategory = 'push' | 'pull' | 'legs' | 'core'
+export type Equipment = 'parallettes' | 'parallel_bars' | 'pull_up_bar'
 
 export interface CalisthenicsExerciseDef {
   id: CalisthenicsExerciseId
@@ -11,6 +12,7 @@ export interface CalisthenicsExerciseDef {
   icon: string
   category: ExerciseCategory
   primaryMuscles: string[]
+  equipment?: Equipment[]
   description: string
   /** true if the user has flagged limited access to equipment for this one */
   equipmentNote?: string
@@ -71,6 +73,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     icon: '🧗',
     category: 'pull',
     primaryMuscles: ['Lats', 'Biceps', 'Rhomboids'],
+    equipment: ['pull_up_bar'],
     description: 'Max reps, full hang to chin over bar.'
   },
   {
@@ -104,6 +107,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     icon: '🪢',
     category: 'pull',
     primaryMuscles: ['Rhomboids', 'Lats', 'Rear delts'],
+    equipment: ['pull_up_bar'],
     description: 'Horizontal row under a bar or rings, body straight.',
     equipmentNote: 'Needs a low bar or rings — log when accessible.'
   },
@@ -116,6 +120,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     icon: '🔻',
     category: 'push',
     primaryMuscles: ['Triceps', 'Chest'],
+    equipment: ['parallel_bars'],
     description: 'Parallel bars or bench, max reps, full lockout at top, controlled descent.',
     equipmentNote: 'Needs parallel bars or sturdy edges — log when accessible.'
   },
@@ -139,6 +144,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     icon: '📏',
     category: 'core',
     primaryMuscles: ['Abs / Core', 'Hip flexors'],
+    equipment: ['parallettes'],
     description: 'Knees tucked to chest, both feet off the floor, arms straight. Total accumulated hold time. The stepping stone between floor support holds and full L-sit.'
   },
   {
@@ -150,6 +156,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     icon: '📐',
     category: 'core',
     primaryMuscles: ['Abs / Core', 'Hip flexors'],
+    equipment: ['parallettes'],
     description: 'Hold a perfect L-shape on parallettes or floor. Core compression secret to guard retention.',
     setup: 'Use your low or high parallettes. If on floor, hands shoulder-width apart, straight arms.',
     cue: 'Depress your shoulders away from your ears (push the parallettes hard into the floor). Compress your abdomen heavily to lift your legs, locking your knees.',
@@ -165,6 +172,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     icon: '⬆️',
     category: 'push',
     primaryMuscles: ['Front delts', 'Triceps'],
+    equipment: ['parallettes'],
     description: 'Lean your shoulders past your wrists with locked elbows. Build the framing structure of top pressure.',
     setup: 'Hands shoulder-width apart on the floor. Lock your elbows completely.',
     cue: 'Lock your elbows completely and protract your shoulder blades (push your upper back toward the ceiling). Squeeze your glutes to keep your body in a rigid straight line as you lean your shoulders past your wrists.',
@@ -195,6 +203,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     icon: '⭕',
     category: 'pull',
     primaryMuscles: ['Lats', 'Biceps'],
+    equipment: ['pull_up_bar'],
     description: 'Horizontal pulling on rings. Adjust angle to control difficulty. Break someone\'s posture.',
     setup: 'Hang your rings and adjust the angle to control the difficulty.',
     cue: 'Initiate the movement by retracting your shoulder blades first, then pull the rings to your ribs. Squeeze your glutes to keep your body completely straight—do not let your hips sag.',
@@ -225,6 +234,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     icon: '⬆️',
     category: 'pull',
     primaryMuscles: ['Lats', 'Rear delts'],
+    equipment: ['pull_up_bar'],
     description: 'Strict scapular pulls on bar. No elbow bend. Build grip endurance and lat control.',
     setup: 'Use your doorway pull-up bar (keep it strictly bodyweight without explosive jerking so the bar stays secure).',
     cue: 'Hang from the bar with completely relaxed, straight arms. Without bending your elbows, pull your shoulder blades down and together to lift your chest slightly toward the bar. Hold for a second, then lower.',
@@ -255,6 +265,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     icon: '🔺',
     category: 'pull',
     primaryMuscles: ['Abs / Core', 'Hip flexors'],
+    equipment: ['pull_up_bar'],
     description: 'Pull knees high against gravity. Control guard retention and inversions.',
     setup: 'Hang from your pull-up bar.',
     cue: 'Hang from the bar. Engage your lats (pulling down slightly) to stop your body from swinging. Use your lower abs to pull your knees as high to your chest as possible. Do not use momentum.',
