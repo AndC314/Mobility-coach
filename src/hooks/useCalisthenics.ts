@@ -125,3 +125,14 @@ export function useBestValue(exerciseId: CalisthenicsExerciseId) {
   if (!logs || logs.length === 0) return undefined
   return logs.reduce((max, l) => Math.max(max, l.value), 0)
 }
+
+/** Returns a Map of exerciseId → log count, sorted descending. */
+export function useExerciseFrequency(): Map<CalisthenicsExerciseId, number> {
+  const logs = useCalisthenicsLogs()
+  const freq = new Map<CalisthenicsExerciseId, number>()
+  if (!logs) return freq
+  for (const log of logs) {
+    freq.set(log.exerciseId, (freq.get(log.exerciseId) ?? 0) + 1)
+  }
+  return freq
+}

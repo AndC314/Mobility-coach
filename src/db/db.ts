@@ -186,12 +186,13 @@ export interface CustomExercise {
   icon: string
   exerciseType: 'calisthenics' | 'mobility'
   // For calisthenics
-  primaryMuscles?: string[] // e.g., ['chest', 'shoulders']
+  primaryMuscles?: string[]
+  category?: 'push' | 'pull' | 'legs' | 'core'
   // For mobility
   bodyArea?: string // 'hip', 'spine', 'shoulder', 'full_body'
   // Shared
-  isGlobal: boolean // true = saved to user's global library, false = session-only
-  createdAt: string // ISO date
+  isGlobal: boolean
+  createdAt: string
   updatedAt?: string
 }
 
