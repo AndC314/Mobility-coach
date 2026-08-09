@@ -2,7 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type CalisthenicsExerciseId, type CalisthenicsMetric } from '../db/db'
 import { todayIso } from '../lib/date'
 import { upsertTodaySession } from './useSessions'
-import { getExerciseDef, estimateCalisthenicsduration } from '../data/calisthenics'
+import { getExerciseDef, estimateCalisthenicsduration, DEPRECATED_EXERCISE_MAP } from '../data/calisthenics'
 import { usePreferences } from './usePreferences'
 import { syncCalisthenicsLogToFirebase } from '../lib/firebase-workout-sync'
 
@@ -96,14 +96,24 @@ export function useCalisthenics() {
 export function useCalisthenicsLogs(exerciseId?: CalisthenicsExerciseId) {
   return useLiveQuery(async () => {
     const all = await db.calisthenicsLogs.orderBy('date').toArray()
-    return exerciseId ? all.filter((l) => l.exerciseId === exerciseId) : all
+    const remapped = all.map((log) => {
+      const canonical = DEPRECATED_EXERCISE_MAP[log.exerciseId]
+      return canonical ? { ...log, exerciseId: canonical } : log
+    })
+    return exerciseId ? remapped.filter((l) => l.exerciseId === exerciseId) : remapped
   }, [exerciseId], [])
 }
 
 export function useTodayCalisthenicsLogs() {
   const today = todayIso()
   return useLiveQuery(
-    () => db.calisthenicsLogs.where('date').equals(today).toArray(),
+    async () => {
+      const logs = await db.calisthenicsLogs.where('date').equals(today).toArray()
+      return logs.map((log) => {
+        const canonical = DEPRECATED_EXERCISE_MAP[log.exerciseId]
+        return canonical ? { ...log, exerciseId: canonical } : log
+      })
+    },
     [today],
     []
   )
