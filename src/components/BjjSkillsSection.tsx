@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell } from 'recharts'
 import { Card, Tag } from './Card'
+import ConfirmDialog from './ConfirmDialog'
 import { useBjjSkillTags, useBjjClassLogs, useTagFrequency } from '../hooks/useBjjSkills'
 import { todayIso } from '../lib/date'
 
@@ -56,6 +57,7 @@ function LogClassView() {
   const [newTagName, setNewTagName] = useState('')
   const [saved, setSaved] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
 
   function toggleTag(id: number) {
     setSelectedTagIds((prev) => (prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]))
@@ -276,7 +278,7 @@ function LogClassView() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      deleteClassLog(log.id!)
+                      setConfirmDeleteId(log.id!)
                     }}
                     className="text-xs text-muted hover:text-red"
                   >
@@ -416,6 +418,17 @@ function LogClassView() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        title="Delete class log?"
+        message="This will permanently remove this class entry. This cannot be undone."
+        onConfirm={() => {
+          if (confirmDeleteId) deleteClassLog(confirmDeleteId)
+          setConfirmDeleteId(null)
+        }}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </div>
   )
 }
@@ -492,6 +505,7 @@ function SkillMapView() {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [draftDescription, setDraftDescription] = useState('')
   const [newTagName, setNewTagName] = useState('')
+  const [confirmDeleteTagId, setConfirmDeleteTagId] = useState<number | null>(null)
 
   function startEdit(id: number, description: string) {
     setEditingId(id)
@@ -551,7 +565,7 @@ function SkillMapView() {
                 >
                   Edit
                 </button>
-                <button onClick={() => deleteTag(t.id!)} className="text-xs font-semibold text-muted">
+                <button onClick={() => setConfirmDeleteTagId(t.id!)} className="text-xs font-semibold text-muted">
                   Delete
                 </button>
               </div>
@@ -586,6 +600,17 @@ function SkillMapView() {
           </Card>
         ))}
       </div>
+
+      <ConfirmDialog
+        open={confirmDeleteTagId !== null}
+        title="Delete skill tag?"
+        message="This will remove the tag from your skill map. Class logs that used it will keep their other tags."
+        onConfirm={() => {
+          if (confirmDeleteTagId) deleteTag(confirmDeleteTagId)
+          setConfirmDeleteTagId(null)
+        }}
+        onCancel={() => setConfirmDeleteTagId(null)}
+      />
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { HashRouter, Routes, Route } from 'react-router-dom'
+import ErrorBoundary from './components/ErrorBoundary'
 import BottomNav from './components/BottomNav'
 import Today from './pages/Today'
 import MobilityPage from './pages/MobilityPage'
@@ -98,5 +99,9 @@ export default function App() {
     return <LoginScreen />
   }
 
-  return <AppContent />
+  return (
+    <ErrorBoundary>
+      <AppContent />
+    </ErrorBoundary>
+  )
 }
