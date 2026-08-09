@@ -2,30 +2,13 @@ import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Card, Tag } from './Card'
 import BodyMap from './BodyMap'
-import { CALISTHENICS_EXERCISES } from '../data/calisthenics'
+import ExercisePicker from './ExercisePicker'
+import { CALISTHENICS_EXERCISES, getExerciseDef } from '../data/calisthenics'
 import { MUSCLE_LABELS, computeMuscleScores } from '../data/muscleMap'
 import { useCalisthenics, useCalisthenicsLogs, logCalisthenicsBase } from '../hooks/useCalisthenics'
 import { db } from '../db/db'
 import { todayIso } from '../lib/date'
 import type { CalisthenicsExerciseId } from '../db/db'
-
-function ExerciseThumb({ id, icon, className }: { id: string; icon: string; className?: string }) {
-  const [showImg, setShowImg] = useState(true)
-  return (
-    <div className={`flex items-center justify-center bg-card2 ${className ?? ''}`}>
-      {showImg ? (
-        <img
-          src={`/exercises/${id}.png`}
-          alt=""
-          className="h-full w-full object-cover"
-          onError={() => setShowImg(false)}
-        />
-      ) : (
-        <span className="text-2xl">{icon}</span>
-      )}
-    </div>
-  )
-}
 
 type Tab = 'log' | 'bulk' | 'muscle_map'
 
@@ -67,7 +50,7 @@ export default function CalisthenicsSection() {
 
 function LogTab() {
   const [selected, setSelected] = useState<CalisthenicsExerciseId>('pushups')
-  const exercise = CALISTHENICS_EXERCISES.find((e) => e.id === selected)!
+  const exercise = getExerciseDef(selected)!
   const logs = useCalisthenicsLogs(selected)
   const { logCalisthenics, updateCalisthenics } = useCalisthenics()
 
@@ -84,6 +67,12 @@ function LogTab() {
 
   const best = logs && logs.length > 0 ? Math.max(...logs.map((l) => l.value)) : undefined
   const recent = (logs ?? []).slice().reverse().slice(0, 6)
+
+  function handleToggle(id: CalisthenicsExerciseId) {
+    setSelected(id)
+    setValue('')
+    setSets('')
+  }
 
   function openEdit(log: any) {
     setEditingId(log.id)
@@ -129,31 +118,8 @@ function LogTab() {
   return (
     <>
       <Card>
-        <h2 className="mb-1 text-base font-bold">Fundamentals</h2>
-        <p className="mb-3 text-xs text-muted">
-          Track your foundational calisthenics movements. Best values feed your Skill Tree, and reps drive the Muscle Map.
-        </p>
-
-        <div className="grid grid-cols-4 gap-2">
-          {CALISTHENICS_EXERCISES.map((ex) => (
-            <button
-              key={ex.id}
-              onClick={() => { setSelected(ex.id); setValue(''); setSets('') }}
-              className={`flex flex-col items-center gap-1 rounded-xl py-3 transition-colors ${
-                selected === ex.id
-                  ? 'bg-purple/15 border border-purple/40'
-                  : 'bg-card2 border border-border'
-              }`}
-            >
-              <span className="text-xl">{ex.icon}</span>
-              <span className={`text-[10px] font-semibold text-center leading-tight ${
-                selected === ex.id ? 'text-purple' : 'text-muted'
-              }`}>
-                {ex.name.split(' ')[0]}
-              </span>
-            </button>
-          ))}
-        </div>
+        <h2 className="mb-1 text-base font-bold">Select Exercise</h2>
+        <ExercisePicker mode="single" selected={[selected]} onToggle={handleToggle} />
       </Card>
 
       <Card>
@@ -165,7 +131,6 @@ function LogTab() {
             <Tag color="#a78bfa">Best: {best}{exercise.unit}</Tag>
           )}
         </div>
-        <ExerciseThumb id={selected} icon={exercise.icon} className="mb-3 h-32 w-full rounded-xl overflow-hidden" />
         <p className="mb-3 text-xs text-muted">{exercise.description}</p>
         {exercise.equipmentNote && (
           <p className="mb-3 text-[11px] font-semibold text-gold">{'⚠'} {exercise.equipmentNote}</p>
@@ -274,7 +239,7 @@ function LogTab() {
               </div>
               <div>
                 <label className="mb-1 block text-xs font-semibold text-muted">
-                  Value ({CALISTHENICS_EXERCISES.find(e => e.id === editExerciseId)?.metric === 'reps' ? 'reps' : 'seconds'})
+                  Value ({getExerciseDef(editExerciseId as CalisthenicsExerciseId)?.metric === 'reps' ? 'reps' : 'seconds'})
                 </label>
                 <input
                   type="number"
@@ -299,29 +264,6 @@ function LogTab() {
 
 // ─── BULK TAB ─────────────────────────────────────────────────────────────
 
-const EXERCISE_CATEGORIES: { id: string; label: string; ids: CalisthenicsExerciseId[] }[] = [
-  {
-    id: 'push',
-    label: 'Push',
-    ids: ['pushups', 'dips', 'pike_pushups', 'archer_pushups', 'hindu_pushups', 'planche_leans'],
-  },
-  {
-    id: 'pull',
-    label: 'Pull',
-    ids: ['pullups', 'australian_pullups', 'ring_rows', 'scapular_pullups', 'hanging_knee_to_chest'],
-  },
-  {
-    id: 'core',
-    label: 'Core',
-    ids: ['plank', 'side_plank', 'hollow_body', 'hollow_body_hold', 'tuck_lsit', 'lsit', 'gymnastics_bridge', 'crow_pose'],
-  },
-  {
-    id: 'legs',
-    label: 'Legs',
-    ids: ['squats', 'bulgarian_squat', 'pistol_squat', 'pistol_squats'],
-  },
-]
-
 interface BulkEntry {
   id: CalisthenicsExerciseId
   value: number
@@ -340,7 +282,7 @@ function BulkTab() {
     if (selected.some((s) => s.id === id)) {
       setSelected(selected.filter((s) => s.id !== id))
     } else {
-      const ex = CALISTHENICS_EXERCISES.find((e) => e.id === id)!
+      const ex = getExerciseDef(id)!
       setSelected([...selected, { id, value: ex.metric === 'hold_sec' ? 30 : 10, sets: 3, restSec: 60 }])
     }
   }
@@ -358,7 +300,7 @@ function BulkTab() {
     setSaving(true)
     try {
       for (const entry of selected) {
-        const ex = CALISTHENICS_EXERCISES.find((e) => e.id === entry.id)!
+        const ex = getExerciseDef(entry.id)!
         await logCalisthenicsBase({
           exerciseId: entry.id,
           metric: ex.metric,
@@ -399,12 +341,12 @@ function BulkTab() {
               <label className="mb-2 block text-xs font-semibold text-muted">Adjust exercise details</label>
               <div className="space-y-2">
                 {selected.map((entry) => {
-                  const ex = CALISTHENICS_EXERCISES.find((e) => e.id === entry.id)!
+                  const ex = getExerciseDef(entry.id)!
                   const isHold = ex.metric === 'hold_sec'
                   return (
                     <div key={entry.id} className="rounded-lg bg-card2 p-3">
                       <div className="mb-2 flex items-center gap-2">
-                        <ExerciseThumb id={entry.id} icon={ex.icon} className="h-10 w-10 flex-shrink-0 rounded-lg overflow-hidden" />
+                        <span className="text-2xl">{ex.icon}</span>
                         <span className="flex-1 text-sm font-semibold text-ink">{ex.name}</span>
                         <button onClick={() => remove(entry.id)} className="text-xs text-muted hover:text-red">✕</button>
                       </div>
@@ -474,47 +416,22 @@ function BulkTab() {
 
   return (
     <>
-      {EXERCISE_CATEGORIES.map((cat) => {
-        const exercises = cat.ids
-          .map((id) => CALISTHENICS_EXERCISES.find((e) => e.id === id))
-          .filter(Boolean) as typeof CALISTHENICS_EXERCISES
-        if (exercises.length === 0) return null
-        return (
-          <div key={cat.id}>
-            <h2 className="mb-2 text-sm font-bold text-muted">{cat.label}</h2>
-            <div className="grid grid-cols-3 gap-2 mb-4">
-              {exercises.map((ex) => {
-                const isSelected = selected.some((s) => s.id === ex.id)
-                return (
-                  <button
-                    key={ex.id}
-                    onClick={() => toggleExercise(ex.id)}
-                    className={`flex flex-col items-center gap-1.5 rounded-xl p-2 transition-colors ${
-                      isSelected
-                        ? 'bg-purple/20 border border-purple/50'
-                        : 'bg-card2 border border-border'
-                    }`}
-                  >
-                    <ExerciseThumb id={ex.id} icon={ex.icon} className="h-14 w-full rounded-lg overflow-hidden" />
-                    <span className={`text-[10px] font-semibold text-center leading-tight ${
-                      isSelected ? 'text-purple' : 'text-muted'
-                    }`}>
-                      {ex.name}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        )
-      })}
+      <Card>
+        <h2 className="mb-1 text-base font-bold">Build Your Session</h2>
+        <p className="mb-3 text-xs text-muted">Select exercises then configure sets and reps.</p>
+        <ExercisePicker
+          mode="multi"
+          selected={selected.map((s) => s.id)}
+          onToggle={toggleExercise}
+        />
+      </Card>
 
       {selected.length > 0 && (
         <Card>
           <h2 className="mb-3 text-base font-bold">Your session ({selected.length} exercises)</h2>
           <div className="space-y-1.5 mb-4">
             {selected.map((entry) => {
-              const ex = CALISTHENICS_EXERCISES.find((e) => e.id === entry.id)!
+              const ex = getExerciseDef(entry.id)!
               return (
                 <div key={entry.id} className="flex items-center justify-between rounded-lg bg-card2 px-3 py-2">
                   <span className="text-sm text-ink">{ex.icon} {ex.name}</span>
