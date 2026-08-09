@@ -93,7 +93,7 @@ export interface MuscleActivation {
 // EXERCISE → MUSCLE MAPPING
 // ─────────────────────────────────────────────────────────────────────────
 
-export const EXERCISE_MUSCLES: Record<CalisthenicsExerciseId, MuscleActivation[]> = {
+export const EXERCISE_MUSCLES: Partial<Record<CalisthenicsExerciseId, MuscleActivation[]>> = {
   archer_pushups: [
     { muscle: 'chest', level: 'primary' },
     { muscle: 'triceps', level: 'primary' },
