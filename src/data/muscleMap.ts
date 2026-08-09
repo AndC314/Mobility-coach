@@ -138,12 +138,6 @@ export const EXERCISE_MUSCLES: Record<CalisthenicsExerciseId, MuscleActivation[]
     { muscle: 'lower_back', level: 'secondary' },
     { muscle: 'front_delt', level: 'secondary' }
   ],
-  hollow_body: [
-    { muscle: 'abs', level: 'primary' },
-    { muscle: 'hip_flexors', level: 'primary' },
-    { muscle: 'lower_back', level: 'secondary' },
-    { muscle: 'quads', level: 'secondary' }
-  ],
   hollow_body_hold: [
     { muscle: 'abs', level: 'primary' },
     { muscle: 'hip_flexors', level: 'secondary' },
@@ -173,13 +167,6 @@ export const EXERCISE_MUSCLES: Record<CalisthenicsExerciseId, MuscleActivation[]
     { muscle: 'glutes', level: 'secondary' },
     { muscle: 'front_delt', level: 'secondary' },
     { muscle: 'triceps', level: 'secondary' }
-  ],
-  pistol_squat: [
-    { muscle: 'quads', level: 'primary' },
-    { muscle: 'glutes', level: 'primary' },
-    { muscle: 'hamstrings', level: 'secondary' },
-    { muscle: 'calves', level: 'secondary' },
-    { muscle: 'lower_back', level: 'secondary' }
   ],
   pistol_squats: [
     { muscle: 'quads', level: 'primary' },
@@ -275,6 +262,35 @@ export const EXERCISE_MUSCLES: Record<CalisthenicsExerciseId, MuscleActivation[]
     { muscle: 'abs', level: 'primary' },
     { muscle: 'lower_back', level: 'secondary' },
     { muscle: 'hip_flexors', level: 'secondary' }
+  ],
+  crunches: [
+    { muscle: 'abs', level: 'primary' }
+  ],
+  door_pull: [
+    { muscle: 'lats', level: 'primary' },
+    { muscle: 'biceps', level: 'primary' },
+    { muscle: 'rhomboids', level: 'primary' },
+    { muscle: 'rear_delt', level: 'secondary' }
+  ],
+  russian_twist: [
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'hip_flexors', level: 'secondary' }
+  ],
+  superman: [
+    { muscle: 'lower_back', level: 'primary' },
+    { muscle: 'glutes', level: 'primary' },
+    { muscle: 'hamstrings', level: 'secondary' }
+  ],
+  wall_plank: [
+    { muscle: 'chest', level: 'primary' },
+    { muscle: 'front_delt', level: 'primary' },
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'triceps', level: 'secondary' }
+  ],
+  wall_sit: [
+    { muscle: 'quads', level: 'primary' },
+    { muscle: 'glutes', level: 'primary' },
+    { muscle: 'calves', level: 'secondary' }
   ]
 }
 
