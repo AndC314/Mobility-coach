@@ -58,6 +58,7 @@ function LogTab() {
   const [sets, setSets] = useState('')
   const [date, setDate] = useState(todayIso())
   const [saved, setSaved] = useState(false)
+  const [pickerOpen, setPickerOpen] = useState(true)
 
   // Edit modal state
   const [editingId, setEditingId] = useState<number | null>(null)
@@ -72,6 +73,7 @@ function LogTab() {
     setSelected(id)
     setValue('')
     setSets('')
+    setPickerOpen(false)
   }
 
   function openEdit(log: any) {
@@ -118,8 +120,21 @@ function LogTab() {
   return (
     <>
       <Card>
-        <h2 className="mb-1 text-base font-bold">Select Exercise</h2>
-        <ExercisePicker mode="single" selected={[selected]} onToggle={handleToggle} />
+        <button
+          type="button"
+          onClick={() => setPickerOpen((v) => !v)}
+          className="flex w-full items-center justify-between"
+        >
+          <h2 className="text-base font-bold">
+            {pickerOpen ? 'Select Exercise' : `${exercise.icon} ${exercise.name}`}
+          </h2>
+          <span className="text-xs text-muted">{pickerOpen ? '▲ collapse' : '▼ change'}</span>
+        </button>
+        {pickerOpen && (
+          <div className="mt-2">
+            <ExercisePicker mode="single" selected={[selected]} onToggle={handleToggle} />
+          </div>
+        )}
       </Card>
 
       <Card>
