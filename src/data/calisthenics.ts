@@ -1,5 +1,7 @@
 import type { CalisthenicsExerciseId, CalisthenicsMetric } from '../db/db'
 
+export type ExerciseCategory = 'push' | 'pull' | 'legs' | 'core'
+
 export interface CalisthenicsExerciseDef {
   id: CalisthenicsExerciseId
   name: string
@@ -7,6 +9,8 @@ export interface CalisthenicsExerciseDef {
   metric: CalisthenicsMetric
   unit: string
   icon: string
+  category: ExerciseCategory
+  primaryMuscles: string[]
   description: string
   /** true if the user has flagged limited access to equipment for this one */
   equipmentNote?: string
@@ -28,24 +32,19 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     metric: 'hold_sec',
     unit: 's',
     icon: '🧱',
+    category: 'core',
+    primaryMuscles: ['Abs / Core', 'Lower back'],
     description: 'Total hold time, forearms or hands, straight line from shoulders to ankles.'
   },
   {
-    id: 'hollow_body',
+    id: 'hollow_body_hold',
     name: 'Hollow Body',
     type: 'hold',
     metric: 'hold_sec',
     unit: 's',
-    icon: '🌙',
-    description: 'Total hold time, lower back pressed to floor, shoulders and legs lifted.'
-  },
-  {
-    id: 'hollow_body_hold',
-    name: 'Hollow Body Hold',
-    type: 'hold',
-    metric: 'hold_sec',
-    unit: 's',
     icon: '🛡️',
+    category: 'core',
+    primaryMuscles: ['Abs / Core'],
     description: 'Your structural armor when playing guard or defending from the bottom. Keep your spine off the mat.',
     setup: 'Lie flat on your yoga mat.',
     cue: 'Lie flat on your yoga mat. Point your toes and tuck your chin to your chest. Contract your abs heavily to lift your shoulder blades and your legs a few inches off the floor. The absolute most important detail: You must crush your lower back into the mat. There should be zero gap between your lumbar spine and the floor. If you cannot maintain this, bring your knees into a tuck position until your core is strong enough to keep your back flat with straight legs.',
@@ -59,6 +58,8 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     metric: 'reps',
     unit: 'reps',
     icon: '💪',
+    category: 'push',
+    primaryMuscles: ['Chest', 'Front delts', 'Triceps'],
     description: 'Max reps with good form, chest to floor.'
   },
   {
@@ -68,6 +69,8 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     metric: 'reps',
     unit: 'reps',
     icon: '🧗',
+    category: 'pull',
+    primaryMuscles: ['Lats', 'Biceps', 'Rhomboids'],
     description: 'Max reps, full hang to chin over bar.'
   },
   {
@@ -77,6 +80,8 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     metric: 'reps',
     unit: 'reps',
     icon: '🦵',
+    category: 'legs',
+    primaryMuscles: ['Quads', 'Glutes'],
     description: 'Bodyweight squats, max reps with full depth.'
   },
   {
@@ -86,6 +91,8 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     metric: 'reps',
     unit: 'reps',
     icon: '🦿',
+    category: 'legs',
+    primaryMuscles: ['Quads', 'Glutes'],
     description: 'Rear foot elevated, max reps per leg.'
   },
   {
@@ -95,6 +102,8 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     metric: 'reps',
     unit: 'reps',
     icon: '🪢',
+    category: 'pull',
+    primaryMuscles: ['Rhomboids', 'Lats', 'Rear delts'],
     description: 'Horizontal row under a bar or rings, body straight.',
     equipmentNote: 'Needs a low bar or rings — log when accessible.'
   },
@@ -105,6 +114,8 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     metric: 'reps',
     unit: 'reps',
     icon: '🔻',
+    category: 'push',
+    primaryMuscles: ['Triceps', 'Chest'],
     description: 'Parallel bars or bench, max reps, full lockout at top, controlled descent.',
     equipmentNote: 'Needs parallel bars or sturdy edges — log when accessible.'
   },
@@ -115,25 +126,20 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     metric: 'reps',
     unit: 'reps',
     icon: '🔺',
+    category: 'push',
+    primaryMuscles: ['Front delts'],
     description: 'Hips high in a pike/downward-dog shape, lower head toward floor between hands. Primary shoulder press progression toward handstand push-ups.'
   },
   {
     id: 'tuck_lsit',
-    name: 'Tuck L-sit',
+    name: 'Tuck L-Sit',
     type: 'hold',
     metric: 'hold_sec',
     unit: 's',
-    icon: '🪑',
+    icon: '📏',
+    category: 'core',
+    primaryMuscles: ['Abs / Core', 'Hip flexors'],
     description: 'Knees tucked to chest, both feet off the floor, arms straight. Total accumulated hold time. The stepping stone between floor support holds and full L-sit.'
-  },
-  {
-    id: 'pistol_squat',
-    name: 'Pistol Squat',
-    type: 'dynamic',
-    metric: 'reps',
-    unit: 'reps',
-    icon: '🦯',
-    description: 'Single-leg squat to full depth, free leg extended forward. Count total reps across both legs. Use a doorframe or band for assistance if needed.'
   },
   {
     id: 'lsit',
@@ -142,6 +148,8 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     metric: 'hold_sec',
     unit: 's',
     icon: '📐',
+    category: 'core',
+    primaryMuscles: ['Abs / Core', 'Hip flexors'],
     description: 'Hold a perfect L-shape on parallettes or floor. Core compression secret to guard retention.',
     setup: 'Use your low or high parallettes. If on floor, hands shoulder-width apart, straight arms.',
     cue: 'Depress your shoulders away from your ears (push the parallettes hard into the floor). Compress your abdomen heavily to lift your legs, locking your knees.',
@@ -155,6 +163,8 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     metric: 'hold_sec',
     unit: 's',
     icon: '⬆️',
+    category: 'push',
+    primaryMuscles: ['Front delts', 'Triceps'],
     description: 'Lean your shoulders past your wrists with locked elbows. Build the framing structure of top pressure.',
     setup: 'Hands shoulder-width apart on the floor. Lock your elbows completely.',
     cue: 'Lock your elbows completely and protract your shoulder blades (push your upper back toward the ceiling). Squeeze your glutes to keep your body in a rigid straight line as you lean your shoulders past your wrists.',
@@ -168,6 +178,8 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     metric: 'reps',
     unit: 'reps',
     icon: '🦿',
+    category: 'legs',
+    primaryMuscles: ['Quads', 'Glutes'],
     description: 'Single-leg squat to full depth. Use your plyo box to control depth if still building balance.',
     setup: 'Stand on one leg. Use your plyo box to touch down at the bottom if needed.',
     cue: 'Root your working foot into the floor, grabbing the mat with your toes. Reach your arms forward as a counterbalance, and brace your core as if taking a punch.',
@@ -181,6 +193,8 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     metric: 'reps',
     unit: 'reps',
     icon: '⭕',
+    category: 'pull',
+    primaryMuscles: ['Lats', 'Biceps'],
     description: 'Horizontal pulling on rings. Adjust angle to control difficulty. Break someone\'s posture.',
     setup: 'Hang your rings and adjust the angle to control the difficulty.',
     cue: 'Initiate the movement by retracting your shoulder blades first, then pull the rings to your ribs. Squeeze your glutes to keep your body completely straight—do not let your hips sag.',
@@ -194,6 +208,8 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     metric: 'reps',
     unit: 'reps',
     icon: '🙏',
+    category: 'push',
+    primaryMuscles: ['Chest', 'Triceps'],
     description: 'Fluid spinal mobility movement. Swoop chest low, drive up, then back. Master dynamic escapes.',
     setup: 'Start in a downward dog position on your mat.',
     cue: 'Start in a downward dog. Swoop your chest as low to your yoga mat as possible, then drive your chest up to the ceiling while dropping your hips. Push straight back to the start.',
@@ -207,6 +223,8 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     metric: 'reps',
     unit: 'reps',
     icon: '⬆️',
+    category: 'pull',
+    primaryMuscles: ['Lats', 'Rear delts'],
     description: 'Strict scapular pulls on bar. No elbow bend. Build grip endurance and lat control.',
     setup: 'Use your doorway pull-up bar (keep it strictly bodyweight without explosive jerking so the bar stays secure).',
     cue: 'Hang from the bar with completely relaxed, straight arms. Without bending your elbows, pull your shoulder blades down and together to lift your chest slightly toward the bar. Hold for a second, then lower.',
@@ -220,6 +238,8 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     metric: 'hold_sec',
     unit: 's',
     icon: '🌉',
+    category: 'core',
+    primaryMuscles: ['Glutes', 'Hamstrings'],
     description: 'Hip drive explosion with shoulder opening. Your upa (bridge escape) secret weapon.',
     setup: 'Lie on your back with hands planted by your ears.',
     cue: 'Lie on your back with hands planted by your ears. Drive through your heels to lift your hips, then push the floor away with your hands, trying to open your armpits toward the wall behind you.',
@@ -228,11 +248,13 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
   },
   {
     id: 'hanging_knee_to_chest',
-    name: 'Hanging Knee-to-Chest',
+    name: 'Hanging Knee Raise',
     type: 'dynamic',
     metric: 'reps',
     unit: 'reps',
     icon: '🔺',
+    category: 'pull',
+    primaryMuscles: ['Abs / Core', 'Hip flexors'],
     description: 'Pull knees high against gravity. Control guard retention and inversions.',
     setup: 'Hang from your pull-up bar.',
     cue: 'Hang from the bar. Engage your lats (pulling down slightly) to stop your body from swinging. Use your lower abs to pull your knees as high to your chest as possible. Do not use momentum.',
@@ -246,6 +268,8 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     metric: 'reps',
     unit: 'reps',
     icon: '🏹',
+    category: 'push',
+    primaryMuscles: ['Chest', 'Triceps'],
     description: 'Heavy unilateral push with straight-arm lock on the other side. Mimic framing.',
     setup: 'Take a very wide push-up stance.',
     cue: 'Take a very wide push-up stance. Lower your chest toward your right hand while keeping your left arm completely straight and locked out. Push back to center and alternate.',
@@ -259,6 +283,8 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     metric: 'hold_sec',
     unit: 's',
     icon: '📏',
+    category: 'core',
+    primaryMuscles: ['Abs / Core'],
     description: 'Total hold time per side. Keep hips stacked and body in a straight line.',
     setup: 'Lie on your side. Stack feet, prop on forearm. Lift hips to form a straight line.',
     cue: 'Drive your hip to the ceiling. Squeeze your oblique. Do not let hips sag or rotate.',
@@ -272,6 +298,8 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     metric: 'hold_sec',
     unit: 's',
     icon: '🐦',
+    category: 'core',
+    primaryMuscles: ['Triceps', 'Front delts', 'Abs / Core'],
     description: 'Total hold time balanced on both hands, knees resting on triceps.',
     setup: 'Squat, place hands flat shoulder-width apart. Lean forward, place knees on triceps.',
     cue: 'Round your upper back. Shift weight forward slowly until feet lift. Squeeze knees into arms.',
@@ -285,6 +313,8 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     metric: 'reps',
     unit: 'reps',
     icon: '⬆️',
+    category: 'core',
+    primaryMuscles: ['Abs / Core'],
     description: 'Max reps with controlled movement, feet anchored. Full crunch from back to sitting position.'
   },
   {
@@ -294,6 +324,8 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     metric: 'reps',
     unit: 'reps',
     icon: '🌉',
+    category: 'legs',
+    primaryMuscles: ['Glutes'],
     description: 'Max reps driving hips upward, feet flat on floor, shoulders on ground. Squeeze glutes at top.'
   },
   {
@@ -303,6 +335,8 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     metric: 'reps',
     unit: 'reps',
     icon: '🦵',
+    category: 'core',
+    primaryMuscles: ['Abs / Core', 'Hip flexors'],
     description: 'Max reps lying on back, raise straight legs from floor to 90 degrees. Lower without touching floor.'
   },
   {
@@ -312,15 +346,19 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     metric: 'reps',
     unit: 'reps',
     icon: '✌️',
+    category: 'core',
+    primaryMuscles: ['Abs / Core'],
     description: 'Max reps folding body into V shape, hands and feet touch at peak contraction. Explosive movement.'
   },
   {
     id: 'dog_bird',
-    name: 'Dog Bird (Bird-Dog)',
+    name: 'Bird-Dog',
     type: 'dynamic',
     metric: 'reps',
     unit: 'reps',
     icon: '🐕',
+    category: 'core',
+    primaryMuscles: ['Abs / Core', 'Lower back'],
     description: 'Max reps per side in quadruped position, extend opposite arm and leg. Core stabilization exercise.'
   },
   {
@@ -330,6 +368,8 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     metric: 'reps',
     unit: 'reps',
     icon: '💎',
+    category: 'push',
+    primaryMuscles: ['Triceps', 'Chest'],
     description: 'Max reps with hands forming diamond shape, triceps-focused push-up. Chest nearly touches hands at bottom.'
   },
   {
@@ -339,6 +379,8 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     metric: 'reps',
     unit: 'reps',
     icon: '💪',
+    category: 'push',
+    primaryMuscles: ['Chest'],
     description: 'Max reps with hands wider than shoulder width, emphasizes chest over triceps. Full range of motion.'
   },
   {
@@ -348,9 +390,82 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     metric: 'reps',
     unit: 'reps',
     icon: '🐛',
+    category: 'core',
+    primaryMuscles: ['Abs / Core'],
     description: 'Max reps lying on back, alternating opposite arm and leg extension. Core control and stability.'
-  }
+  },
+  {
+    id: 'wall_plank',
+    name: 'Wall Plank',
+    type: 'hold',
+    metric: 'hold_sec',
+    unit: 's',
+    icon: '🧱',
+    category: 'push',
+    primaryMuscles: ['Chest', 'Front delts', 'Abs / Core'],
+    description: 'Hands on wall at shoulder height, lean forward into plank position. Hold with straight body line.',
+  },
+  {
+    id: 'wall_sit',
+    name: 'Wall Sit',
+    type: 'hold',
+    metric: 'hold_sec',
+    unit: 's',
+    icon: '🪑',
+    category: 'legs',
+    primaryMuscles: ['Quads', 'Glutes'],
+    description: 'Back flat against wall, thighs parallel to floor, knees at 90 degrees. Hold for time.',
+  },
+  {
+    id: 'superman',
+    name: 'Superman',
+    type: 'hold',
+    metric: 'hold_sec',
+    unit: 's',
+    icon: '🦸',
+    category: 'core',
+    primaryMuscles: ['Lower back', 'Glutes'],
+    description: 'Lie face down, lift arms and legs off the floor simultaneously. Squeeze glutes and lower back.',
+  },
+  {
+    id: 'door_pull',
+    name: 'Door Pull',
+    type: 'dynamic',
+    metric: 'reps',
+    unit: 'reps',
+    icon: '🚪',
+    category: 'pull',
+    primaryMuscles: ['Lats', 'Biceps', 'Rhomboids'],
+    description: 'Grip a door frame or sturdy door edge, lean back and pull chest toward hands. Horizontal pulling without a bar.',
+  },
+  {
+    id: 'crunches',
+    name: 'Crunches',
+    type: 'dynamic',
+    metric: 'reps',
+    unit: 'reps',
+    icon: '🔄',
+    category: 'core',
+    primaryMuscles: ['Abs / Core'],
+    description: 'Curl shoulders off floor toward knees, short range of motion. Focus on upper abs contraction.',
+  },
+  {
+    id: 'russian_twist',
+    name: 'Russian Twist',
+    type: 'dynamic',
+    metric: 'reps',
+    unit: 'reps',
+    icon: '🌀',
+    category: 'core',
+    primaryMuscles: ['Abs / Core'],
+    description: 'Sit with feet elevated, lean back slightly, rotate torso side to side. Count each side as one rep.',
+  },
 ]
+
+export const DEPRECATED_EXERCISE_MAP: Partial<Record<string, CalisthenicsExerciseId>> = {
+  pistol_squat: 'pistol_squats',
+  hollow_body: 'hollow_body_hold',
+}
 
 export function getExerciseDef(id: CalisthenicsExerciseId): CalisthenicsExerciseDef | undefined {
   return CALISTHENICS_EXERCISES.find((e) => e.id === id)
