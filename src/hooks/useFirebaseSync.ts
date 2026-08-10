@@ -5,11 +5,13 @@ import {
   onSnapshot,
   addDoc,
   updateDoc,
+  getDocs,
   doc,
   Timestamp,
 } from 'firebase/firestore'
 import { db as firestoreDb } from '../lib/firebase'
 import { db as dexieDb, type SessionType, type CalisthenicsExerciseId } from '../db/db'
+import { sessionToWorkoutDoc } from '../lib/firebase-workout-sync'
 import type { WorkoutDoc, BjjClassLogDoc, CalisthenicsLogDoc } from '../types/firebase'
 
 export interface UseSyncState {
@@ -101,6 +103,11 @@ export function useFirebaseSync(user: User | null): UseSyncState {
       }
     )
     unsubsRef.current.push(unsubCal)
+
+    // ── 4. Catch-up push: push local data that's missing from Firestore ──
+    catchUpSync(user.uid).catch((err) =>
+      console.error('[useFirebaseSync] Catch-up sync failed:', err)
+    )
 
     return () => {
       unsubsRef.current.forEach((unsub) => unsub())
@@ -245,4 +252,90 @@ function mapWorkoutTypeToSessionType(workoutType: 'calisthenics' | 'bjj' | 'mobi
   if (workoutType === 'calisthenics') return 'calisthenics'
   if (workoutType === 'bjj') return 'bjj'
   return 'morning'
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Catch-up sync: pushes local-only data to Firestore on login.
+// Runs once per session. Deduplicates by createdAt timestamp.
+// ─────────────────────────────────────────────────────────────────────────
+
+async function catchUpSync(uid: string): Promise<void> {
+  const workoutsRef = collection(firestoreDb, `users/${uid}/workouts`)
+  const bjjRef = collection(firestoreDb, `users/${uid}/bjjClassLogs`)
+  const calRef = collection(firestoreDb, `users/${uid}/calisthenicsLogs`)
+
+  // Fetch existing remote createdAt keys for dedup
+  const [remoteWorkouts, remoteBjj, remoteCal] = await Promise.all([
+    getDocs(workoutsRef),
+    getDocs(bjjRef),
+    getDocs(calRef),
+  ])
+
+  const remoteWorkoutKeys = new Set(
+    remoteWorkouts.docs.map((d) => {
+      const data = d.data() as WorkoutDoc
+      return `${data.date}|${data.originalType || data.type}|${data.label || ''}`
+    })
+  )
+  const remoteBjjKeys = new Set(
+    remoteBjj.docs.map((d) => (d.data() as BjjClassLogDoc).createdAt)
+  )
+  const remoteCalKeys = new Set(
+    remoteCal.docs.map((d) => (d.data() as CalisthenicsLogDoc).createdAt)
+  )
+
+  // Push missing sessions
+  const localSessions = await dexieDb.sessions.toArray()
+  let pushedSessions = 0
+  for (const session of localSessions) {
+    const key = `${session.date}|${session.type}|${session.label}`
+    if (!remoteWorkoutKeys.has(key)) {
+      const doc = sessionToWorkoutDoc(session)
+      await addDoc(workoutsRef, doc)
+      pushedSessions++
+    }
+  }
+
+  // Push missing BJJ class logs
+  const localBjj = await dexieDb.bjjClassLogs.toArray()
+  let pushedBjj = 0
+  for (const log of localBjj) {
+    if (!remoteBjjKeys.has(log.createdAt)) {
+      await addDoc(bjjRef, {
+        date: log.date,
+        className: log.className,
+        theme: log.theme,
+        tagIds: log.tagIds,
+        technicalMins: log.technicalMins,
+        sparringMins: log.sparringMins,
+        notes: log.notes,
+        createdAt: log.createdAt,
+      })
+      pushedBjj++
+    }
+  }
+
+  // Push missing calisthenics logs
+  const localCal = await dexieDb.calisthenicsLogs.toArray()
+  let pushedCal = 0
+  for (const log of localCal) {
+    if (!remoteCalKeys.has(log.createdAt)) {
+      await addDoc(calRef, {
+        date: log.date,
+        exerciseId: log.exerciseId,
+        metric: log.metric,
+        value: log.value,
+        sets: log.sets,
+        notes: log.notes,
+        createdAt: log.createdAt,
+      })
+      pushedCal++
+    }
+  }
+
+  if (pushedSessions + pushedBjj + pushedCal > 0) {
+    console.info(
+      `[catchUpSync] Pushed ${pushedSessions} sessions, ${pushedBjj} BJJ logs, ${pushedCal} calisthenics logs`
+    )
+  }
 }
