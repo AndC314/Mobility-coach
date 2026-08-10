@@ -1,9 +1,13 @@
 import { useLiveQuery } from 'dexie-react-hooks'
+import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore'
 import { db, type BjjSkillTag, type BjjClassLog, type CompletedSession } from '../db/db'
+import { db as firestoreDb } from '../lib/firebase'
 import { todayIso } from '../lib/date'
 import { syncSessionToFirebase, syncBjjClassLogToFirebase } from '../lib/firebase-workout-sync'
+import { useAuth } from './useAuth'
 
 export function useBjjSkillTags() {
+  const { user } = useAuth()
   const tags = useLiveQuery(() => db.bjjSkillTags.toArray(), [], [])
 
   async function addTag(name: string, description = '') {
@@ -11,24 +15,60 @@ export function useBjjSkillTags() {
     if (!trimmed) return
     const existing = await db.bjjSkillTags.where('name').equalsIgnoreCase(trimmed).first()
     if (existing) return existing.id!
-    return db.bjjSkillTags.add({
+    const localId = await db.bjjSkillTags.add({
       name: trimmed,
       description,
       color: '#2ec4b6',
       createdAt: new Date().toISOString()
     })
+
+    if (user) {
+      const tagsRef = collection(firestoreDb, `users/${user.uid}/bjjSkillTags`)
+      addDoc(tagsRef, {
+        name: trimmed,
+        description,
+        color: '#2ec4b6',
+        createdAt: new Date().toISOString(),
+        localId,
+      }).catch((err) => console.error('[useBjjSkillTags] sync failed:', err))
+    }
+
+    return localId
   }
 
   async function updateTag(id: number, patch: Partial<Omit<BjjSkillTag, 'id'>>) {
     await db.bjjSkillTags.update(id, patch)
+
+    if (user) {
+      const tag = await db.bjjSkillTags.get(id)
+      if (tag) {
+        const tagsRef = collection(firestoreDb, `users/${user.uid}/bjjSkillTags`)
+        const snapshot = await getDocs(tagsRef)
+        const remoteDoc = snapshot.docs.find((d) => d.data().name === tag.name)
+        if (remoteDoc) {
+          updateDoc(doc(firestoreDb, `users/${user.uid}/bjjSkillTags/${remoteDoc.id}`), patch)
+            .catch((err) => console.error('[useBjjSkillTags] update sync failed:', err))
+        }
+      }
+    }
   }
 
   async function deleteTag(id: number) {
+    const tag = await db.bjjSkillTags.get(id)
     await db.bjjSkillTags.delete(id)
-    // strip from any class logs referencing it
     const logs = await db.bjjClassLogs.where('tagIds').equals(id).toArray()
     for (const log of logs) {
       await db.bjjClassLogs.update(log.id!, { tagIds: log.tagIds.filter((t) => t !== id) })
+    }
+
+    if (user && tag) {
+      const tagsRef = collection(firestoreDb, `users/${user.uid}/bjjSkillTags`)
+      const snapshot = await getDocs(tagsRef)
+      const remoteDoc = snapshot.docs.find((d) => d.data().name === tag.name)
+      if (remoteDoc) {
+        deleteDoc(doc(firestoreDb, `users/${user.uid}/bjjSkillTags/${remoteDoc.id}`))
+          .catch((err) => console.error('[useBjjSkillTags] delete sync failed:', err))
+      }
     }
   }
 

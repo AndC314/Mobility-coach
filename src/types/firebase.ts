@@ -74,6 +74,41 @@ export interface UserMetadata {
   version: number
 }
 
+export interface PreferencesDoc {
+  bjjDays: string[]
+  sessionDuration: number
+  goal: string
+  darkMode: boolean
+  weeklyGoalDays: number
+  soundEnabled: boolean
+  avatarVariant: string
+  updatedAt: number
+}
+
+export interface BjjSkillTagDoc {
+  id?: string
+  name: string
+  description: string
+  color?: string
+  createdAt: string
+  localId?: number
+}
+
+export interface CustomExerciseDoc {
+  id?: string
+  localId: string
+  name: string
+  type: 'dynamic' | 'hold'
+  icon: string
+  exerciseType: 'calisthenics' | 'mobility'
+  primaryMuscles?: string[]
+  category?: string
+  bodyArea?: string
+  isGlobal: boolean
+  createdAt: string
+  updatedAt?: string
+}
+
 export interface UseAuthState {
   user: User | null
   loading: boolean

@@ -6,13 +6,15 @@ import {
   addDoc,
   updateDoc,
   getDocs,
+  setDoc,
+  deleteDoc,
   doc,
   Timestamp,
 } from 'firebase/firestore'
 import { db as firestoreDb } from '../lib/firebase'
-import { db as dexieDb, type SessionType, type CalisthenicsExerciseId } from '../db/db'
+import { db as dexieDb, type SessionType, type CalisthenicsExerciseId, type UserPreferences, type CustomExercise, customExerciseId } from '../db/db'
 import { sessionToWorkoutDoc } from '../lib/firebase-workout-sync'
-import type { WorkoutDoc, BjjClassLogDoc, CalisthenicsLogDoc } from '../types/firebase'
+import type { WorkoutDoc, BjjClassLogDoc, CalisthenicsLogDoc, PreferencesDoc, BjjSkillTagDoc, CustomExerciseDoc } from '../types/firebase'
 
 export interface UseSyncState {
   allWorkouts: WorkoutDoc[]
@@ -104,7 +106,62 @@ export function useFirebaseSync(user: User | null): UseSyncState {
     )
     unsubsRef.current.push(unsubCal)
 
-    // ── 4. Catch-up push: push local data that's missing from Firestore ──
+    // ── 4. preferences listener (singleton doc) ────────────────────────────
+    const prefsDocRef = doc(firestoreDb, `users/${user.uid}/settings/preferences`)
+    const unsubPrefs = onSnapshot(
+      prefsDocRef,
+      async (snapshot) => {
+        if (!snapshot.exists()) return
+        const remote = snapshot.data() as PreferencesDoc
+        try {
+          await syncPreferencesToLocal(remote)
+        } catch (err) {
+          console.error('[useFirebaseSync] Failed to sync preferences to local DB:', err)
+        }
+      },
+      (error) => {
+        console.error('[useFirebaseSync] preferences snapshot error:', error)
+      }
+    )
+    unsubsRef.current.push(unsubPrefs)
+
+    // ── 5. BJJ skill tags listener ───────────────────────────────────────
+    const tagsRef = collection(firestoreDb, `users/${user.uid}/bjjSkillTags`)
+    const unsubTags = onSnapshot(
+      tagsRef,
+      async (snapshot) => {
+        const tags = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as BjjSkillTagDoc[]
+        try {
+          await syncBjjSkillTagsToLocal(tags)
+        } catch (err) {
+          console.error('[useFirebaseSync] Failed to sync bjjSkillTags to local DB:', err)
+        }
+      },
+      (error) => {
+        console.error('[useFirebaseSync] bjjSkillTags snapshot error:', error)
+      }
+    )
+    unsubsRef.current.push(unsubTags)
+
+    // ── 6. custom exercises listener ─────────────────────────────────────
+    const customExRef = collection(firestoreDb, `users/${user.uid}/customExercises`)
+    const unsubCustom = onSnapshot(
+      customExRef,
+      async (snapshot) => {
+        const exercises = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as CustomExerciseDoc[]
+        try {
+          await syncCustomExercisesToLocal(exercises, user.uid)
+        } catch (err) {
+          console.error('[useFirebaseSync] Failed to sync customExercises to local DB:', err)
+        }
+      },
+      (error) => {
+        console.error('[useFirebaseSync] customExercises snapshot error:', error)
+      }
+    )
+    unsubsRef.current.push(unsubCustom)
+
+    // ── 7. Catch-up push: push local data that's missing from Firestore ──
     catchUpSync(user.uid).catch((err) =>
       console.error('[useFirebaseSync] Catch-up sync failed:', err)
     )
@@ -248,6 +305,69 @@ async function syncCalisthenicsLogsToLocal(logs: CalisthenicsLogDoc[]): Promise<
   }
 }
 
+async function syncPreferencesToLocal(remote: PreferencesDoc): Promise<void> {
+  const local = await dexieDb.preferences.get(1)
+  const localUpdated = local ? new Date(local.bjjDays.join()).getTime() : 0
+  if (remote.updatedAt > localUpdated) {
+    await dexieDb.preferences.put({
+      id: 1,
+      bjjDays: remote.bjjDays,
+      sessionDuration: remote.sessionDuration as any,
+      goal: remote.goal as any,
+      darkMode: remote.darkMode,
+      weeklyGoalDays: remote.weeklyGoalDays,
+      soundEnabled: remote.soundEnabled,
+      avatarVariant: remote.avatarVariant as any,
+    })
+  }
+}
+
+async function syncBjjSkillTagsToLocal(remoteTags: BjjSkillTagDoc[]): Promise<void> {
+  const localTags = await dexieDb.bjjSkillTags.toArray()
+  const localByName = new Map(localTags.map((t) => [t.name, t]))
+
+  for (const remote of remoteTags) {
+    const existing = localByName.get(remote.name)
+    if (!existing) {
+      await dexieDb.bjjSkillTags.add({
+        name: remote.name,
+        description: remote.description,
+        color: remote.color,
+        createdAt: remote.createdAt,
+      })
+    } else {
+      await dexieDb.bjjSkillTags.update(existing.id!, {
+        description: remote.description,
+        color: remote.color,
+      })
+    }
+  }
+}
+
+async function syncCustomExercisesToLocal(remoteExercises: CustomExerciseDoc[], userId: string): Promise<void> {
+  const localExercises = await dexieDb.customExercises.toArray()
+  const localByLocalId = new Map(localExercises.map((e) => [e.id as string, e]))
+
+  for (const remote of remoteExercises) {
+    if (!localByLocalId.has(remote.localId)) {
+      await dexieDb.customExercises.add({
+        id: customExerciseId(remote.localId),
+        userId,
+        name: remote.name,
+        type: remote.type,
+        icon: remote.icon,
+        exerciseType: remote.exerciseType,
+        primaryMuscles: remote.primaryMuscles,
+        category: remote.category as any,
+        bodyArea: remote.bodyArea,
+        isGlobal: remote.isGlobal,
+        createdAt: remote.createdAt,
+        updatedAt: remote.updatedAt,
+      })
+    }
+  }
+}
+
 function mapWorkoutTypeToSessionType(workoutType: 'calisthenics' | 'bjj' | 'mobility'): SessionType {
   if (workoutType === 'calisthenics') return 'calisthenics'
   if (workoutType === 'bjj') return 'bjj'
@@ -333,9 +453,70 @@ async function catchUpSync(uid: string): Promise<void> {
     }
   }
 
-  if (pushedSessions + pushedBjj + pushedCal > 0) {
+  // Push preferences (singleton — always overwrite if local exists)
+  const localPrefs = await dexieDb.preferences.get(1)
+  if (localPrefs) {
+    const prefsDocRef = doc(firestoreDb, `users/${uid}/settings/preferences`)
+    await setDoc(prefsDocRef, {
+      bjjDays: localPrefs.bjjDays,
+      sessionDuration: localPrefs.sessionDuration,
+      goal: localPrefs.goal,
+      darkMode: localPrefs.darkMode,
+      weeklyGoalDays: localPrefs.weeklyGoalDays,
+      soundEnabled: localPrefs.soundEnabled,
+      avatarVariant: localPrefs.avatarVariant,
+      updatedAt: Timestamp.now().toMillis(),
+    } satisfies PreferencesDoc, { merge: true })
+  }
+
+  // Push missing BJJ skill tags
+  const tagsRef = collection(firestoreDb, `users/${uid}/bjjSkillTags`)
+  const remoteTags = await getDocs(tagsRef)
+  const remoteTagNames = new Set(remoteTags.docs.map((d) => (d.data() as BjjSkillTagDoc).name))
+  const localTags = await dexieDb.bjjSkillTags.toArray()
+  let pushedTags = 0
+  for (const tag of localTags) {
+    if (!remoteTagNames.has(tag.name)) {
+      await addDoc(tagsRef, {
+        name: tag.name,
+        description: tag.description,
+        color: tag.color,
+        createdAt: tag.createdAt,
+        localId: tag.id,
+      } satisfies BjjSkillTagDoc)
+      pushedTags++
+    }
+  }
+
+  // Push missing custom exercises
+  const customExRef = collection(firestoreDb, `users/${uid}/customExercises`)
+  const remoteCustom = await getDocs(customExRef)
+  const remoteCustomIds = new Set(remoteCustom.docs.map((d) => (d.data() as CustomExerciseDoc).localId))
+  const localCustom = await dexieDb.customExercises.toArray()
+  let pushedCustom = 0
+  for (const ex of localCustom) {
+    if (!remoteCustomIds.has(ex.id as string)) {
+      await addDoc(customExRef, {
+        localId: ex.id as string,
+        name: ex.name,
+        type: ex.type,
+        icon: ex.icon,
+        exerciseType: ex.exerciseType,
+        primaryMuscles: ex.primaryMuscles,
+        category: ex.category,
+        bodyArea: ex.bodyArea,
+        isGlobal: ex.isGlobal,
+        createdAt: ex.createdAt,
+        updatedAt: ex.updatedAt,
+      } satisfies CustomExerciseDoc)
+      pushedCustom++
+    }
+  }
+
+  const total = pushedSessions + pushedBjj + pushedCal + pushedTags + pushedCustom
+  if (total > 0) {
     console.info(
-      `[catchUpSync] Pushed ${pushedSessions} sessions, ${pushedBjj} BJJ logs, ${pushedCal} calisthenics logs`
+      `[catchUpSync] Pushed ${pushedSessions} sessions, ${pushedBjj} BJJ logs, ${pushedCal} cal logs, ${pushedTags} tags, ${pushedCustom} custom exercises`
     )
   }
 }

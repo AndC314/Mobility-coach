@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react'
-import { useLiveQuery } from 'dexie-react-hooks'
 import { CALISTHENICS_EXERCISES, type ExerciseCategory, type Equipment } from '../data/calisthenics'
-import { db, customExerciseId, type CalisthenicsExerciseId, type CustomExercise } from '../db/db'
+import { customExerciseId, type CalisthenicsExerciseId, type CustomExercise } from '../db/db'
 import { useExerciseFrequency } from '../hooks/useCalisthenics'
+import { useCustomExercises } from '../hooks/useCustomExercises'
 import { useAuth } from '../hooks/useAuth'
 import { MUSCLE_LABELS, type MuscleGroup } from '../data/muscleMap'
 
@@ -37,12 +37,7 @@ export default function ExercisePicker({ mode, selected, onToggle }: ExercisePic
   const [showCustomForm, setShowCustomForm] = useState(false)
 
   const frequency = useExerciseFrequency()
-
-  const customExercises = useLiveQuery(
-    () => db.customExercises.where('exerciseType').equals('calisthenics').toArray(),
-    [],
-    []
-  )
+  const { exercises: customExercises, addCustomExercise } = useCustomExercises('calisthenics')
 
   function toggleEquipment(eq: Equipment) {
     setActiveEquipment((prev) =>
@@ -192,6 +187,7 @@ export default function ExercisePicker({ mode, selected, onToggle }: ExercisePic
         <InlineCustomForm
           onSave={() => setShowCustomForm(false)}
           onCancel={() => setShowCustomForm(false)}
+          addCustomExercise={addCustomExercise}
         />
       )}
 
@@ -318,7 +314,7 @@ function ExerciseRow({ ex, isSelected, mode, onToggle, count }: ExerciseRowProps
 
 const MUSCLE_OPTIONS = Object.entries(MUSCLE_LABELS) as [MuscleGroup, string][]
 
-function InlineCustomForm({ onSave, onCancel }: { onSave: () => void; onCancel: () => void }) {
+function InlineCustomForm({ onSave, onCancel, addCustomExercise }: { onSave: () => void; onCancel: () => void; addCustomExercise: (ex: CustomExercise) => Promise<void> }) {
   const { user } = useAuth()
   const [name, setName] = useState('')
   const [exType, setExType] = useState<'dynamic' | 'hold'>('dynamic')
@@ -350,7 +346,7 @@ function InlineCustomForm({ onSave, onCancel }: { onSave: () => void; onCancel: 
         isGlobal: true,
         createdAt: new Date().toISOString(),
       }
-      await db.customExercises.add(exercise)
+      await addCustomExercise(exercise)
       onSave()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save')
