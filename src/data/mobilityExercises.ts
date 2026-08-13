@@ -144,6 +144,18 @@ export const MOBILITY_EXERCISES: MobilityExercise[] = [
     feel: 'Spine lengthening. Relief in lower back.'
   },
   {
+    id: 'dead_hang',
+    name: 'Dead Hang',
+    icon: '🦾',
+    category: 'full_body',
+    defaultHoldSec: 30,
+    maxHoldSec: 120,
+    description: 'Passive hang for grip strength, shoulder health, and full spine decompression',
+    setup: 'Grip pull-up bar shoulder-width. Let feet leave floor. Completely relax — no active pulling.',
+    cue: 'Let everything go. Relax shoulders, relax lats. Just hang like dead weight. Breathe normally.',
+    feel: 'Grip working, spine decompressing, shoulders stretching open.'
+  },
+  {
     id: 'pelvic_clock',
     name: 'Pelvic Clock',
     icon: '🕐',

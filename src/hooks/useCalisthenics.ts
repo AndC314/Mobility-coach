@@ -46,7 +46,8 @@ export async function logCalisthenicsBase(params: {
     label: def?.name ?? 'Calisthenics',
     plannedSec: estimatedSec,
     actualSec: estimatedSec, // assume completed as planned
-    exerciseIds: [params.exerciseId]
+    exerciseIds: [params.exerciseId],
+    date
   })
 
   return id

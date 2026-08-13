@@ -24,8 +24,9 @@ export async function upsertTodaySession(params: {
   plannedSec: number
   actualSec: number
   exerciseIds: string[]
+  date?: string
 }) {
-  const today = todayIso()
+  const targetDate = params.date || todayIso()
   const plannedSec = Math.max(0, safeNum(params.plannedSec, 0))
   const actualSec = Math.max(0, safeNum(params.actualSec, 0))
   const percent = plannedSec > 0 ? Math.min(100, Math.round((actualSec / plannedSec) * 100)) : actualSec > 0 ? 100 : 0
@@ -37,7 +38,7 @@ export async function upsertTodaySession(params: {
 
   const existing = await db.sessions
     .where('date')
-    .equals(today)
+    .equals(targetDate)
     .filter((s) => s.type === params.type && s.label === params.label)
     .first()
 
@@ -47,7 +48,8 @@ export async function upsertTodaySession(params: {
       actualSec,
       durationMin,
       percent,
-      exerciseIds: params.exerciseIds
+      exerciseIds: params.exerciseIds,
+      date: targetDate
     })
     // Sync updated session to Firestore (non-blocking)
     const updated = await db.sessions.get(existing.id!)
@@ -60,7 +62,7 @@ export async function upsertTodaySession(params: {
   }
 
   const id = await db.sessions.add({
-    date: today,
+    date: targetDate,
     type: params.type,
     label: params.label,
     plannedSec,

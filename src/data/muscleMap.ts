@@ -28,22 +28,22 @@ export type MuscleGroup =
 
 export const MUSCLE_LABELS: Record<MuscleGroup, string> = {
   chest: 'Chest',
-  front_delt: 'Front delts',
+  front_delt: 'Shoulders',
   triceps: 'Triceps',
   biceps: 'Biceps',
   forearms: 'Forearms',
-  abs: 'Abs / Core',
-  hip_flexors: 'Hip flexors',
-  quads: 'Quads',
-  inner_thigh: 'Inner thigh',
-  lats: 'Lats',
-  rear_delt: 'Rear delts',
-  traps: 'Traps',
-  rhomboids: 'Rhomboids',
-  lower_back: 'Lower back',
+  abs: 'Abs',
+  hip_flexors: 'Pelvis',
+  quads: 'Quadriceps',
+  inner_thigh: 'Hip adductors',
+  lats: 'Back',
+  rear_delt: 'Rotator cuff',
+  traps: 'Neck / Traps',
+  rhomboids: 'Back (mid)',
+  lower_back: 'Spine',
   glutes: 'Glutes',
   hamstrings: 'Hamstrings',
-  calves: 'Calves'
+  calves: 'Legs (calves)'
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -291,6 +291,21 @@ export const EXERCISE_MUSCLES: Partial<Record<CalisthenicsExerciseId, MuscleActi
     { muscle: 'quads', level: 'primary' },
     { muscle: 'glutes', level: 'primary' },
     { muscle: 'calves', level: 'secondary' }
+  ],
+  lunge_forward: [
+    { muscle: 'quads', level: 'primary' },
+    { muscle: 'glutes', level: 'primary' },
+    { muscle: 'hamstrings', level: 'secondary' },
+    { muscle: 'calves', level: 'secondary' }
+  ],
+  lunge_backward: [
+    { muscle: 'quads', level: 'primary' },
+    { muscle: 'glutes', level: 'primary' },
+    { muscle: 'hamstrings', level: 'primary' },
+    { muscle: 'calves', level: 'secondary' }
+  ],
+  calf_raises: [
+    { muscle: 'calves', level: 'primary' }
   ]
 }
 

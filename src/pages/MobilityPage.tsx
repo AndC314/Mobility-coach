@@ -83,11 +83,12 @@ export default function MobilityPage() {
         .join(' + ')
 
       await upsertTodaySession({
-        type: 'custom',
+        type: 'hip_mobility',
         label: `Mobility: ${exerciseNames}`,
         plannedSec: totalSec,
         actualSec: totalSec,
-        exerciseIds: selected.map((s) => s.id)
+        exerciseIds: selected.map((s) => s.id),
+        date
       })
 
       setSaved(true)

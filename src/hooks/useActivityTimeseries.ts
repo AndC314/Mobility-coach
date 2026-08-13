@@ -7,6 +7,10 @@ export interface WeeklyActivityData {
   bjjMins: number
   calisthenicsMins: number
   mobilityMins: number
+  bjjSessions: number
+  calisthenicsSessions: number
+  mobilitySessions: number
+  totalMins: number
 }
 
 export function useActivityTimeseries(weeksBack = 12): WeeklyActivityData[] {
@@ -28,34 +32,43 @@ export function useActivityTimeseries(weeksBack = 12): WeeklyActivityData[] {
     const weStr = weekEnd.toISOString().split('T')[0]
 
     // BJJ: sum technicalMins + sparringMins (fallback 50T+10S=60 for old logs)
-    const bjjMins = bjjLogs
-      .filter((l) => l.date >= wsStr && l.date <= weStr)
-      .reduce((sum, l) => {
-        const t = l.technicalMins ?? 0
-        const s = l.sparringMins ?? 0
-        return sum + (t === 0 && s === 0 ? 60 : t + s)
-      }, 0)
+    const bjjWeekLogs = bjjLogs.filter((l) => l.date >= wsStr && l.date <= weStr)
+    const bjjMins = bjjWeekLogs.reduce((sum, l) => {
+      const t = l.technicalMins ?? 0
+      const s = l.sparringMins ?? 0
+      return sum + (t === 0 && s === 0 ? 60 : t + s)
+    }, 0)
 
     // Calisthenics sessions
-    const calisthenicsMins = sessions
-      .filter((s) => s.date >= wsStr && s.date <= weStr && s.type === 'calisthenics')
-      .reduce((sum, s) => sum + s.durationMin, 0)
+    const calisthenicsWeekSessions = sessions.filter(
+      (s) => s.date >= wsStr && s.date <= weStr && s.type === 'calisthenics'
+    )
+    const calisthenicsMins = calisthenicsWeekSessions.reduce((sum, s) => sum + s.durationMin, 0)
 
     // Mobility sessions (non-bjj, non-calisthenics, non-custom)
-    const mobilityMins = sessions
-      .filter(
-        (s) =>
-          s.date >= wsStr &&
-          s.date <= weStr &&
-          s.type !== 'bjj' &&
-          s.type !== 'calisthenics' &&
-          s.type !== 'custom'
-      )
-      .reduce((sum, s) => sum + s.durationMin, 0)
+    const mobilityWeekSessions = sessions.filter(
+      (s) =>
+        s.date >= wsStr &&
+        s.date <= weStr &&
+        s.type !== 'bjj' &&
+        s.type !== 'calisthenics' &&
+        s.type !== 'custom'
+    )
+    const mobilityMins = mobilityWeekSessions.reduce((sum, s) => sum + s.durationMin, 0)
 
     const label = weekStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 
-    result.push({ weekLabel: label, weekStart: wsStr, bjjMins, calisthenicsMins, mobilityMins })
+    result.push({
+      weekLabel: label,
+      weekStart: wsStr,
+      bjjMins,
+      calisthenicsMins,
+      mobilityMins,
+      bjjSessions: bjjWeekLogs.length,
+      calisthenicsSessions: calisthenicsWeekSessions.length,
+      mobilitySessions: mobilityWeekSessions.length,
+      totalMins: bjjMins + calisthenicsMins + mobilityMins
+    })
   }
 
   return result

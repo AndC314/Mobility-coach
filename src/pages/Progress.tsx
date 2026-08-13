@@ -48,13 +48,39 @@ export default function Progress() {
 
       {view === 'activity' && (
         <div className="space-y-4">
+          {/* Weekly summary stats */}
+          {(() => {
+            const activeWeeks = timeseries.filter((w) => w.totalMins > 0)
+            const totalSessions = timeseries.reduce(
+              (s, w) => s + w.bjjSessions + w.calisthenicsSessions + w.mobilitySessions, 0
+            )
+            const totalMins = timeseries.reduce((s, w) => s + w.totalMins, 0)
+            const avgPerWeek = activeWeeks.length > 0
+              ? Math.round(totalMins / activeWeeks.length)
+              : 0
+            return (
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { value: totalSessions, label: 'Sessions' },
+                  { value: `${Math.floor(totalMins / 60)}h ${totalMins % 60}m`, label: 'Total' },
+                  { value: `${avgPerWeek}m`, label: 'Avg / week' }
+                ].map(({ value, label }) => (
+                  <Card key={label} className="text-center py-3">
+                    <div className="text-lg font-bold text-ink">{value}</div>
+                    <div className="text-[10px] text-muted uppercase tracking-wide">{label}</div>
+                  </Card>
+                ))}
+              </div>
+            )
+          })()}
+
           <Card>
-            <h2 className="mb-1 text-base font-bold">Weekly training minutes</h2>
-            <p className="mb-3 text-xs text-muted">Last 12 weeks — BJJ, Calisthenics, Mobility</p>
-            {timeseries.every((w) => w.bjjMins === 0 && w.calisthenicsMins === 0 && w.mobilityMins === 0) ? (
+            <h2 className="mb-1 text-base font-bold">Weekly training</h2>
+            <p className="mb-3 text-xs text-muted">Last 12 weeks — minutes per discipline</p>
+            {timeseries.every((w) => w.totalMins === 0) ? (
               <p className="py-6 text-center text-sm text-muted">No sessions logged yet</p>
             ) : (
-              <div style={{ height: 240 }}>
+              <div style={{ height: 220 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={timeseries} margin={{ left: -16, right: 4 }}>
                     <XAxis
@@ -94,25 +120,31 @@ export default function Progress() {
           </Card>
 
           <Card>
-            <h2 className="mb-2 text-base font-bold">Totals (last 12 weeks)</h2>
-            <div className="space-y-2">
+            <h2 className="mb-2 text-base font-bold">By discipline</h2>
+            <div className="space-y-3">
               {[
-                { label: 'BJJ', color: '#2ec4b6', key: 'bjjMins' as const },
-                { label: 'Calisthenics', color: '#e8622a', key: 'calisthenicsMins' as const },
-                { label: 'Mobility', color: '#a78bfa', key: 'mobilityMins' as const }
-              ].map(({ label, color, key }) => {
-                const total = timeseries.reduce((s, w) => s + w[key], 0)
+                { label: 'BJJ', color: '#2ec4b6', minsKey: 'bjjMins' as const, sessKey: 'bjjSessions' as const },
+                { label: 'Calisthenics', color: '#e8622a', minsKey: 'calisthenicsMins' as const, sessKey: 'calisthenicsSessions' as const },
+                { label: 'Mobility', color: '#a78bfa', minsKey: 'mobilityMins' as const, sessKey: 'mobilitySessions' as const }
+              ].map(({ label, color, minsKey, sessKey }) => {
+                const total = timeseries.reduce((s, w) => s + w[minsKey], 0)
+                const sessions = timeseries.reduce((s, w) => s + w[sessKey], 0)
                 const hrs = Math.floor(total / 60)
                 const mins = total % 60
                 return (
-                  <div key={key} className="flex items-center justify-between">
+                  <div key={minsKey} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="h-2.5 w-2.5 rounded-full" style={{ background: color }} />
                       <span className="text-sm text-ink">{label}</span>
                     </div>
-                    <span className="text-sm font-semibold">
-                      {hrs > 0 ? `${hrs}h ` : ''}{mins}m
-                    </span>
+                    <div className="text-right">
+                      <span className="text-sm font-semibold">
+                        {hrs > 0 ? `${hrs}h ` : ''}{mins}m
+                      </span>
+                      <span className="ml-2 text-xs text-muted">
+                        ({sessions} {sessions === 1 ? 'session' : 'sessions'})
+                      </span>
+                    </div>
                   </div>
                 )
               })}
