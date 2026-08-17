@@ -47,7 +47,7 @@ export function generateCalisthenicsSession(input: SessionGeneratorInput): Gener
   const decayInputs: DecayInput[] = recentLogs.map((l) => ({
     exerciseId: l.exerciseId,
     value: l.value,
-    loggedAt: l.createdAt ?? new Date(l.date).getTime(),
+    loggedAt: l.createdAt ? new Date(l.createdAt).getTime() : new Date(l.date).getTime(),
   }))
 
   const muscleSoreness = computeMuscleSorenessDecay(decayInputs, now)
