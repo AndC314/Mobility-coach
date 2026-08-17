@@ -224,85 +224,114 @@ export function useFirebaseSync(user: User | null): UseSyncState {
 
 async function syncFirestoreToLocal(workouts: WorkoutDoc[]): Promise<void> {
   for (const workout of workouts) {
-    // Use originalType when available for lossless round-trip
-    const sessionType: SessionType =
-      (workout.originalType as SessionType) || mapWorkoutTypeToSessionType(workout.type)
+    try {
+      if (!workout.date) continue
 
-    const session = {
-      date: workout.date,
-      type: sessionType,
-      label: workout.label || `${workout.type} workout`,
-      durationMin: Math.round((workout.actualSec || 0) / 60),
-      plannedSec: workout.plannedSec || 0,
-      actualSec: workout.actualSec || 0,
-      percent: workout.plannedSec
-        ? Math.round((workout.actualSec! / workout.plannedSec) * 100)
-        : 0,
-      exerciseIds: workout.exerciseIds || [],
-      createdAt: new Date(workout.createdAt).toISOString(),
-    }
+      // Use originalType when available for lossless round-trip
+      const sessionType: SessionType =
+        (workout.originalType as SessionType) || mapWorkoutTypeToSessionType(workout.type)
 
-    const existing = await dexieDb.sessions
-      .where('date')
-      .equals(workout.date)
-      .filter((s) => s.type === sessionType && s.label === session.label)
-      .first()
-
-    if (existing) {
-      if (workout.updatedAt > new Date(existing.createdAt).getTime()) {
-        await dexieDb.sessions.update(existing.id!, session)
+      const session = {
+        date: workout.date,
+        type: sessionType,
+        label: workout.label || `${workout.type} workout`,
+        durationMin: Math.round((workout.actualSec || 0) / 60),
+        plannedSec: workout.plannedSec || 0,
+        actualSec: workout.actualSec || 0,
+        percent: workout.plannedSec
+          ? Math.round((workout.actualSec! / workout.plannedSec) * 100)
+          : 0,
+        exerciseIds: workout.exerciseIds || [],
+        createdAt: new Date(workout.createdAt || Date.now()).toISOString(),
       }
-    } else {
-      await dexieDb.sessions.add(session)
+
+      const existing = await dexieDb.sessions
+        .where('date')
+        .equals(workout.date)
+        .filter((s) => s.type === sessionType && s.label === session.label)
+        .first()
+
+      if (existing) {
+        if (workout.updatedAt > new Date(existing.createdAt).getTime()) {
+          await dexieDb.sessions.update(existing.id!, session)
+        }
+      } else {
+        await dexieDb.sessions.add(session)
+      }
+    } catch (err) {
+      console.error('[syncFirestoreToLocal] Failed to sync workout:', workout.date, err)
     }
   }
 }
 
 async function syncBjjClassLogsToLocal(logs: BjjClassLogDoc[]): Promise<void> {
   for (const log of logs) {
-    // Dedup by (date, createdAt) — same ISO timestamp = same record
-    const existing = await dexieDb.bjjClassLogs
-      .where('date')
-      .equals(log.date)
-      .filter((l) => l.createdAt === log.createdAt)
-      .first()
+    try {
+      if (!log.date) continue
+      const createdAt = normalizeCreatedAt(log.createdAt, log.date)
 
-    if (!existing) {
-      await dexieDb.bjjClassLogs.add({
-        date: log.date,
-        className: log.className,
-        theme: log.theme,
-        tagIds: log.tagIds ?? [],
-        technicalMins: log.technicalMins,
-        sparringMins: log.sparringMins,
-        notes: log.notes,
-        createdAt: log.createdAt,
-      })
+      const existing = await dexieDb.bjjClassLogs
+        .where('date')
+        .equals(log.date)
+        .filter((l) => l.createdAt === createdAt)
+        .first()
+
+      if (!existing) {
+        await dexieDb.bjjClassLogs.add({
+          date: log.date,
+          className: log.className,
+          theme: log.theme,
+          tagIds: log.tagIds ?? [],
+          technicalMins: log.technicalMins,
+          sparringMins: log.sparringMins,
+          notes: log.notes,
+          createdAt,
+        })
+      }
+    } catch (err) {
+      console.error('[syncBjjClassLogsToLocal] Failed to sync individual log:', log.date, err)
     }
   }
 }
 
 async function syncCalisthenicsLogsToLocal(logs: CalisthenicsLogDoc[]): Promise<void> {
   for (const log of logs) {
-    // Dedup by (date, exerciseId, createdAt)
-    const existing = await dexieDb.calisthenicsLogs
-      .where('date')
-      .equals(log.date)
-      .filter((l) => l.exerciseId === log.exerciseId && l.createdAt === log.createdAt)
-      .first()
+    try {
+      // Skip invalid logs — date, exerciseId, and value are required
+      if (!log.date || !log.exerciseId || log.value == null) continue
 
-    if (!existing) {
-      await dexieDb.calisthenicsLogs.add({
-        date: log.date,
-        exerciseId: log.exerciseId as CalisthenicsExerciseId,
-        metric: log.metric,
-        value: log.value,
-        sets: log.sets,
-        notes: log.notes,
-        createdAt: log.createdAt,
-      })
+      // Normalize createdAt — handle Timestamp objects, numbers, or missing values
+      const createdAt = normalizeCreatedAt(log.createdAt, log.date)
+
+      // Dedup by (date, exerciseId, createdAt)
+      const existing = await dexieDb.calisthenicsLogs
+        .where('date')
+        .equals(log.date)
+        .filter((l) => l.exerciseId === log.exerciseId && l.createdAt === createdAt)
+        .first()
+
+      if (!existing) {
+        await dexieDb.calisthenicsLogs.add({
+          date: log.date,
+          exerciseId: log.exerciseId as CalisthenicsExerciseId,
+          metric: log.metric || 'reps',
+          value: log.value,
+          sets: log.sets,
+          notes: log.notes,
+          createdAt,
+        })
+      }
+    } catch (err) {
+      console.error('[syncCalisthenicsLogsToLocal] Failed to sync individual log:', log.exerciseId, log.date, err)
     }
   }
+}
+
+function normalizeCreatedAt(createdAt: any, fallbackDate: string): string {
+  if (typeof createdAt === 'string' && createdAt.length > 0) return createdAt
+  if (createdAt && typeof createdAt.toDate === 'function') return createdAt.toDate().toISOString()
+  if (typeof createdAt === 'number') return new Date(createdAt).toISOString()
+  return `${fallbackDate}T00:00:00.000Z`
 }
 
 async function syncPreferencesToLocal(remote: PreferencesDoc): Promise<void> {
@@ -439,17 +468,22 @@ async function catchUpSync(uid: string): Promise<void> {
   const localCal = await dexieDb.calisthenicsLogs.toArray()
   let pushedCal = 0
   for (const log of localCal) {
-    if (!remoteCalKeys.has(log.createdAt)) {
-      await addDoc(calRef, {
-        date: log.date,
-        exerciseId: log.exerciseId,
-        metric: log.metric,
-        value: log.value,
-        sets: log.sets,
-        notes: log.notes,
-        createdAt: log.createdAt,
-      })
-      pushedCal++
+    try {
+      const createdAt = log.createdAt || `${log.date}T00:00:00.000Z`
+      if (!remoteCalKeys.has(createdAt)) {
+        await addDoc(calRef, {
+          date: log.date,
+          exerciseId: log.exerciseId,
+          metric: log.metric || 'reps',
+          value: log.value,
+          sets: log.sets,
+          notes: log.notes,
+          createdAt,
+        })
+        pushedCal++
+      }
+    } catch (err) {
+      console.error('[catchUpSync] Failed to push calisthenics log:', log.date, log.exerciseId, err)
     }
   }
 

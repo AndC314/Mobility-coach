@@ -4,6 +4,7 @@ import { useSkillTree } from '../hooks/useSkillTree'
 import { useProgressionState, useCurrentLevel, type ResolvedChain, type ResolvedNode, type NodeUnlockStatus } from '../hooks/useProgressionState'
 import { LEVEL_COLORS, LEVEL_LABELS } from '../data/progressionChains'
 import LevelAssessment from './LevelAssessment'
+import TrendIndicator from './TrendIndicator'
 import type { SkillBranch, SkillNode, NodeStatus } from '../lib/skillTree'
 
 type BranchId = 'push' | 'pull' | 'legs' | 'core' | 'mobility' | 'bjj'
@@ -208,9 +209,9 @@ function ProgressionNodeRow({ node, isLast }: { node: ResolvedNode; isLast: bool
         >
           <div className="flex-1 min-w-0">
             <div className="text-sm font-bold text-ink truncate">{node.exerciseName}</div>
-            <div className="text-[11px] text-muted">
+            <div className="text-[11px] text-muted flex items-center">
               {node.best != null
-                ? `Best: ${node.best}${node.unit === 's' ? 's' : ' reps'}`
+                ? <><span>Best: {node.best}{node.unit === 's' ? 's' : ' reps'}</span><TrendIndicator exerciseId={node.exerciseId} /></>
                 : node.status === 'locked'
                   ? 'Locked'
                   : 'No data yet'}

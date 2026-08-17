@@ -306,6 +306,30 @@ export const EXERCISE_MUSCLES: Partial<Record<CalisthenicsExerciseId, MuscleActi
   ],
   calf_raises: [
     { muscle: 'calves', level: 'primary' }
+  ],
+  dead_hang: [
+    { muscle: 'forearms', level: 'primary' },
+    { muscle: 'lats', level: 'secondary' },
+    { muscle: 'rear_delt', level: 'secondary' }
+  ],
+  neck_curls: [
+    { muscle: 'traps', level: 'primary' }
+  ],
+  prone_y_raise: [
+    { muscle: 'traps', level: 'primary' },
+    { muscle: 'rear_delt', level: 'primary' },
+    { muscle: 'rhomboids', level: 'secondary' }
+  ],
+  copenhagen_plank: [
+    { muscle: 'inner_thigh', level: 'primary' },
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'glutes', level: 'secondary' }
+  ],
+  cossack_squat: [
+    { muscle: 'inner_thigh', level: 'primary' },
+    { muscle: 'quads', level: 'primary' },
+    { muscle: 'glutes', level: 'primary' },
+    { muscle: 'hamstrings', level: 'secondary' }
   ]
 }
 
@@ -363,23 +387,24 @@ export const MUSCLE_SUGGESTIONS: Record<MuscleGroup, ExerciseSuggestion[]> = {
     { exerciseId: 'australian_pullups', label: 'Australian Pull-ups' }
   ],
   forearms: [
-    { exerciseId: 'pullups', label: 'Pull-ups (dead hang)' }
+    { exerciseId: 'dead_hang', label: 'Dead Hang' },
+    { exerciseId: 'pullups', label: 'Pull-ups' }
   ],
   abs: [
-    { exerciseId: 'hollow_body', label: 'Hollow Body' },
+    { exerciseId: 'hollow_body_hold', label: 'Hollow Body' },
     { exerciseId: 'plank', label: 'Plank' }
   ],
   hip_flexors: [
-    { exerciseId: 'hollow_body', label: 'Hollow Body' },
-    { exerciseId: 'squats', label: 'Deep Squats' }
+    { exerciseId: 'hollow_body_hold', label: 'Hollow Body' },
+    { exerciseId: 'leg_raise', label: 'Leg Raise' }
   ],
   quads: [
     { exerciseId: 'squats', label: 'Squats' },
     { exerciseId: 'bulgarian_squat', label: 'Bulgarian Split Squat' }
   ],
   inner_thigh: [
-    { exerciseId: 'squats', label: 'Wide-stance Squats' },
-    { exerciseId: 'bulgarian_squat', label: 'Bulgarian Split Squat' }
+    { exerciseId: 'copenhagen_plank', label: 'Copenhagen Plank' },
+    { exerciseId: 'cossack_squat', label: 'Cossack Squat' }
   ],
   lats: [
     { exerciseId: 'pullups', label: 'Pull-ups' },
@@ -389,16 +414,16 @@ export const MUSCLE_SUGGESTIONS: Record<MuscleGroup, ExerciseSuggestion[]> = {
     { exerciseId: 'australian_pullups', label: 'Australian Pull-ups' }
   ],
   traps: [
-    { exerciseId: 'australian_pullups', label: 'Australian Pull-ups' },
-    { exerciseId: 'pullups', label: 'Pull-ups' }
+    { exerciseId: 'neck_curls', label: 'Neck Curls' },
+    { exerciseId: 'prone_y_raise', label: 'Prone Y-Raise' }
   ],
   rhomboids: [
     { exerciseId: 'australian_pullups', label: 'Australian Pull-ups' },
     { exerciseId: 'pullups', label: 'Pull-ups' }
   ],
   lower_back: [
-    { exerciseId: 'plank', label: 'Plank' },
-    { exerciseId: 'squats', label: 'Squats' }
+    { exerciseId: 'superman', label: 'Superman' },
+    { exerciseId: 'dog_bird', label: 'Bird-Dog' }
   ],
   glutes: [
     { exerciseId: 'squats', label: 'Squats' },

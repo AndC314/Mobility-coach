@@ -294,6 +294,59 @@ const CORE_POSTERIOR: ProgressionChain = {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// LEGS — ADDUCTOR & LATERAL
+// Targets inner thigh / adductors and lateral movement patterns
+// ─────────────────────────────────────────────────────────────────────────
+
+const LEGS_ADDUCTOR: ProgressionChain = {
+  id: 'legs_adductor',
+  category: 'legs',
+  label: 'Adductor & Lateral',
+  description: 'Groin and inner thigh strength for guard control',
+  nodes: [
+    {
+      exerciseId: 'cossack_squat',
+      unlockRequirements: [{ exerciseId: 'squats', threshold: 20, unit: 'reps' }],
+      level: 2,
+    },
+    {
+      exerciseId: 'copenhagen_plank',
+      unlockRequirements: [{ exerciseId: 'side_plank', threshold: 30, unit: 's' }],
+      level: 3,
+    },
+  ],
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// PULL — GRIP & NECK
+// Targets forearms, neck, and traps
+// ─────────────────────────────────────────────────────────────────────────
+
+const PULL_GRIP_NECK: ProgressionChain = {
+  id: 'pull_grip_neck',
+  category: 'pull',
+  label: 'Grip & Neck',
+  description: 'Forearm endurance and neck strength for BJJ',
+  nodes: [
+    {
+      exerciseId: 'dead_hang',
+      unlockRequirements: [],
+      level: 1,
+    },
+    {
+      exerciseId: 'prone_y_raise',
+      unlockRequirements: [],
+      level: 1,
+    },
+    {
+      exerciseId: 'neck_curls',
+      unlockRequirements: [{ exerciseId: 'prone_y_raise', threshold: 12, unit: 'reps' }],
+      level: 2,
+    },
+  ],
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // EXPORTS
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -302,7 +355,9 @@ export const PROGRESSION_CHAINS: ProgressionChain[] = [
   PUSH_VERTICAL,
   PULL_VERTICAL,
   PULL_HORIZONTAL,
+  PULL_GRIP_NECK,
   LEGS_SQUAT,
+  LEGS_ADDUCTOR,
   CORE_ANTERIOR,
   CORE_POSTERIOR,
 ]

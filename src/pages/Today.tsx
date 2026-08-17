@@ -27,6 +27,8 @@ export default function Today() {
   async function handleItemTap(item: PlanItem) {
     if (item.target.tab === 'recovery') {
       navigate(`/recovery?area=${item.target.area}`)
+    } else if (item.target.tab === 'calisthenics') {
+      navigate('/calisthenics')
     } else if (item.target.tab === 'morning' || item.target.tab === 'bjj_release') {
       navigate(`/mobility?tab=${item.target.tab}`)
     } else {

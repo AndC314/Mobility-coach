@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Card, Tag } from './Card'
 import BodyMap from './BodyMap'
@@ -10,6 +10,10 @@ import { db } from '../db/db'
 import { todayIso } from '../lib/date'
 import type { CalisthenicsExerciseId } from '../db/db'
 
+export interface BulkPrefill {
+  exercises: { id: string; value: number; sets: number }[]
+}
+
 type Tab = 'log' | 'bulk' | 'muscle_map'
 
 const TABS: { id: Tab; label: string }[] = [
@@ -18,8 +22,19 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'muscle_map', label: '💪 Muscle Map' },
 ]
 
-export default function CalisthenicsSection() {
+interface CalisthenicsSectionProps {
+  prefill?: BulkPrefill | null
+  onPrefillConsumed?: () => void
+}
+
+export default function CalisthenicsSection({ prefill, onPrefillConsumed }: CalisthenicsSectionProps) {
   const [tab, setTab] = useState<Tab>('log')
+
+  useEffect(() => {
+    if (prefill) {
+      setTab('bulk')
+    }
+  }, [prefill])
 
   return (
     <div className="space-y-4">
@@ -40,7 +55,7 @@ export default function CalisthenicsSection() {
       </div>
 
       {tab === 'log' && <LogTab />}
-      {tab === 'bulk' && <BulkTab />}
+      {tab === 'bulk' && <BulkTab prefill={prefill} onPrefillConsumed={onPrefillConsumed} />}
       {tab === 'muscle_map' && <MuscleMapTab />}
     </div>
   )
@@ -286,12 +301,26 @@ interface BulkEntry {
   restSec: number
 }
 
-function BulkTab() {
+function BulkTab({ prefill, onPrefillConsumed }: { prefill?: BulkPrefill | null; onPrefillConsumed?: () => void }) {
   const [selected, setSelected] = useState<BulkEntry[]>([])
   const [view, setView] = useState<'picker' | 'config'>('picker')
   const [date, setDate] = useState(todayIso())
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    if (prefill && prefill.exercises.length > 0) {
+      const entries: BulkEntry[] = prefill.exercises.map((e) => ({
+        id: e.id as CalisthenicsExerciseId,
+        value: e.value,
+        sets: e.sets,
+        restSec: 60,
+      }))
+      setSelected(entries)
+      setView('config')
+      onPrefillConsumed?.()
+    }
+  }, [prefill])
 
   function toggleExercise(id: CalisthenicsExerciseId) {
     if (selected.some((s) => s.id === id)) {

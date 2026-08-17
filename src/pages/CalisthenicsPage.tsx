@@ -1,7 +1,22 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import CalisthenicsSection from '../components/CalisthenicsSection'
+import CalisthenicsSection, { type BulkPrefill } from '../components/CalisthenicsSection'
+import TodayStrengthCard from '../components/TodayStrengthCard'
+import type { SessionExercise } from '../lib/calisthenicsSession'
 
 export default function CalisthenicsPage() {
+  const [prefill, setPrefill] = useState<BulkPrefill | null>(null)
+
+  function handleStartSession(exercises: SessionExercise[]) {
+    setPrefill({
+      exercises: exercises.map((ex) => ({
+        id: ex.exerciseId,
+        value: ex.targetValue,
+        sets: ex.targetSets,
+      })),
+    })
+  }
+
   return (
     <div className="space-y-4 pb-4 fade-in">
       <div className="flex items-center justify-between">
@@ -17,7 +32,9 @@ export default function CalisthenicsPage() {
         </Link>
       </div>
 
-      <CalisthenicsSection />
+      <TodayStrengthCard onStartSession={handleStartSession} />
+
+      <CalisthenicsSection prefill={prefill} onPrefillConsumed={() => setPrefill(null)} />
     </div>
   )
 }

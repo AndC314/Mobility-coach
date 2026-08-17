@@ -1,9 +1,11 @@
 import { Card } from './Card'
 import { useWeakLink, type CategoryScore } from '../hooks/useWeakLink'
+import { usePlateauExercises } from '../hooks/usePlateauExercises'
 import { LEVEL_COLORS } from '../data/progressionChains'
 
 export default function WeakLinkCard() {
   const analysis = useWeakLink()
+  const plateaus = usePlateauExercises()
 
   if (!analysis) return null
 
@@ -57,6 +59,29 @@ export default function WeakLinkCard() {
             <div className="mt-1 text-[10px] text-muted">
               Unlocks: {weakest.bottleneck.unlocksExercise}
             </div>
+          </div>
+        )}
+
+        {plateaus && plateaus.length > 0 && (
+          <div className="rounded-lg bg-card2 border border-orange/20 p-2.5">
+            <div className="text-[10px] font-bold text-orange uppercase tracking-wider mb-1.5">
+              Plateaus
+            </div>
+            <div className="space-y-1.5">
+              {plateaus.slice(0, 3).map((p) => (
+                <div key={p.exerciseId} className="flex items-center justify-between">
+                  <span className="text-xs text-ink">{p.name}</span>
+                  <span className="text-[10px] text-muted">
+                    {p.currentBest} {p.unit} &middot; {p.sessionsStuck} sessions stuck
+                  </span>
+                </div>
+              ))}
+            </div>
+            {plateaus.length > 3 && (
+              <div className="mt-1 text-[10px] text-muted">
+                +{plateaus.length - 3} more
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -15,7 +15,7 @@ export interface PlanItem {
   id: string
   label: string
   durationMin: number
-  target: { tab: 'morning' | 'bjj_release' | ProgressionKey | 'recovery'; area?: SorenessArea }
+  target: { tab: 'morning' | 'bjj_release' | ProgressionKey | 'recovery' | 'calisthenics'; area?: SorenessArea }
   done: boolean
   percent: number
 }
@@ -241,6 +241,21 @@ export async function generateTodayPlan(
         percent: 0
       })
     }
+  }
+
+  // Add calisthenics session if user has training history and categories are available
+  const calLogsCount = await db.calisthenicsLogs.count()
+  if (calLogsCount > 0 && suppressedCategories.length < 4) {
+    const availableCats = 4 - suppressedCategories.length
+    const estMin = availableCats >= 3 ? 18 : 12
+    items.push({
+      id: 'calisthenics_session',
+      label: 'Strength session',
+      durationMin: estMin,
+      target: { tab: 'calisthenics' },
+      done: false,
+      percent: 0
+    })
   }
 
   // Reflect real progress from today's sessions
