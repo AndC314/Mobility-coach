@@ -157,15 +157,13 @@ export default function Today() {
       {avatarStats?.recoveryReadiness && (
         <Card>
           <h2 className="mb-3 text-base font-bold">Training readiness</h2>
-          <div style={{ height: 320 }}>
-            <SkillRadar recoveryReadiness={{
-              Push: avatarStats.recoveryReadiness.Push || 50,
-              Pull: avatarStats.recoveryReadiness.Pull || 50,
-              Legs: avatarStats.recoveryReadiness.Legs || 50,
-              Core: avatarStats.recoveryReadiness.Core || 50,
-              Mobility: avatarStats.recoveryReadiness.Mobility || 50
-            }} />
-          </div>
+          <SkillRadar recoveryReadiness={{
+            Push: avatarStats.recoveryReadiness.Push || 50,
+            Pull: avatarStats.recoveryReadiness.Pull || 50,
+            Legs: avatarStats.recoveryReadiness.Legs || 50,
+            Core: avatarStats.recoveryReadiness.Core || 50,
+            Mobility: avatarStats.recoveryReadiness.Mobility || 50
+          }} />
           <p className="mt-2 text-xs text-muted">Inner ring: skill levels - Outer ring: training readiness</p>
         </Card>
       )}
