@@ -1,12 +1,17 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Card, Tag } from '../components/Card'
-import { PRESET_WORKOUTS, HIIT_FORMAT_INFO, type HiitWorkoutDef, type HiitFormat } from '../data/hiitWorkouts'
+import { PRESET_WORKOUTS, HIIT_FORMAT_INFO, generateBalancedHiit, type HiitWorkoutDef, type HiitFormat } from '../data/hiitWorkouts'
 import { getExerciseDef } from '../data/calisthenics'
 import HiitTimer from '../components/HiitTimer'
 
 export default function HiitPage() {
   const [activeWorkout, setActiveWorkout] = useState<HiitWorkoutDef | null>(null)
   const [filterFormat, setFilterFormat] = useState<HiitFormat | 'all'>('all')
+  const [generatedWorkout, setGeneratedWorkout] = useState<HiitWorkoutDef | null>(null)
+
+  const handleGenerate = useCallback(() => {
+    setGeneratedWorkout(generateBalancedHiit(3))
+  }, [])
 
   if (activeWorkout) {
     return <HiitTimer workout={activeWorkout} onClose={() => setActiveWorkout(null)} />
@@ -23,6 +28,63 @@ export default function HiitPage() {
         <h1 className="text-2xl font-extrabold">HIIT Workouts</h1>
       </div>
 
+      {/* Random Generator */}
+      <Card>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-bold text-ink">Random Full Body</h3>
+              <p className="text-[11px] text-muted">Push → Pull → Legs → Core, 40s/20s × 3 rounds</p>
+            </div>
+            <button
+              onClick={handleGenerate}
+              className="rounded-full bg-orange/15 px-3 py-1.5 text-xs font-bold text-orange border border-orange/30"
+            >
+              🎲 Generate
+            </button>
+          </div>
+
+          {generatedWorkout && (
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-1">
+                {generatedWorkout.exercises.map((exId, i) => {
+                  const def = getExerciseDef(exId)
+                  const catColors = ['#e8622a', '#2ec4b6', '#f5c842', '#a78bfa']
+                  return (
+                    <span
+                      key={`${exId}-${i}`}
+                      className="rounded-full px-2 py-0.5 text-[10px] font-semibold border"
+                      style={{
+                        color: catColors[i],
+                        background: catColors[i] + '15',
+                        borderColor: catColors[i] + '30',
+                      }}
+                    >
+                      {def?.name ?? exId}
+                    </span>
+                  )
+                })}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setActiveWorkout(generatedWorkout)}
+                  className="flex-1 rounded-xl bg-orange py-2.5 text-xs font-bold text-white"
+                >
+                  Start Workout
+                </button>
+                <button
+                  onClick={handleGenerate}
+                  className="rounded-xl border border-border bg-card px-3 py-2.5 text-xs font-semibold text-muted"
+                >
+                  Reroll
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </Card>
+
+      {/* Format Filters */}
       <div className="flex gap-1.5 overflow-x-auto pb-1">
         <FilterButton active={filterFormat === 'all'} onClick={() => setFilterFormat('all')}>
           All
@@ -34,6 +96,7 @@ export default function HiitPage() {
         ))}
       </div>
 
+      {/* Preset Workouts */}
       <div className="space-y-3">
         {filtered.map((w) => (
           <button

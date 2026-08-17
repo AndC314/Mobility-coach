@@ -1,4 +1,5 @@
 import type { CalisthenicsExerciseId } from '../db/db'
+import { CALISTHENICS_EXERCISES, type ExerciseCategory } from './calisthenics'
 
 export type HiitFormat = 'tabata' | 'emom' | 'amrap'
 
@@ -30,6 +31,65 @@ export const HIIT_FORMAT_INFO: Record<HiitFormat, { label: string; description: 
     icon: '🔥',
   },
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// RANDOM WORKOUT GENERATOR
+// Picks one exercise per category in push→pull→legs→core order
+// ─────────────────────────────────────────────────────────────────────────
+
+const HIIT_POOL: Record<ExerciseCategory, CalisthenicsExerciseId[]> = {
+  push: ['pushups', 'diamond_push_ups', 'wide_push_ups', 'hindu_pushups', 'pike_pushups', 'archer_pushups'],
+  pull: ['australian_pullups', 'pullups', 'ring_rows', 'scapular_pullups', 'door_pull'],
+  legs: ['squats', 'lunge_forward', 'lunge_backward', 'bulgarian_squat', 'glute_bridge', 'calf_raises'],
+  core: ['hollow_body_hold', 'v_up', 'dead_bug', 'leg_raise', 'russian_twist', 'sit_ups'],
+}
+
+function pickRandom<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)]
+}
+
+export function generateBalancedHiit(rounds: 2 | 3 = 3): HiitWorkoutDef {
+  const push = pickRandom(HIIT_POOL.push)
+  const pull = pickRandom(HIIT_POOL.pull)
+  const legs = pickRandom(HIIT_POOL.legs)
+  const core = pickRandom(HIIT_POOL.core)
+
+  const exercises: CalisthenicsExerciseId[] = [push, pull, legs, core]
+  const totalRounds = exercises.length * rounds
+
+  const names = exercises.map((id) => {
+    const def = CALISTHENICS_EXERCISES.find((e) => e.id === id)
+    return def?.name ?? id
+  })
+
+  return {
+    id: `random_${Date.now()}`,
+    name: 'Full Body Flow',
+    format: 'tabata',
+    description: `${names.join(' → ')} × ${rounds} rounds`,
+    workSec: 40,
+    restSec: 20,
+    rounds: totalRounds,
+    exercises,
+  }
+}
+
+export function getExercisePool(): Record<ExerciseCategory, { id: CalisthenicsExerciseId; name: string }[]> {
+  const result: Record<ExerciseCategory, { id: CalisthenicsExerciseId; name: string }[]> = {
+    push: [], pull: [], legs: [], core: [],
+  }
+  for (const cat of Object.keys(HIIT_POOL) as ExerciseCategory[]) {
+    result[cat] = HIIT_POOL[cat].map((id) => {
+      const def = CALISTHENICS_EXERCISES.find((e) => e.id === id)
+      return { id, name: def?.name ?? id }
+    })
+  }
+  return result
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// PRESET WORKOUTS
+// ─────────────────────────────────────────────────────────────────────────
 
 export const PRESET_WORKOUTS: HiitWorkoutDef[] = [
   {
@@ -91,5 +151,25 @@ export const PRESET_WORKOUTS: HiitWorkoutDef[] = [
     restSec: 0,
     rounds: 1,
     exercises: ['squats', 'lunge_forward', 'bulgarian_squat'],
+  },
+  {
+    id: 'balanced_foundation',
+    name: 'Foundation Flow',
+    format: 'tabata',
+    description: 'Push→Pull→Legs→Core balanced circuit, 40s/20s × 3 rounds',
+    workSec: 40,
+    restSec: 20,
+    rounds: 12,
+    exercises: ['pushups', 'australian_pullups', 'squats', 'dead_bug'],
+  },
+  {
+    id: 'balanced_advanced',
+    name: 'Full Body Blitz',
+    format: 'tabata',
+    description: 'Advanced push→pull→legs→core, 40s/20s × 3 rounds',
+    workSec: 40,
+    restSec: 20,
+    rounds: 12,
+    exercises: ['diamond_push_ups', 'pullups', 'bulgarian_squat', 'v_up'],
   },
 ]

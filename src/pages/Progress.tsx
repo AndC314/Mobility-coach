@@ -4,6 +4,7 @@ import {
 } from 'recharts'
 import SkillTree from '../components/SkillTree'
 import SkillRadar from '../components/SkillRadar'
+import WeakLinkCard from '../components/WeakLinkCard'
 import { Card } from '../components/Card'
 import { useActivityTimeseries } from '../hooks/useActivityTimeseries'
 
@@ -38,7 +39,12 @@ export default function Progress() {
         ))}
       </div>
 
-      {view === 'tree' && <SkillTree />}
+      {view === 'tree' && (
+        <div className="space-y-4">
+          <WeakLinkCard />
+          <SkillTree />
+        </div>
+      )}
 
       {view === 'trends' && (
         <div className="space-y-4">
