@@ -3,6 +3,7 @@ import { Card, Tag } from './Card'
 import { useSkillTree } from '../hooks/useSkillTree'
 import { useProgressionState, useCurrentLevel, type ResolvedChain, type ResolvedNode, type NodeUnlockStatus } from '../hooks/useProgressionState'
 import { LEVEL_COLORS, LEVEL_LABELS } from '../data/progressionChains'
+import { getExerciseDef } from '../data/calisthenics'
 import LevelAssessment from './LevelAssessment'
 import TrendIndicator from './TrendIndicator'
 import type { SkillBranch, SkillNode, NodeStatus } from '../lib/skillTree'
@@ -209,12 +210,15 @@ function ProgressionNodeRow({ node, isLast }: { node: ResolvedNode; isLast: bool
         >
           <div className="flex-1 min-w-0">
             <div className="text-sm font-bold text-ink truncate">{node.exerciseName}</div>
-            <div className="text-[11px] text-muted flex items-center">
+            <div className="text-[11px] text-muted flex items-center gap-1">
               {node.best != null
-                ? <><span>Best: {node.best}{node.unit === 's' ? 's' : ' reps'}</span><TrendIndicator exerciseId={node.exerciseId} /></>
+                ? <>
+                    <span>Best: {node.best}/{node.masteryTarget}{node.unit === 's' ? 's' : ' reps'}</span>
+                    <TrendIndicator exerciseId={node.exerciseId} />
+                  </>
                 : node.status === 'locked'
                   ? 'Locked'
-                  : 'No data yet'}
+                  : `Target: ${node.masteryTarget}${node.unit === 's' ? 's' : ' reps'}`}
             </div>
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -227,42 +231,95 @@ function ProgressionNodeRow({ node, isLast }: { node: ResolvedNode; isLast: bool
         </button>
 
         {open && node.status !== 'locked' && (
+          <ExerciseDetails node={node} style={style} />
+        )}
+
+        {open && node.status === 'locked' && (
           <div className="mt-2 rounded-lg bg-card2 p-3 space-y-2">
-            {node.nextUnlockThreshold != null && node.unlocksExercise && (
-              <div>
+            <p className="text-[11px] font-semibold text-muted uppercase tracking-wider">Requirements</p>
+            {node.unlockRequirements.map((req) => (
+              <div key={req.exerciseName}>
                 <div className="mb-1 flex items-center justify-between text-[11px]">
-                  <span className="text-muted">
-                    Unlocks <span className="font-semibold text-ink">{node.unlocksExercise}</span>
-                  </span>
-                  <span className="font-bold" style={{ color: style.ring }}>
-                    {node.best ?? 0}/{node.nextUnlockThreshold}{node.nextUnlockUnit === 's' ? 's' : ''}
+                  <span className="text-ink">{req.exerciseName}</span>
+                  <span className="font-bold" style={{ color: req.current >= req.threshold ? '#2ec4b6' : '#e8622a' }}>
+                    {req.current}/{req.threshold}{req.unit === 's' ? 's' : ''}
                   </span>
                 </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-border">
+                <div className="h-1 overflow-hidden rounded-full bg-border">
                   <div
                     className="h-full rounded-full transition-all"
                     style={{
-                      width: `${node.progressTowardNext}%`,
-                      background: node.progressTowardNext >= 100 ? '#2ec4b6' : '#f5c842',
+                      width: `${Math.min(100, Math.round((req.current / req.threshold) * 100))}%`,
+                      background: req.current >= req.threshold ? '#2ec4b6' : '#e8622a',
                     }}
                   />
                 </div>
               </div>
-            )}
-            {node.status === 'mastered' && !node.unlocksExercise && (
-              <p className="text-[11px] text-teal font-semibold">Chain complete — mastered!</p>
-            )}
-          </div>
-        )}
-
-        {open && node.status === 'locked' && (
-          <div className="mt-2 rounded-lg bg-card2 p-3">
-            <p className="text-[11px] text-muted">
-              Requirements not met yet. Keep training the previous exercises to unlock.
-            </p>
+            ))}
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+function ExerciseDetails({ node, style }: { node: ResolvedNode; style: { ring: string } }) {
+  const def = getExerciseDef(node.exerciseId)
+
+  return (
+    <div className="mt-2 rounded-lg bg-card2 p-3 space-y-2">
+      {node.nextUnlockThreshold != null && node.unlocksExercise && (
+        <div>
+          <div className="mb-1 flex items-center justify-between text-[11px]">
+            <span className="text-muted">
+              Unlocks <span className="font-semibold text-ink">{node.unlocksExercise}</span>
+            </span>
+            <span className="font-bold" style={{ color: style.ring }}>
+              {node.best ?? 0}/{node.nextUnlockThreshold}{node.nextUnlockUnit === 's' ? 's' : ''}
+            </span>
+          </div>
+          <div className="h-1.5 overflow-hidden rounded-full bg-border">
+            <div
+              className="h-full rounded-full transition-all"
+              style={{
+                width: `${node.progressTowardNext}%`,
+                background: node.progressTowardNext >= 100 ? '#2ec4b6' : '#f5c842',
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {node.status !== 'mastered' && !node.unlocksExercise && (
+        <div className="flex items-center justify-between text-[11px]">
+          <span className="text-muted">Mastery target</span>
+          <span className="font-bold" style={{ color: style.ring }}>
+            {node.best ?? 0}/{node.masteryTarget}{node.unit === 's' ? 's' : ' reps'}
+          </span>
+        </div>
+      )}
+
+      {node.status === 'mastered' && !node.unlocksExercise && (
+        <p className="text-[11px] text-teal font-semibold">Chain complete — mastered!</p>
+      )}
+
+      {def?.cue && (
+        <div className="border-t border-border pt-2">
+          <p className="text-[11px] font-semibold text-muted uppercase tracking-wider mb-1">Execution</p>
+          <p className="text-[11px] text-ink leading-relaxed">{def.cue}</p>
+        </div>
+      )}
+
+      {def?.lowMobilityTip && (
+        <div className="rounded-md bg-gold/10 px-2 py-1.5">
+          <p className="text-[11px] font-semibold text-gold mb-0.5">Low mobility tip</p>
+          <p className="text-[11px] text-ink leading-relaxed">{def.lowMobilityTip}</p>
+        </div>
+      )}
+
+      {def?.feelIt && (
+        <p className="text-[11px] text-muted italic">{def.feelIt}</p>
+      )}
     </div>
   )
 }

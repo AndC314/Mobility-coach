@@ -17,7 +17,8 @@ export default {
         accent: '#e8622a',
         teal: '#2ec4b6',
         gold: '#f5c842',
-        purple: '#a78bfa'
+        purple: '#a78bfa',
+        orange: '#f97316'
       },
       borderRadius: {
         xl2: '1.25rem'

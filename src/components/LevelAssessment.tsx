@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, Tag } from './Card'
 import { db, type CalisthenicsExerciseId, type CalisthenicsMetric } from '../db/db'
 import { CALISTHENICS_EXERCISES } from '../data/calisthenics'
@@ -81,8 +81,21 @@ export default function LevelAssessment({ onClose }: Props) {
   const [inputValue, setInputValue] = useState('')
   const [saving, setSaving] = useState(false)
   const [done, setDone] = useState(false)
+  const [prs, setPrs] = useState<Map<CalisthenicsExerciseId, number>>(new Map())
+
+  useEffect(() => {
+    db.calisthenicsLogs.toArray().then((logs) => {
+      const best = new Map<CalisthenicsExerciseId, number>()
+      for (const log of logs) {
+        const prev = best.get(log.exerciseId) ?? 0
+        if (log.value > prev) best.set(log.exerciseId, log.value)
+      }
+      setPrs(best)
+    })
+  }, [])
 
   const current = ASSESSMENT_EXERCISES[step]
+  const currentPR = prs.get(current.exerciseId)
 
   async function handleNext() {
     const val = parseInt(inputValue, 10)
@@ -210,6 +223,12 @@ export default function LevelAssessment({ onClose }: Props) {
           <p className="text-[11px] text-muted">
             {current.metric === 'hold_sec' ? 'Enter seconds' : 'Enter max reps (one set)'}
           </p>
+
+          {currentPR != null && currentPR > 0 && (
+            <p className="text-sm font-semibold text-accent">
+              PR to beat: {currentPR} {current.unit}
+            </p>
+          )}
         </div>
       </Card>
 

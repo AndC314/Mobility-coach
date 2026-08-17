@@ -12,6 +12,13 @@ import { CALISTHENICS_EXERCISES } from '../data/calisthenics'
 
 export type NodeUnlockStatus = 'locked' | 'unlocked' | 'in_progress' | 'mastered'
 
+export interface UnlockRequirementResolved {
+  exerciseName: string
+  current: number
+  threshold: number
+  unit: 'reps' | 's'
+}
+
 export interface ResolvedNode {
   exerciseId: CalisthenicsExerciseId
   exerciseName: string
@@ -19,10 +26,12 @@ export interface ResolvedNode {
   status: NodeUnlockStatus
   best: number | null
   unit: 'reps' | 's'
+  masteryTarget: number
   progressTowardNext: number
   nextUnlockThreshold: number | null
   nextUnlockUnit: 'reps' | 's' | null
   unlocksExercise: string | null
+  unlockRequirements: UnlockRequirementResolved[]
 }
 
 export interface ResolvedChain {
@@ -77,6 +86,17 @@ function resolveChain(
     const status = getNodeStatus(node, bestMap, chain)
     const { progressTowardNext, nextUnlockThreshold, nextUnlockUnit, unlocksExercise } =
       getNextUnlockInfo(node, bestMap, chain)
+    const masteryTarget = getMasteryTarget(node, chain)
+
+    const unlockRequirements: UnlockRequirementResolved[] = node.unlockRequirements.map((req) => {
+      const reqExercise = CALISTHENICS_EXERCISES.find((e) => e.id === req.exerciseId)
+      return {
+        exerciseName: reqExercise?.name ?? req.exerciseId,
+        current: bestMap.get(req.exerciseId) ?? 0,
+        threshold: req.threshold,
+        unit: req.unit,
+      }
+    })
 
     return {
       exerciseId: node.exerciseId,
@@ -85,10 +105,12 @@ function resolveChain(
       status,
       best,
       unit,
+      masteryTarget,
       progressTowardNext,
       nextUnlockThreshold,
       nextUnlockUnit,
       unlocksExercise,
+      unlockRequirements,
     }
   })
 
@@ -163,6 +185,23 @@ function isMastered(
     const req = dep.unlockRequirements.find((r) => r.exerciseId === node.exerciseId)
     return req ? best >= req.threshold : true
   })
+}
+
+function getMasteryTarget(node: ProgressionNode, chain: ProgressionChain): number {
+  const dependents = chain.nodes.filter((n) =>
+    n.unlockRequirements.some((r) => r.exerciseId === node.exerciseId)
+  )
+
+  if (dependents.length > 0) {
+    return Math.max(
+      ...dependents.map((d) =>
+        d.unlockRequirements.find((r) => r.exerciseId === node.exerciseId)?.threshold ?? 0
+      )
+    )
+  }
+
+  const exercise = CALISTHENICS_EXERCISES.find((e) => e.id === node.exerciseId)
+  return exercise?.type === 'hold' ? 60 : 20
 }
 
 function getNextUnlockInfo(

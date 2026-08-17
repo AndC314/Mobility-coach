@@ -24,6 +24,8 @@ export interface CalisthenicsExerciseDef {
   bjjTransfer?: string
   /** What body parts you should feel working */
   feelIt?: string
+  /** Modification for people with limited mobility */
+  lowMobilityTip?: string
 }
 
 export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
@@ -36,7 +38,10 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     icon: '🧱',
     category: 'core',
     primaryMuscles: ['Abs / Core', 'Lower back'],
-    description: 'Total hold time, forearms or hands, straight line from shoulders to ankles.'
+    description: 'Total hold time, forearms or hands, straight line from shoulders to ankles.',
+    cue: 'Forearms flat, elbows under shoulders. Squeeze glutes and brace abs as if about to take a punch. Straight line from ears to ankles — no sagging hips, no piked butt.',
+    lowMobilityTip: 'If wrists or shoulders limit a hand plank, stay on forearms. Knee plank is a valid regression — still squeeze glutes and brace core.',
+    feelIt: 'Entire core as a unit. If lower back aches, tilt your pelvis under (posterior tilt) and squeeze glutes harder.',
   },
   {
     id: 'hollow_body_hold',
@@ -50,6 +55,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     description: 'Your structural armor when playing guard or defending from the bottom. Keep your spine off the mat.',
     setup: 'Lie flat on your yoga mat.',
     cue: 'Lie flat on your yoga mat. Point your toes and tuck your chin to your chest. Contract your abs heavily to lift your shoulder blades and your legs a few inches off the floor. The absolute most important detail: You must crush your lower back into the mat. There should be zero gap between your lumbar spine and the floor. If you cannot maintain this, bring your knees into a tuck position until your core is strong enough to keep your back flat with straight legs.',
+    lowMobilityTip: 'If you cannot flatten your lower back with legs straight, bend your knees into a tuck (feet off floor, knees toward chest). Gradually extend legs over weeks as your core gets stronger.',
     bjjTransfer: 'This is your structural armor when playing guard or defending from the bottom. When you are on your back, an opponent\'s goal is to flatten your spine against the mat, which kills your hip mobility and stops you from bridging. A strong hollow body acts like a spring—it keeps your core engaged, your shoulders off the mat, and your hips active, making it incredibly difficult for them to pin you flat.',
     feelIt: 'Your entire abdominal wall should be burning. If you feel any tension or arching in your lower back, your form has broken and you are no longer protecting your spine.'
   },
@@ -62,7 +68,10 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     icon: '💪',
     category: 'push',
     primaryMuscles: ['Chest', 'Front delts', 'Triceps'],
-    description: 'Max reps with good form, chest to floor.'
+    description: 'Max reps with good form, chest to floor.',
+    cue: 'Hands just outside shoulder-width, fingers spread. Lower your chest to one fist-height from the floor. Lock elbows fully at the top. Keep your body in a rigid plank throughout.',
+    lowMobilityTip: 'If wrists hurt, use fist push-ups or push-up handles. For shoulder limitations, reduce range — stop at 90° elbow bend and build depth gradually.',
+    feelIt: 'Chest, front shoulders, and triceps. If your lower back sags, squeeze your glutes harder.',
   },
   {
     id: 'pullups',
@@ -74,7 +83,10 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     category: 'pull',
     primaryMuscles: ['Lats', 'Biceps', 'Rhomboids'],
     equipment: ['pull_up_bar'],
-    description: 'Max reps, full hang to chin over bar.'
+    description: 'Max reps, full hang to chin over bar.',
+    cue: 'Dead hang with arms fully extended. Initiate by depressing your shoulder blades, then pull until your chin clears the bar. Lower with control to full extension.',
+    lowMobilityTip: 'If shoulder mobility limits full overhead hang, use a slightly wider grip or start from a box to reduce the bottom stretch. Band-assisted reps count — log them.',
+    feelIt: 'Lats, biceps, and middle back. If you only feel biceps, focus on pulling elbows down toward your hips.',
   },
   {
     id: 'squats',
@@ -85,7 +97,10 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     icon: '🦵',
     category: 'legs',
     primaryMuscles: ['Quads', 'Glutes'],
-    description: 'Bodyweight squats, max reps with full depth.'
+    description: 'Bodyweight squats, max reps with full depth.',
+    cue: 'Feet shoulder-width, toes slightly out. Push your hips back and down as if sitting into a chair. Knees track over toes. Descend until hip crease passes below knee. Drive up through your heels.',
+    lowMobilityTip: 'Elevate your heels on a small plate or book if ankles are stiff. Hold a doorframe or TRX for balance if you tip backward at depth.',
+    feelIt: 'Quads and glutes. If your lower back rounds at the bottom, you need more ankle or hip mobility — use the heel elevation.',
   },
   {
     id: 'bulgarian_squat',
@@ -96,7 +111,10 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     icon: '🦿',
     category: 'legs',
     primaryMuscles: ['Quads', 'Glutes'],
-    description: 'Rear foot elevated, max reps per leg.'
+    description: 'Rear foot elevated, max reps per leg.',
+    cue: 'Rear foot on a bench or step, laces down. Front foot far enough forward that your knee stays over your ankle at the bottom. Drop your back knee straight down, then drive up through front heel.',
+    lowMobilityTip: 'Use a lower surface (a step instead of a bench) if your hip flexors are too tight. Hold something for balance until stability improves.',
+    feelIt: 'Front leg quad and glute. If your back hip cramps, stretch your hip flexors between sets.',
   },
   {
     id: 'australian_pullups',
@@ -109,7 +127,10 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     primaryMuscles: ['Rhomboids', 'Lats', 'Rear delts'],
     equipment: ['pull_up_bar'],
     description: 'Horizontal row under a bar or rings, body straight.',
-    equipmentNote: 'Needs a low bar or rings — log when accessible.'
+    equipmentNote: 'Needs a low bar or rings — log when accessible.',
+    cue: 'Hang beneath a low bar or rings with body straight. Pull your chest to the bar by squeezing shoulder blades together. Lower with control to full arm extension.',
+    lowMobilityTip: 'Walk your feet further from the bar to make it easier (more upright = less load). Keep your body rigid — if hips sag, step feet closer to beneath the bar.',
+    feelIt: 'Mid-back between shoulder blades and lats. If only biceps burn, focus on initiating with a shoulder blade squeeze.',
   },
   {
     id: 'dips',
@@ -122,7 +143,10 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     primaryMuscles: ['Triceps', 'Chest'],
     equipment: ['parallel_bars'],
     description: 'Parallel bars or bench, max reps, full lockout at top, controlled descent.',
-    equipmentNote: 'Needs parallel bars or sturdy edges — log when accessible.'
+    equipmentNote: 'Needs parallel bars or sturdy edges — log when accessible.',
+    cue: 'Grip bars, lock arms at top. Lean slightly forward and lower until elbows reach 90°. Drive back to full lockout without swinging.',
+    lowMobilityTip: 'If shoulders hurt at the bottom, reduce depth — stop when upper arms are parallel to floor. Bench dips with feet on floor are a valid regression.',
+    feelIt: 'Triceps and lower chest. Shoulder pain means you went too deep for your current mobility.',
   },
   {
     id: 'pike_pushups',
@@ -133,7 +157,10 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     icon: '🔺',
     category: 'push',
     primaryMuscles: ['Front delts'],
-    description: 'Hips high in a pike/downward-dog shape, lower head toward floor between hands. Primary shoulder press progression toward handstand push-ups.'
+    description: 'Hips high in a pike/downward-dog shape, lower head toward floor between hands. Primary shoulder press progression toward handstand push-ups.',
+    cue: 'Set up in a downward-dog shape with hips high and hands shoulder-width. Bend elbows to lower the top of your head toward the floor between your hands. Press back up to lockout.',
+    lowMobilityTip: 'Bend your knees as much as needed to keep your hips high — tight hamstrings will pull your hips down otherwise. Focus on getting your torso vertical rather than forcing straight legs.',
+    feelIt: 'Front deltoids and triceps. If you feel it more in your chest, walk your hands closer to your feet.',
   },
   {
     id: 'tuck_lsit',
@@ -145,7 +172,10 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     category: 'core',
     primaryMuscles: ['Abs / Core', 'Hip flexors'],
     equipment: ['parallettes'],
-    description: 'Knees tucked to chest, both feet off the floor, arms straight. Total accumulated hold time. The stepping stone between floor support holds and full L-sit.'
+    description: 'Knees tucked to chest, both feet off the floor, arms straight. Total accumulated hold time. The stepping stone between floor support holds and full L-sit.',
+    cue: 'Hands on parallettes or floor, arms locked straight. Depress shoulders (push down hard). Tuck knees tightly to chest and lift feet off the floor. Hold with locked arms.',
+    lowMobilityTip: 'If wrists hurt on the floor, parallettes are essential — they keep the wrist neutral. Start with just lifting your butt off the floor with knees tucked, even if feet barely clear.',
+    feelIt: 'Deep lower abs, hip flexors, and shoulder depression. If triceps fatigue first, focus on pushing the floor away harder.',
   },
   {
     id: 'lsit',
@@ -160,6 +190,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     description: 'Hold a perfect L-shape on parallettes or floor. Core compression secret to guard retention.',
     setup: 'Use your low or high parallettes. If on floor, hands shoulder-width apart, straight arms.',
     cue: 'Depress your shoulders away from your ears (push the parallettes hard into the floor). Compress your abdomen heavily to lift your legs, locking your knees.',
+    lowMobilityTip: 'If hamstrings prevent straight legs, keep a slight knee bend. The key is shoulder depression and hip compression, not straight legs. Work hamstring flexibility separately.',
     bjjTransfer: 'Core compression is the secret to guard retention. The ability to pull your knees tightly to your chest is what stops aggressive guard passes and allows you to pummel your legs back inside.',
     feelIt: 'Deep in your lower abs and hip flexors. If your quads cramp, your abs aren\'t compressing hard enough.'
   },
@@ -191,6 +222,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     description: 'Single-leg squat to full depth. Use your plyo box to control depth if still building balance.',
     setup: 'Stand on one leg. Use your plyo box to touch down at the bottom if needed.',
     cue: 'Root your working foot into the floor, grabbing the mat with your toes. Reach your arms forward as a counterbalance, and brace your core as if taking a punch.',
+    lowMobilityTip: 'Use a box or chair behind you — sit down to it to control depth. Hold a doorframe or TRX strap for balance. Tight ankles: elevate heel on a small plate.',
     bjjTransfer: 'BJJ requires explosive, asymmetrical leg strength—whether you are executing a technical stand-up under pressure, finishing a single-leg sweep, or driving through a takedown.',
     feelIt: 'Heavy engagement in the working quad, glute, and the stabilizing muscles of your ankle.'
   },
@@ -253,6 +285,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     description: 'Hip drive explosion with shoulder opening. Your upa (bridge escape) secret weapon.',
     setup: 'Lie on your back with hands planted by your ears.',
     cue: 'Lie on your back with hands planted by your ears. Drive through your heels to lift your hips, then push the floor away with your hands, trying to open your armpits toward the wall behind you.',
+    lowMobilityTip: 'If shoulders or wrists can\'t support a full bridge, work on shoulder bridges (only hips up, shoulders stay down) and wall-assisted stretches first. Never force the position.',
     bjjTransfer: 'The BJJ bridge (upa) is your primary escape tool. Calisthenics bridges drastically improve shoulder and thoracic mobility, giving you a much higher, more explosive hip drive to buck heavy opponents off you.',
     feelIt: 'Glutes, hamstrings, and a deep opening stretch in your chest and shoulders.'
   },
@@ -337,7 +370,10 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     icon: '🌉',
     category: 'legs',
     primaryMuscles: ['Glutes'],
-    description: 'Max reps driving hips upward, feet flat on floor, shoulders on ground. Squeeze glutes at top.'
+    description: 'Max reps driving hips upward, feet flat on floor, shoulders on ground. Squeeze glutes at top.',
+    cue: 'Lie on back, knees bent, feet flat and hip-width. Drive through your heels to lift hips until body is a straight line from shoulders to knees. Squeeze glutes hard at the top for 1 second.',
+    lowMobilityTip: 'If hamstrings cramp, bring feet closer to your butt. If lower back takes over, focus on a posterior pelvic tilt (tuck tailbone) before driving up.',
+    feelIt: 'Glutes primarily. If hamstrings cramp or lower back aches, reposition feet.',
   },
   {
     id: 'leg_raise',
@@ -348,7 +384,10 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     icon: '🦵',
     category: 'core',
     primaryMuscles: ['Abs / Core', 'Hip flexors'],
-    description: 'Max reps lying on back, raise straight legs from floor to 90 degrees. Lower without touching floor.'
+    description: 'Max reps lying on back, raise straight legs from floor to 90 degrees. Lower without touching floor.',
+    cue: 'Lie flat, hands under your hips or by sides. Keep lower back pinned to the floor. Raise straight legs to 90° then lower slowly without touching the floor.',
+    lowMobilityTip: 'If hamstrings are tight and you can\'t straighten legs, bend knees slightly — the core work is the same. Lower back must stay flat; reduce range if it arches.',
+    feelIt: 'Lower abs and hip flexors. Lower back lifting off the floor means you\'ve gone past your current core strength.',
   },
   {
     id: 'v_up',
@@ -359,7 +398,10 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     icon: '✌️',
     category: 'core',
     primaryMuscles: ['Abs / Core'],
-    description: 'Max reps folding body into V shape, hands and feet touch at peak contraction. Explosive movement.'
+    description: 'Max reps folding body into V shape, hands and feet touch at peak contraction. Explosive movement.',
+    cue: 'Lie flat, arms overhead. Simultaneously lift legs and torso to touch hands to feet at the top in a V shape. Lower both with control back to flat.',
+    lowMobilityTip: 'If you can\'t reach your toes, bend knees and touch shins instead (tuck V-up). Tight hamstrings make the straight-leg version unnecessarily hard on form.',
+    feelIt: 'Entire abdominal wall explosively. If hip flexors dominate, slow down the movement.',
   },
   {
     id: 'dog_bird',
@@ -370,7 +412,10 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     icon: '🐕',
     category: 'core',
     primaryMuscles: ['Abs / Core', 'Lower back'],
-    description: 'Max reps per side in quadruped position, extend opposite arm and leg. Core stabilization exercise.'
+    description: 'Max reps per side in quadruped position, extend opposite arm and leg. Core stabilization exercise.',
+    cue: 'On all fours, hands under shoulders, knees under hips. Extend opposite arm and leg simultaneously without letting hips rotate. Hold 2 seconds, return, alternate.',
+    lowMobilityTip: 'If balance is difficult, extend only the leg first (keep both hands down) until stability improves. Wrist pain: use fists or a folded towel under palms.',
+    feelIt: 'Deep core stabilizers and lower back working anti-rotationally. Hips should stay level — no twisting.',
   },
   {
     id: 'diamond_push_ups',
@@ -381,7 +426,10 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     icon: '💎',
     category: 'push',
     primaryMuscles: ['Triceps', 'Chest'],
-    description: 'Max reps with hands forming diamond shape, triceps-focused push-up. Chest nearly touches hands at bottom.'
+    description: 'Max reps with hands forming diamond shape, triceps-focused push-up. Chest nearly touches hands at bottom.',
+    cue: 'Hands together under your chest, index fingers and thumbs forming a diamond. Keep elbows tucked close to your ribs as you lower. Press back up to full lockout.',
+    lowMobilityTip: 'If wrists ache in the narrow position, widen slightly to a triangle shape or use fists. Elbows flaring means your triceps are weak — do partial range until strength builds.',
+    feelIt: 'Triceps primarily, inner chest secondarily. If shoulders hurt, your elbows are flaring too wide.',
   },
   {
     id: 'wide_push_ups',
@@ -392,7 +440,10 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     icon: '💪',
     category: 'push',
     primaryMuscles: ['Chest'],
-    description: 'Max reps with hands wider than shoulder width, emphasizes chest over triceps. Full range of motion.'
+    description: 'Max reps with hands wider than shoulder width, emphasizes chest over triceps. Full range of motion.',
+    cue: 'Hands 1.5× shoulder-width apart, fingers angled out slightly. Lower chest to the floor while keeping core tight. Press back up without letting hips sag.',
+    lowMobilityTip: 'If shoulders pinch at the bottom, don\'t go as wide — start at 1.2× shoulder width and gradually widen as pec flexibility improves.',
+    feelIt: 'Outer chest and front shoulders. Less tricep than standard push-ups.',
   },
   {
     id: 'dead_bug',
@@ -403,7 +454,10 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     icon: '🐛',
     category: 'core',
     primaryMuscles: ['Abs / Core'],
-    description: 'Max reps lying on back, alternating opposite arm and leg extension. Core control and stability.'
+    description: 'Max reps lying on back, alternating opposite arm and leg extension. Core control and stability.',
+    cue: 'Lie on back, arms pointing at ceiling, knees at 90°. Extend opposite arm overhead and opposite leg straight out, keeping lower back pinned to the floor. Return and alternate.',
+    lowMobilityTip: 'If your back arches when extending, don\'t reach the leg as far — keep it higher off the floor. Only extend as far as you can while maintaining a flat lower back.',
+    feelIt: 'Deep core stabilizers. The moment your lower back lifts off the floor, you\'ve gone too far.',
   },
   {
     id: 'wall_plank',
@@ -415,6 +469,9 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     category: 'push',
     primaryMuscles: ['Chest', 'Front delts', 'Abs / Core'],
     description: 'Hands on wall at shoulder height, lean forward into plank position. Hold with straight body line.',
+    cue: 'Hands on wall at shoulder height and width. Step feet back until body is a rigid diagonal line. Squeeze glutes, brace core. Hold without letting hips sag forward.',
+    lowMobilityTip: 'The further your feet from the wall, the harder it gets. Start close and step back gradually. This is the safest push entry point for shoulder or wrist issues.',
+    feelIt: 'Core and shoulders stabilizing. Should feel easy — it\'s a foundation exercise to build form awareness.',
   },
   {
     id: 'wall_sit',
@@ -426,6 +483,9 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     category: 'legs',
     primaryMuscles: ['Quads', 'Glutes'],
     description: 'Back flat against wall, thighs parallel to floor, knees at 90 degrees. Hold for time.',
+    cue: 'Back flat against wall, slide down until thighs are parallel to floor. Knees at 90°, shins vertical. Press your entire back into the wall.',
+    lowMobilityTip: 'If knees hurt at 90°, don\'t go as deep — keep a higher seat angle (120°) and work deeper as quad strength builds.',
+    feelIt: 'Quads burning intensely. If knees ache, you may be sliding too low or knees are drifting past toes.',
   },
   {
     id: 'superman',
@@ -437,6 +497,9 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     category: 'core',
     primaryMuscles: ['Lower back', 'Glutes'],
     description: 'Lie face down, lift arms and legs off the floor simultaneously. Squeeze glutes and lower back.',
+    cue: 'Lie face down, arms extended overhead. Simultaneously lift arms, chest, and legs off the floor by squeezing glutes and lower back. Hold at the top without craning your neck.',
+    lowMobilityTip: 'If lower back is sensitive, lift only legs OR only arms at first. Keep your neck neutral (look at the floor, not forward) to avoid cervical strain.',
+    feelIt: 'Lower back and glutes. If you feel it only in your lower back with sharp pain, reduce height of lift.',
   },
   {
     id: 'door_pull',
@@ -448,6 +511,9 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     category: 'pull',
     primaryMuscles: ['Lats', 'Biceps', 'Rhomboids'],
     description: 'Grip a door frame or sturdy door edge, lean back and pull chest toward hands. Horizontal pulling without a bar.',
+    cue: 'Grip both sides of a door frame at chest height. Lean back with arms extended, body straight. Pull your chest toward the frame by squeezing shoulder blades. Lower with control.',
+    lowMobilityTip: 'Stand closer to the frame to reduce the angle (easier). A towel over a door works if you can\'t grip the frame edges. Keep core engaged to avoid swinging.',
+    feelIt: 'Lats and mid-back. This is the most accessible pull exercise — no equipment needed beyond a doorframe.',
   },
   {
     id: 'crunches',
@@ -481,6 +547,9 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     category: 'legs',
     primaryMuscles: ['Quads', 'Glutes'],
     description: 'Step forward into a lunge, knee tracking over toes. Alternate legs. Count total reps.',
+    cue: 'Step forward, lower until both knees are at 90°. Front knee stays over ankle (not past toes). Back knee hovers just above the floor. Push back to standing through front heel.',
+    lowMobilityTip: 'If balance is shaky, hold a wall or chair. If back knee hurts touching the floor, place a folded towel under it or stop higher.',
+    feelIt: 'Front quad and glute. Back hip flexor gets a stretch at the bottom.',
   },
   {
     id: 'lunge_backward',
@@ -492,6 +561,9 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     category: 'legs',
     primaryMuscles: ['Quads', 'Glutes', 'Hamstrings'],
     description: 'Step backward into a lunge, front knee stays stable. Alternate legs. Count total reps.',
+    cue: 'Step backward, lower until both knees reach 90°. Front knee stays stable over ankle. Push off the back foot to return to standing. Alternate legs.',
+    lowMobilityTip: 'Easier on the knees than forward lunges — prefer this variant if you have knee sensitivity. Hold something for balance if needed.',
+    feelIt: 'Front glute and quad, with more hamstring than forward lunges.',
   },
   {
     id: 'calf_raises',

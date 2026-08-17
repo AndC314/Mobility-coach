@@ -124,7 +124,7 @@ export default function HiitTimer({ workout, onClose }: Props) {
         {timer.phase === 'idle' ? (
           <button
             onClick={timer.start}
-            className="flex-1 rounded-xl bg-orange py-3 text-sm font-bold text-white"
+            className="flex-1 rounded-xl bg-orange py-3.5 text-base font-bold text-white shadow-lg shadow-orange/30"
           >
             Start Workout
           </button>
