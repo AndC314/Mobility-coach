@@ -163,6 +163,8 @@ export type CalisthenicsExerciseId =
   | 'dead_hang'
   | 'neck_curls'
   | 'prone_y_raise'
+  | 'burpees'
+  | 'jumping_lunges'
   | 'wall_plank'
   | 'wall_sit'
   | 'wide_push_ups'

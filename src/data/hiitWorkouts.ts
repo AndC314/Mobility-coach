@@ -38,9 +38,9 @@ export const HIIT_FORMAT_INFO: Record<HiitFormat, { label: string; description: 
 // ─────────────────────────────────────────────────────────────────────────
 
 const HIIT_POOL: Record<ExerciseCategory, CalisthenicsExerciseId[]> = {
-  push: ['pushups', 'diamond_push_ups', 'wide_push_ups', 'hindu_pushups', 'pike_pushups', 'archer_pushups'],
+  push: ['pushups', 'diamond_push_ups', 'wide_push_ups', 'hindu_pushups', 'pike_pushups', 'archer_pushups', 'burpees'],
   pull: ['australian_pullups', 'pullups', 'ring_rows', 'scapular_pullups', 'door_pull'],
-  legs: ['squats', 'lunge_forward', 'lunge_backward', 'bulgarian_squat', 'glute_bridge', 'calf_raises'],
+  legs: ['squats', 'lunge_forward', 'lunge_backward', 'bulgarian_squat', 'glute_bridge', 'calf_raises', 'jumping_lunges'],
   core: ['hollow_body_hold', 'v_up', 'dead_bug', 'leg_raise', 'russian_twist', 'sit_ups'],
 }
 
