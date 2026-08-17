@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { Card } from '../components/Card'
 import AvatarDisplay from '../components/AvatarDisplay'
 import { usePreferences } from '../hooks/usePreferences'
+import { useAuth } from '../hooks/useAuth'
 import { downloadExport, importData, readFileAsJson, type ImportMode } from '../lib/dataTransfer'
 import { runFullRepair } from '../lib/dataRepair'
 import { primeAudio, playCompleteDing } from '../lib/sound'
@@ -17,6 +18,7 @@ const GOALS: { id: MobilityGoal; label: string; icon: string }[] = [
 
 export default function Profile() {
   const { preferences, update } = usePreferences()
+  const { user, logout } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [importMode, setImportMode] = useState<ImportMode>('merge')
   const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
@@ -324,6 +326,23 @@ export default function Profile() {
           companion app. The data model is already in place — no setup needed here yet.
         </p>
       </Card>
+
+      {user && (
+        <Card>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-bold">Account</h2>
+              <p className="text-xs text-muted">{user.email || 'Google account'}</p>
+            </div>
+            <button
+              onClick={logout}
+              className="rounded-full bg-accent/10 px-4 py-2 text-xs font-bold text-accent border border-accent/30"
+            >
+              Sign out
+            </button>
+          </div>
+        </Card>
+      )}
 
       <p className="pt-2 text-center text-xs text-muted">Mobility Coach · v1.0 · All data stored locally on this device</p>
     </div>

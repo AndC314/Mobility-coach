@@ -7,8 +7,6 @@ import { db, type CalisthenicsExerciseId } from '../db/db'
 import HiitTimer from '../components/HiitTimer'
 import ChallengeTimer from '../components/ChallengeTimer'
 
-type PageView = 'list' | 'hiit' | 'challenge'
-
 export default function HiitPage() {
   const [activeWorkout, setActiveWorkout] = useState<HiitWorkoutDef | null>(null)
   const [activeChallenge, setActiveChallenge] = useState<ChallengeDef | null>(null)
@@ -16,16 +14,23 @@ export default function HiitPage() {
   const [generatedWorkout, setGeneratedWorkout] = useState<HiitWorkoutDef | null>(null)
   const [tab, setTab] = useState<'workouts' | 'challenges'>('workouts')
   const [challengeBests, setChallengeBests] = useState<Map<CalisthenicsExerciseId, number>>(new Map())
+  const [challengeLastDone, setChallengeLastDone] = useState<Map<string, string>>(new Map())
 
   useEffect(() => {
     db.calisthenicsLogs.toArray().then((logs) => {
       const bests = new Map<CalisthenicsExerciseId, number>()
+      const lastDone = new Map<string, string>()
       for (const log of logs) {
         if (!log.notes?.startsWith('Challenge:')) continue
         const prev = bests.get(log.exerciseId) ?? 0
         if (log.value > prev) bests.set(log.exerciseId, log.value)
+        // Track last attempt date per challenge name (extracted from notes)
+        const challengeName = log.notes.replace('Challenge: ', '').split(' — ')[0]
+        const prevDate = lastDone.get(challengeName) ?? ''
+        if (log.date > prevDate) lastDone.set(challengeName, log.date)
       }
       setChallengeBests(bests)
+      setChallengeLastDone(lastDone)
     })
   }, [activeChallenge])
 
@@ -86,6 +91,7 @@ export default function HiitPage() {
         <ChallengesView
           challenges={CHALLENGES}
           bests={challengeBests}
+          lastDone={challengeLastDone}
           onSelect={setActiveChallenge}
         />
       )}
@@ -200,13 +206,35 @@ export default function HiitPage() {
   )
 }
 
+const COOLDOWN_DAYS = 7
+
+function getCooldownState(challengeName: string, lastDone: Map<string, string>): { onCooldown: boolean; availableDate: string | null; daysLeft: number } {
+  const lastDate = lastDone.get(challengeName)
+  if (!lastDate) return { onCooldown: false, availableDate: null, daysLeft: 0 }
+  const last = new Date(lastDate)
+  const available = new Date(last)
+  available.setDate(available.getDate() + COOLDOWN_DAYS)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  available.setHours(0, 0, 0, 0)
+  const diff = Math.ceil((available.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+  if (diff <= 0) return { onCooldown: false, availableDate: null, daysLeft: 0 }
+  return {
+    onCooldown: true,
+    availableDate: available.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+    daysLeft: diff,
+  }
+}
+
 function ChallengesView({
   challenges,
   bests,
+  lastDone,
   onSelect,
 }: {
   challenges: ChallengeDef[]
   bests: Map<CalisthenicsExerciseId, number>
+  lastDone: Map<string, string>
   onSelect: (c: ChallengeDef) => void
 }) {
   const categories = ['push', 'pull', 'legs', 'core', 'full_body'] as const
@@ -237,31 +265,42 @@ function ChallengesView({
             <div className="space-y-2">
               {catChallenges.map((c) => {
                 const best = bests.get(c.exerciseId)
-                const exerciseDef = getExerciseDef(c.exerciseId)
+                const cooldown = getCooldownState(c.name, lastDone)
                 return (
                   <button
                     key={c.id}
-                    onClick={() => onSelect(c)}
-                    className="w-full text-left"
+                    onClick={() => !cooldown.onCooldown && onSelect(c)}
+                    disabled={cooldown.onCooldown}
+                    className={`w-full text-left ${cooldown.onCooldown ? 'opacity-50' : ''}`}
                   >
                     <Card>
                       <div className="flex items-center justify-between">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-0.5">
-                            <span className="text-sm font-bold text-ink">{c.icon} {c.name}</span>
+                            <span className={`text-sm font-bold ${cooldown.onCooldown ? 'text-muted' : 'text-ink'}`}>
+                              {c.icon} {c.name}
+                            </span>
                             <Tag color={c.type === 'max_reps' ? '#f5c842' : c.type === 'accumulate_hold' ? '#a78bfa' : '#2ec4b6'}>
                               {c.type === 'max_reps' ? 'Max' : c.type === 'accumulate_hold' ? 'Hold' : 'Target'}
                             </Tag>
                           </div>
-                          <p className="text-[11px] text-muted truncate">{c.description}</p>
+                          {cooldown.onCooldown ? (
+                            <p className="text-[11px] font-semibold text-orange">
+                              ⏳ Recovery — available {cooldown.availableDate} ({cooldown.daysLeft}d left)
+                            </p>
+                          ) : (
+                            <p className="text-[11px] text-muted truncate">{c.description}</p>
+                          )}
                           {best != null && best > 0 && (
-                            <p className="text-[11px] font-semibold text-accent mt-0.5">
+                            <p className={`text-[11px] font-semibold mt-0.5 ${cooldown.onCooldown ? 'text-muted' : 'text-accent'}`}>
                               PR: {c.type === 'accumulate_hold' ? formatTimeMini(best) : `${best} reps`}
                             </p>
                           )}
                         </div>
                         <div className="flex-shrink-0 ml-3 text-right">
-                          <div className="text-base font-black text-ink">{formatTimeMini(c.timeLimitSec)}</div>
+                          <div className={`text-base font-black ${cooldown.onCooldown ? 'text-muted' : 'text-ink'}`}>
+                            {formatTimeMini(c.timeLimitSec)}
+                          </div>
                           <div className="text-[10px] text-muted">time cap</div>
                         </div>
                       </div>
