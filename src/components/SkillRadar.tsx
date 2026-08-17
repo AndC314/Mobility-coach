@@ -179,17 +179,25 @@ export default function SkillRadar({ axes, size = 260, recoveryReadiness }: Skil
         })}
       </svg>
 
-      {/* Legend row with values */}
-      <div className="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1">
-        {data.map((axis) => (
-          <div key={axis.key} className="flex items-center gap-1.5 text-xs">
-            <div
-              className="h-2 w-2 rounded-full"
-              style={{ backgroundColor: AXIS_COLORS[axis.key] ?? '#7a7d96' }}
-            />
-            <span className="text-muted">{axis.raw}{axis.unit === 'reps' || axis.unit === 's' ? axis.unit : ''}</span>
-          </div>
-        ))}
+      {/* Legend with axis breakdown */}
+      <div className="mt-4 w-full space-y-2 px-2">
+        {data.map((axis) => {
+          const color = AXIS_COLORS[axis.key] ?? '#7a7d96'
+          const pct = Math.round(axis.value)
+          const rawLabel = axis.raw != null
+            ? `${axis.raw}${axis.unit === 'reps' ? ' reps' : axis.unit === 's' ? 's' : axis.unit ? ` ${axis.unit}` : ''}`
+            : 'no data'
+          return (
+            <div key={axis.key} className="flex items-center gap-2">
+              <div className="w-24 text-xs font-medium truncate" style={{ color }}>{axis.label}</div>
+              <div className="flex-1 h-1.5 rounded-full bg-border overflow-hidden">
+                <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
+              </div>
+              <div className="w-8 text-right text-xs font-bold" style={{ color }}>{pct}%</div>
+              <div className="w-16 text-right text-[10px] text-muted">{rawLabel}</div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )

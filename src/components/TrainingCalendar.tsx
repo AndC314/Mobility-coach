@@ -53,6 +53,7 @@ export default function TrainingCalendar({ conflictDays = [] }: TrainingCalendar
   const { preferences, update } = usePreferences()
   const [editingGoal, setEditingGoal] = useState(false)
 
+  const [sessionsOpen, setSessionsOpen] = useState(false)
   const [viewDate, setViewDate] = useState(() => new Date())
   const year = viewDate.getFullYear()
   const month = viewDate.getMonth()
@@ -242,17 +243,32 @@ export default function TrainingCalendar({ conflictDays = [] }: TrainingCalendar
 
       {/* Session list for the month */}
       <Card>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-base font-bold">Sessions</h2>
+        <button
+          onClick={() => setSessionsOpen((o) => !o)}
+          className="flex w-full items-center justify-between"
+        >
+          <div className="flex items-center gap-2">
+            <h2 className="text-base font-bold">Sessions</h2>
+            <svg
+              width="12" height="12" viewBox="0 0 12 12"
+              className={`text-muted transition-transform ${sessionsOpen ? 'rotate-180' : ''}`}
+            >
+              <path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
           <span className="text-xs text-muted">{monthLabel}</span>
-        </div>
-        {sessionsThisMonth.length === 0 ? (
-          <p className="py-4 text-center text-sm text-muted">No sessions logged this month</p>
-        ) : (
-          <div className="space-y-2">
-            {sessionsThisMonth.map((s) => (
-              <SessionRow key={s.id} session={s} />
-            ))}
+        </button>
+        {sessionsOpen && (
+          <div className="mt-3">
+            {sessionsThisMonth.length === 0 ? (
+              <p className="py-4 text-center text-sm text-muted">No sessions logged this month</p>
+            ) : (
+              <div className="space-y-2">
+                {sessionsThisMonth.map((s) => (
+                  <SessionRow key={s.id} session={s} />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </Card>
