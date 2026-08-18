@@ -66,7 +66,7 @@ export default function SupercompensationChart() {
     <Card>
       <h2 className="mb-1 text-base font-bold">Fitness Level</h2>
       <p className="mb-3 text-[11px] text-muted">
-        Supercompensation model — training causes fatigue then adaptation above baseline
+        Hard sessions (≥70% best volume) → supercompensation. Light sessions → maintenance only.
       </p>
 
       <div className="flex flex-wrap gap-1.5 mb-3">
@@ -135,7 +135,7 @@ export default function SupercompensationChart() {
       </div>
 
       <p className="mt-2 text-[10px] text-muted text-center">
-        Baseline 100 · Dip = fatigue · Peak above = supercompensation · Decay = detraining
+        Baseline 100 · Hard = dip + growth · Light = dip + maintain · No training = decay
       </p>
     </Card>
   )
