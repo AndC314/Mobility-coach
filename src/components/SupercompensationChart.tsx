@@ -7,12 +7,15 @@ import { Card } from './Card'
 import { db } from '../db/db'
 import { computeSupercompensation, type FitnessCategory } from '../lib/supercompensation'
 
-const CATEGORY_CONFIG: Record<FitnessCategory, { label: string; color: string }> = {
-  push: { label: 'Push', color: '#e8622a' },
-  pull: { label: 'Pull', color: '#2ec4b6' },
-  legs: { label: 'Legs', color: '#f5c842' },
-  core: { label: 'Core', color: '#a78bfa' },
-  grappling: { label: 'Grappling', color: '#64748b' },
+const CATEGORY_CONFIG: Record<FitnessCategory, { label: string; color: string; group: 'strength' | 'mobility' }> = {
+  push: { label: 'Push', color: '#e8622a', group: 'strength' },
+  pull: { label: 'Pull', color: '#2ec4b6', group: 'strength' },
+  legs: { label: 'Legs', color: '#f5c842', group: 'strength' },
+  core: { label: 'Core', color: '#a78bfa', group: 'strength' },
+  grappling: { label: 'Grappling', color: '#64748b', group: 'strength' },
+  mob_hips: { label: 'Hips', color: '#f472b6', group: 'mobility' },
+  mob_hamstrings: { label: 'Hamstrings', color: '#fb923c', group: 'mobility' },
+  mob_lats: { label: 'Lats/Shoulders', color: '#34d399', group: 'mobility' },
 }
 
 export default function SupercompensationChart() {
@@ -22,10 +25,11 @@ export default function SupercompensationChart() {
 
   const calLogs = useLiveQuery(() => db.calisthenicsLogs.toArray(), [], [])
   const bjjLogs = useLiveQuery(() => db.bjjClassLogs.toArray(), [], [])
+  const sessions = useLiveQuery(() => db.sessions.toArray(), [], [])
 
   const data = useMemo(
-    () => computeSupercompensation(calLogs ?? [], bjjLogs ?? [], 90),
-    [calLogs, bjjLogs]
+    () => computeSupercompensation(calLogs ?? [], bjjLogs ?? [], 90, sessions ?? []),
+    [calLogs, bjjLogs, sessions]
   )
 
   function toggleCat(cat: FitnessCategory) {
@@ -40,7 +44,10 @@ export default function SupercompensationChart() {
     })
   }
 
-  const hasData = data.some((d) => d.push !== 100 || d.pull !== 100 || d.legs !== 100 || d.core !== 100 || d.grappling !== 100)
+  const hasData = data.some((d) =>
+    d.push !== 100 || d.pull !== 100 || d.legs !== 100 || d.core !== 100 || d.grappling !== 100 ||
+    d.mob_hips !== 100 || d.mob_hamstrings !== 100 || d.mob_lats !== 100
+  )
 
   if (!hasData) {
     return (
@@ -62,28 +69,52 @@ export default function SupercompensationChart() {
     return ''
   }
 
+  const strengthCats = (Object.entries(CATEGORY_CONFIG) as [FitnessCategory, typeof CATEGORY_CONFIG[FitnessCategory]][])
+    .filter(([, cfg]) => cfg.group === 'strength')
+  const mobilityCats = (Object.entries(CATEGORY_CONFIG) as [FitnessCategory, typeof CATEGORY_CONFIG[FitnessCategory]][])
+    .filter(([, cfg]) => cfg.group === 'mobility')
+
   return (
     <Card>
       <h2 className="mb-1 text-base font-bold">Fitness Level</h2>
       <p className="mb-3 text-[11px] text-muted">
-        Hard sessions (≥70% best volume) → supercompensation. Light sessions → maintenance only.
+        Hard sessions (≥70% best volume) → supercompensation. 2+ weeks inactive → slow decay.
       </p>
 
-      <div className="flex flex-wrap gap-1.5 mb-3">
-        {(Object.entries(CATEGORY_CONFIG) as [FitnessCategory, { label: string; color: string }][]).map(([cat, cfg]) => (
-          <button
-            key={cat}
-            onClick={() => toggleCat(cat)}
-            className={`rounded-full px-2.5 py-1 text-[10px] font-bold border transition-colors ${
-              visibleCats.has(cat)
-                ? 'border-current'
-                : 'border-border text-muted opacity-40'
-            }`}
-            style={visibleCats.has(cat) ? { color: cfg.color, borderColor: cfg.color, background: cfg.color + '15' } : undefined}
-          >
-            {cfg.label}
-          </button>
-        ))}
+      <div className="space-y-1.5 mb-3">
+        <div className="flex flex-wrap gap-1.5">
+          {strengthCats.map(([cat, cfg]) => (
+            <button
+              key={cat}
+              onClick={() => toggleCat(cat)}
+              className={`rounded-full px-2.5 py-1 text-[10px] font-bold border transition-colors ${
+                visibleCats.has(cat)
+                  ? 'border-current'
+                  : 'border-border text-muted opacity-40'
+              }`}
+              style={visibleCats.has(cat) ? { color: cfg.color, borderColor: cfg.color, background: cfg.color + '15' } : undefined}
+            >
+              {cfg.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          <span className="text-[9px] text-muted uppercase tracking-wide self-center mr-0.5">Mob</span>
+          {mobilityCats.map(([cat, cfg]) => (
+            <button
+              key={cat}
+              onClick={() => toggleCat(cat)}
+              className={`rounded-full px-2.5 py-1 text-[10px] font-bold border transition-colors ${
+                visibleCats.has(cat)
+                  ? 'border-current'
+                  : 'border-border text-muted opacity-40'
+              }`}
+              style={visibleCats.has(cat) ? { color: cfg.color, borderColor: cfg.color, background: cfg.color + '15' } : undefined}
+            >
+              {cfg.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div style={{ height: 200 }}>
@@ -116,7 +147,7 @@ export default function SupercompensationChart() {
               }}
               formatter={(value: number, name: string) => [value.toFixed(1), name]}
             />
-            {(Object.entries(CATEGORY_CONFIG) as [FitnessCategory, { label: string; color: string }][]).map(([cat, cfg]) =>
+            {(Object.entries(CATEGORY_CONFIG) as [FitnessCategory, typeof CATEGORY_CONFIG[FitnessCategory]][]).map(([cat, cfg]) =>
               visibleCats.has(cat) ? (
                 <Line
                   key={cat}
@@ -124,7 +155,8 @@ export default function SupercompensationChart() {
                   dataKey={cat}
                   name={cfg.label}
                   stroke={cfg.color}
-                  strokeWidth={2}
+                  strokeWidth={cfg.group === 'mobility' ? 1.5 : 2}
+                  strokeDasharray={cfg.group === 'mobility' ? '4 2' : undefined}
                   dot={false}
                   activeDot={{ r: 3 }}
                 />
@@ -135,7 +167,7 @@ export default function SupercompensationChart() {
       </div>
 
       <p className="mt-2 text-[10px] text-muted text-center">
-        Baseline 100 · Hard = dip + growth · Light = dip + maintain · No training = decay
+        Baseline 100 · Hard = dip + growth · Light = maintain · 2+ weeks off = slow decay
       </p>
     </Card>
   )

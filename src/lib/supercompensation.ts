@@ -1,7 +1,7 @@
-import type { CalisthenicsLog, BjjClassLog } from '../db/db'
+import type { CalisthenicsLog, BjjClassLog, CompletedSession } from '../db/db'
 import { CALISTHENICS_EXERCISES, type ExerciseCategory } from '../data/calisthenics'
 
-export type FitnessCategory = 'push' | 'pull' | 'legs' | 'core' | 'grappling'
+export type FitnessCategory = 'push' | 'pull' | 'legs' | 'core' | 'grappling' | 'mob_hips' | 'mob_hamstrings' | 'mob_lats'
 
 export interface DayPoint {
   date: string
@@ -10,6 +10,9 @@ export interface DayPoint {
   legs: number
   core: number
   grappling: number
+  mob_hips: number
+  mob_hamstrings: number
+  mob_lats: number
 }
 
 const BASELINE = 100
@@ -20,8 +23,42 @@ const SUPERCOMP_GAIN = 6
 const MAINT_FATIGUE_DIP = 4
 const RECOVERY_DAYS = 2
 const DECAY_RATE = 0.03
+// Below-baseline decay after prolonged inactivity (2+ weeks)
+const INACTIVITY_THRESHOLD_DAYS = 14
+const BELOW_BASELINE_DECAY = 0.01
 // Intensity threshold: daily volume must be >= 70% of running best to trigger supercompensation
 const INTENSITY_THRESHOLD = 0.7
+
+// Mobility exercise → muscle group mapping
+const MOBILITY_MUSCLE_MAP: Record<string, FitnessCategory[]> = {
+  forward_fold: ['mob_hamstrings'],
+  ninety_ninety: ['mob_hips'],
+  figure_four: ['mob_hips'],
+  hip_flexor_lunge: ['mob_hips', 'mob_hamstrings'],
+  pancake: ['mob_hips', 'mob_hamstrings'],
+  pigeon_pose: ['mob_hips'],
+  butterfly: ['mob_hips'],
+  deep_squat: ['mob_hips'],
+  lizard: ['mob_hips'],
+  couch_stretch: ['mob_hips', 'mob_hamstrings'],
+  low_lunge_hip_flexor: ['mob_hips'],
+  half_forward_fold: ['mob_hamstrings'],
+  standing_hamstring_stretch: ['mob_hamstrings'],
+  calf_stretch: ['mob_hamstrings'],
+  lat_hang: ['mob_lats'],
+  thread_needle: ['mob_lats'],
+  doorway_pec_stretch: ['mob_lats'],
+  shoulder_pass_through: ['mob_lats'],
+  lunge_rotation: ['mob_lats', 'mob_hips'],
+  downward_dog: ['mob_hamstrings', 'mob_lats'],
+  cat_cow: ['mob_lats'],
+  dead_hang: ['mob_lats'],
+  pike_stretch: ['mob_hamstrings'],
+  childs_pose: ['mob_hips', 'mob_lats'],
+  shoulder_stand: ['mob_lats'],
+  pelvic_clock: ['mob_hips'],
+  pelvic_tilt: ['mob_hips'],
+}
 
 function getExerciseCategory(exerciseId: string): ExerciseCategory | null {
   const def = CALISTHENICS_EXERCISES.find((e) => e.id === exerciseId)
@@ -36,7 +73,8 @@ interface DayVolume {
 export function computeSupercompensation(
   calLogs: CalisthenicsLog[],
   bjjLogs: BjjClassLog[],
-  days: number = 90
+  days: number = 90,
+  sessions: CompletedSession[] = []
 ): DayPoint[] {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -61,10 +99,27 @@ export function computeSupercompensation(
     dayMap.set('grappling', (dayMap.get('grappling') ?? 0) + mins)
   }
 
+  // Mobility sessions → muscle group volume (seconds held)
+  for (const sess of sessions) {
+    if (sess.type === 'calisthenics' || sess.type === 'bjj' || sess.type === 'custom') continue
+    if (!sess.exerciseIds || sess.exerciseIds.length === 0) continue
+    if (!dailyVolume.has(sess.date)) dailyVolume.set(sess.date, new Map())
+    const dayMap = dailyVolume.get(sess.date)!
+    const secPerExercise = (sess.actualSec || sess.durationMin * 60) / sess.exerciseIds.length
+    for (const exId of sess.exerciseIds) {
+      const muscles = MOBILITY_MUSCLE_MAP[exId]
+      if (!muscles) continue
+      for (const m of muscles) {
+        dayMap.set(m, (dayMap.get(m) ?? 0) + secPerExercise)
+      }
+    }
+  }
+
   // Compute running best per category (max daily volume seen so far)
-  const categories: FitnessCategory[] = ['push', 'pull', 'legs', 'core', 'grappling']
+  const categories: FitnessCategory[] = ['push', 'pull', 'legs', 'core', 'grappling', 'mob_hips', 'mob_hamstrings', 'mob_lats']
   const runningBest: Record<FitnessCategory, number> = {
     push: 0, pull: 0, legs: 0, core: 0, grappling: 0,
+    mob_hips: 0, mob_hamstrings: 0, mob_lats: 0,
   }
 
   // Pre-compute: scan all dates in chronological order to set running bests
@@ -82,14 +137,18 @@ export function computeSupercompensation(
   // Reset for simulation
   const simBest: Record<FitnessCategory, number> = {
     push: 0, pull: 0, legs: 0, core: 0, grappling: 0,
+    mob_hips: 0, mob_hamstrings: 0, mob_lats: 0,
   }
 
-  const state: Record<FitnessCategory, { level: number; daysSinceTraining: number; lastWasHard: boolean }> = {
-    push: { level: BASELINE, daysSinceTraining: 999, lastWasHard: false },
-    pull: { level: BASELINE, daysSinceTraining: 999, lastWasHard: false },
-    legs: { level: BASELINE, daysSinceTraining: 999, lastWasHard: false },
-    core: { level: BASELINE, daysSinceTraining: 999, lastWasHard: false },
-    grappling: { level: BASELINE, daysSinceTraining: 999, lastWasHard: false },
+  const state: Record<FitnessCategory, { level: number; daysSinceTraining: number; lastWasHard: boolean; everTrained: boolean }> = {
+    push: { level: BASELINE, daysSinceTraining: 999, lastWasHard: false, everTrained: false },
+    pull: { level: BASELINE, daysSinceTraining: 999, lastWasHard: false, everTrained: false },
+    legs: { level: BASELINE, daysSinceTraining: 999, lastWasHard: false, everTrained: false },
+    core: { level: BASELINE, daysSinceTraining: 999, lastWasHard: false, everTrained: false },
+    grappling: { level: BASELINE, daysSinceTraining: 999, lastWasHard: false, everTrained: false },
+    mob_hips: { level: BASELINE, daysSinceTraining: 999, lastWasHard: false, everTrained: false },
+    mob_hamstrings: { level: BASELINE, daysSinceTraining: 999, lastWasHard: false, everTrained: false },
+    mob_lats: { level: BASELINE, daysSinceTraining: 999, lastWasHard: false, everTrained: false },
   }
 
   const result: DayPoint[] = []
@@ -106,6 +165,7 @@ export function computeSupercompensation(
       if (volume > 0) {
         // Update running best
         if (volume > simBest[cat]) simBest[cat] = volume
+        s.everTrained = true
         // Determine if this is a hard (red zone) or maintenance session
         const threshold = simBest[cat] * INTENSITY_THRESHOLD
         const isHard = volume >= threshold || simBest[cat] === 0
@@ -138,9 +198,12 @@ export function computeSupercompensation(
           // Detraining: decay back toward baseline
           s.level = BASELINE + (s.level - BASELINE) * (1 - DECAY_RATE)
           if (s.level - BASELINE < 0.5) s.level = BASELINE
-        } else if (s.level < BASELINE) {
-          // Still recovering from deep fatigue
+        } else if (s.level < BASELINE && s.daysSinceTraining <= INACTIVITY_THRESHOLD_DAYS) {
+          // Still recovering from deep fatigue (within 2 weeks)
           s.level = s.level + (BASELINE - s.level) * 0.15
+        } else if (s.daysSinceTraining > INACTIVITY_THRESHOLD_DAYS && s.everTrained) {
+          // Slow decay below baseline after 2+ weeks inactivity
+          s.level = s.level * (1 - BELOW_BASELINE_DECAY)
         }
       }
     }
@@ -152,6 +215,9 @@ export function computeSupercompensation(
       legs: Math.round(state.legs.level * 10) / 10,
       core: Math.round(state.core.level * 10) / 10,
       grappling: Math.round(state.grappling.level * 10) / 10,
+      mob_hips: Math.round(state.mob_hips.level * 10) / 10,
+      mob_hamstrings: Math.round(state.mob_hamstrings.level * 10) / 10,
+      mob_lats: Math.round(state.mob_lats.level * 10) / 10,
     })
 
     cursor.setDate(cursor.getDate() + 1)
