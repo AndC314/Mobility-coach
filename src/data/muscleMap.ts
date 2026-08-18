@@ -489,10 +489,79 @@ export const MUSCLE_SUGGESTIONS: Record<MuscleGroup, ExerciseSuggestion[]> = {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// SORENESS / LOAD SCORING (legacy simple model, still used by BodyMap)
+// EXERCISE SUGGESTIONS WITH TARGETS
+// Given untrained muscles + user log history, returns de-duplicated
+// exercise suggestions with progressive overload targets.
 // ─────────────────────────────────────────────────────────────────────────
 
-export const SORENESS_CAP = 45
+export interface TargetedSuggestion {
+  exerciseId: CalisthenicsExerciseId
+  label: string
+  targetSets: number
+  targetReps: number
+  muscle: MuscleGroup
+  isNew: boolean // true if user has never logged this exercise
+}
+
+export function computeSuggestions(
+  muscles: MuscleGroup[],
+  allLogs: LogEntry[]
+): TargetedSuggestion[] {
+  const seen = new Set<CalisthenicsExerciseId>()
+  const suggestions: TargetedSuggestion[] = []
+
+  // Find user's best value per exercise
+  const bestByExercise = new Map<CalisthenicsExerciseId, number>()
+  for (const log of allLogs) {
+    const prev = bestByExercise.get(log.exerciseId) ?? 0
+    if (log.value > prev) bestByExercise.set(log.exerciseId, log.value)
+  }
+
+  for (const muscle of muscles) {
+    const candidates = MUSCLE_SUGGESTIONS[muscle] ?? []
+    for (const { exerciseId, label } of candidates) {
+      if (seen.has(exerciseId)) continue
+      seen.add(exerciseId)
+
+      const best = bestByExercise.get(exerciseId)
+      const isNew = best == null
+      let targetReps: number
+      if (isNew) {
+        targetReps = 5
+      } else if (best < 10) {
+        targetReps = best + 1
+      } else {
+        targetReps = Math.ceil(best * 1.1)
+      }
+
+      suggestions.push({
+        exerciseId,
+        label,
+        targetSets: 3,
+        targetReps,
+        muscle,
+        isNew,
+      })
+      break // one exercise per muscle to keep suggestions compact
+    }
+  }
+
+  return suggestions
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// SORENESS / LOAD SCORING
+//
+// The load threshold is adaptive: 100% = matching your best recent 48h
+// volume for that muscle. If you did 60 total reps for chest last week,
+// 100% next time means you hit 60+ again. Falls back to a baseline cap
+// when no history exists.
+// ─────────────────────────────────────────────────────────────────────────
+
+export const BASELINE_CAP = 45
+export const SORENESS_CAP = BASELINE_CAP
+
+export type MuscleCaps = Partial<Record<MuscleGroup, number>>
 
 export interface MuscleScore {
   muscle: MuscleGroup
@@ -500,15 +569,71 @@ export interface MuscleScore {
   level: ActivationLevel
 }
 
-interface LogEntry {
+export interface LogEntry {
   exerciseId: CalisthenicsExerciseId
   value: number
   date: string
 }
 
+/**
+ * Computes per-muscle adaptive caps from historical logs.
+ * For each muscle, finds the max total volume achieved in any 48h window
+ * across the last 14 days. Returns a partial map — muscles without history
+ * will use BASELINE_CAP as fallback.
+ */
+export function computeAdaptiveCaps(historicalLogs: LogEntry[], todayStr: string): MuscleCaps {
+  const [ty, tm, td] = todayStr.split('-').map(Number)
+  const today = new Date(ty, tm - 1, td)
+
+  // Group logs by date
+  const byDate = new Map<string, LogEntry[]>()
+  for (const log of historicalLogs) {
+    const existing = byDate.get(log.date) ?? []
+    existing.push(log)
+    byDate.set(log.date, existing)
+  }
+
+  // Get all dates in last 14 days
+  const dates: string[] = []
+  for (let i = 0; i < 14; i++) {
+    const d = new Date(today)
+    d.setDate(d.getDate() - i)
+    dates.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`)
+  }
+
+  // For each possible 48h window start, compute muscle volume
+  const caps: MuscleCaps = {}
+  const all = Object.keys(MUSCLE_LABELS) as MuscleGroup[]
+
+  for (let windowStart = 0; windowStart < 13; windowStart++) {
+    const windowDates = [dates[windowStart], dates[windowStart + 1]]
+    const windowLogs = windowDates.flatMap((d) => byDate.get(d) ?? [])
+    if (windowLogs.length === 0) continue
+
+    const muscleTotals = new Map<MuscleGroup, number>()
+    for (const log of windowLogs) {
+      const activations = EXERCISE_MUSCLES[log.exerciseId] ?? []
+      for (const { muscle, level } of activations) {
+        const contribution = level === 'primary' ? log.value : log.value * 0.5
+        muscleTotals.set(muscle, (muscleTotals.get(muscle) ?? 0) + contribution)
+      }
+    }
+
+    for (const muscle of all) {
+      const total = muscleTotals.get(muscle) ?? 0
+      if (total > 0) {
+        caps[muscle] = Math.max(caps[muscle] ?? 0, total)
+      }
+    }
+  }
+
+  return caps
+}
+
 export function computeMuscleScores(
   logs: LogEntry[],
-  todayStr: string
+  todayStr: string,
+  adaptiveCaps?: MuscleCaps
 ): MuscleScore[] {
   const [ty, tm, td] = todayStr.split('-').map(Number)
   const yesterday = new Date(ty, tm - 1, td - 1)
@@ -537,9 +662,10 @@ export function computeMuscleScores(
   const all = Object.keys(MUSCLE_LABELS) as MuscleGroup[]
   return all.map((muscle) => {
     const entry = raw.get(muscle)
+    const cap = adaptiveCaps?.[muscle] ?? BASELINE_CAP
     return {
       muscle,
-      score: entry ? Math.min(100, Math.round((entry.total / SORENESS_CAP) * 100)) : 0,
+      score: entry ? Math.min(100, Math.round((entry.total / cap) * 100)) : 0,
       level: entry?.level ?? 'secondary'
     }
   })

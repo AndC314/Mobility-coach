@@ -5,7 +5,7 @@ import BodyMap from './BodyMap'
 import ExercisePicker from './ExercisePicker'
 import ExerciseIcon from './ExerciseIcon'
 import { CALISTHENICS_EXERCISES, getExerciseDef } from '../data/calisthenics'
-import { MUSCLE_LABELS, computeMuscleScores } from '../data/muscleMap'
+import { MUSCLE_LABELS, computeMuscleScores, computeAdaptiveCaps, computeSuggestions } from '../data/muscleMap'
 import { useCalisthenics, useCalisthenicsLogs, logCalisthenicsBase } from '../hooks/useCalisthenics'
 import { db } from '../db/db'
 import { todayIso } from '../lib/date'
@@ -506,41 +506,65 @@ function BulkTab({ prefill, onPrefillConsumed }: { prefill?: BulkPrefill | null;
 
 function MuscleMapTab() {
   const today = todayIso()
-  const allLogs = useLiveQuery(async () => {
+
+  // Fetch 14 days of logs for adaptive caps + current 48h window for scores
+  const data = useLiveQuery(async () => {
     const [ty, tm, td] = today.split('-').map(Number)
-    const yesterday = new Date(ty, tm - 1, td - 1)
-    const ys = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`
-    return db.calisthenicsLogs.where('date').aboveOrEqual(ys).toArray()
+    const twoWeeksAgo = new Date(ty, tm - 1, td - 14)
+    const twoWeeksStr = `${twoWeeksAgo.getFullYear()}-${String(twoWeeksAgo.getMonth() + 1).padStart(2, '0')}-${String(twoWeeksAgo.getDate()).padStart(2, '0')}`
+    const logs = await db.calisthenicsLogs.where('date').aboveOrEqual(twoWeeksStr).toArray()
+    return logs
   }, [today], [])
 
-  const scores = computeMuscleScores(allLogs ?? [], today)
+  const allLogs = data ?? []
+  const adaptiveCaps = computeAdaptiveCaps(allLogs, today)
+  const scores = computeMuscleScores(allLogs, today, adaptiveCaps)
   const sorted = [...scores].sort((a, b) => a.score - b.score)
   const untrained = sorted.filter((s) => s.score === 0)
   const undertrained = sorted.filter((s) => s.score > 0 && s.score < 40)
   const loaded = sorted.filter((s) => s.score >= 40).reverse()
+
+  const gapMuscles = [...untrained, ...undertrained].map((s) => s.muscle)
+  const suggestions = computeSuggestions(gapMuscles, allLogs)
 
   return (
     <>
       <Card>
         <h2 className="mb-1 text-base font-bold">Muscle load — last 48h</h2>
         <p className="mb-3 text-xs text-muted">
-          Based on logged reps/hold seconds. 45+ reps = 100% load for that muscle group.
+          Progressive threshold: 100% = matching your best recent volume for each muscle.
           Colour: red = heavy load, gold = moderate, grey = not yet trained.
         </p>
         <BodyMap scores={scores} />
       </Card>
 
-      {untrained.length > 0 && (
+      {suggestions.length > 0 && (
         <Card className="border-teal/30">
           <h2 className="mb-2 text-sm font-bold text-teal">{'→'} Suggested next</h2>
           <p className="mb-2 text-xs text-muted">
-            These muscle groups haven't been trained in the last 48 hours:
+            Exercises targeting your least-trained muscles, with progressive targets:
           </p>
-          <div className="flex flex-wrap gap-2">
-            {untrained.map((s) => (
-              <span key={s.muscle} className="rounded-full bg-teal/10 px-3 py-1 text-xs font-semibold text-teal border border-teal/30">
-                {MUSCLE_LABELS[s.muscle]}
-              </span>
+          <div className="space-y-2">
+            {suggestions.map((s) => (
+              <div
+                key={s.exerciseId}
+                className="flex items-center justify-between rounded-lg bg-teal/5 px-3 py-2 border border-teal/20"
+              >
+                <div className="flex-1 min-w-0">
+                  <span className="text-sm font-semibold text-ink">{s.label}</span>
+                  <span className="ml-2 text-[10px] text-muted">
+                    {MUSCLE_LABELS[s.muscle]}
+                  </span>
+                  {s.isNew && (
+                    <span className="ml-1.5 text-[9px] font-semibold text-teal bg-teal/10 rounded px-1 py-0.5">
+                      NEW
+                    </span>
+                  )}
+                </div>
+                <span className="text-sm font-bold text-teal tabular-nums">
+                  {s.targetSets}×{s.targetReps}
+                </span>
+              </div>
             ))}
           </div>
         </Card>
@@ -586,7 +610,7 @@ function MuscleMapTab() {
         </Card>
       )}
 
-      {(allLogs ?? []).length === 0 && (
+      {allLogs.length === 0 && (
         <Card>
           <p className="py-4 text-center text-sm text-muted">
             Log some calisthenics in the Log tab to see your muscle map fill in.
