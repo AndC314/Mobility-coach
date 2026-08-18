@@ -5,6 +5,7 @@ import { useExerciseFrequency } from '../hooks/useCalisthenics'
 import { useCustomExercises } from '../hooks/useCustomExercises'
 import { useAuth } from '../hooks/useAuth'
 import { MUSCLE_LABELS, type MuscleGroup } from '../data/muscleMap'
+import ExerciseIcon from './ExerciseIcon'
 
 interface ExercisePickerProps {
   mode: 'single' | 'multi'
@@ -278,7 +279,7 @@ function ExerciseRow({ ex, isSelected, mode, onToggle, count }: ExerciseRowProps
           : 'border-transparent bg-card2 hover:border-border')
       }
     >
-      <span className="text-lg leading-none">{ex.icon}</span>
+      <ExerciseIcon exerciseId={ex.id} fallbackEmoji={ex.icon} size="md" />
       <div className="min-w-0 flex-1">
         <p
           className={

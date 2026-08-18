@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { Card, Tag } from './Card'
 import BodyMap from './BodyMap'
 import ExercisePicker from './ExercisePicker'
+import ExerciseIcon from './ExerciseIcon'
 import { CALISTHENICS_EXERCISES, getExerciseDef } from '../data/calisthenics'
 import { MUSCLE_LABELS, computeMuscleScores } from '../data/muscleMap'
 import { useCalisthenics, useCalisthenicsLogs, logCalisthenicsBase } from '../hooks/useCalisthenics'
@@ -141,7 +142,7 @@ function LogTab() {
           className="flex w-full items-center justify-between"
         >
           <h2 className="text-base font-bold">
-            {pickerOpen ? 'Select Exercise' : `${exercise.icon} ${exercise.name}`}
+            {pickerOpen ? 'Select Exercise' : <><ExerciseIcon exerciseId={exercise.id} fallbackEmoji={exercise.icon} size="sm" /> {exercise.name}</>}
           </h2>
           <span className="text-xs text-muted">{pickerOpen ? '▲ collapse' : '▼ change'}</span>
         </button>
@@ -154,8 +155,8 @@ function LogTab() {
 
       <Card>
         <div className="mb-1 flex items-center justify-between">
-          <h2 className="text-base font-bold">
-            {exercise.icon} {exercise.name}
+          <h2 className="flex items-center gap-1.5 text-base font-bold">
+            <ExerciseIcon exerciseId={exercise.id} fallbackEmoji={exercise.icon} size="md" /> {exercise.name}
           </h2>
           {best != null && (
             <Tag color="#a78bfa">Best: {best}{exercise.unit}</Tag>
@@ -390,7 +391,7 @@ function BulkTab({ prefill, onPrefillConsumed }: { prefill?: BulkPrefill | null;
                   return (
                     <div key={entry.id} className="rounded-lg bg-card2 p-3">
                       <div className="mb-2 flex items-center gap-2">
-                        <span className="text-2xl">{ex.icon}</span>
+                        <ExerciseIcon exerciseId={ex.id} fallbackEmoji={ex.icon} size="lg" />
                         <span className="flex-1 text-sm font-semibold text-ink">{ex.name}</span>
                         <button onClick={() => remove(entry.id)} className="text-xs text-muted hover:text-red">✕</button>
                       </div>
@@ -478,7 +479,7 @@ function BulkTab({ prefill, onPrefillConsumed }: { prefill?: BulkPrefill | null;
               const ex = getExerciseDef(entry.id)!
               return (
                 <div key={entry.id} className="flex items-center justify-between rounded-lg bg-card2 px-3 py-2">
-                  <span className="text-sm text-ink">{ex.icon} {ex.name}</span>
+                  <span className="flex items-center gap-1.5 text-sm text-ink"><ExerciseIcon exerciseId={ex.id} fallbackEmoji={ex.icon} size="sm" /> {ex.name}</span>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-muted">
                       {entry.sets} × {entry.value}{ex.unit}

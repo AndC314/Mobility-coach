@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { Card, Tag } from './Card'
+import ExerciseIcon from './ExerciseIcon'
 import { useCalisthenicsSession } from '../hooks/useCalisthenicsSession'
 import { db, DEFAULT_PREFERENCES } from '../db/db'
 import { useLiveQuery } from 'dexie-react-hooks'
+import { getExerciseDef } from '../data/calisthenics'
 import type { SessionExercise } from '../lib/calisthenicsSession'
 import type { Equipment } from '../data/calisthenics'
 
@@ -81,8 +83,9 @@ export default function TodayStrengthCard({ onStartSession }: Props) {
           {session.exercises.map((ex) => (
             <div
               key={ex.exerciseId}
-              className="flex items-center justify-between rounded-lg bg-card2 px-3 py-2"
+              className="flex items-center gap-2.5 rounded-lg bg-card2 px-3 py-2"
             >
+              <ExerciseIcon exerciseId={ex.exerciseId} fallbackEmoji={getExerciseDef(ex.exerciseId as any)?.icon ?? '🏋️'} size="md" />
               <div className="flex-1 min-w-0">
                 <div className="text-xs font-semibold text-ink truncate">{ex.name}</div>
                 <div className="text-[10px] text-muted">{ex.reason}</div>
