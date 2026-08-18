@@ -7,7 +7,7 @@ import { downloadExport, importData, readFileAsJson, type ImportMode } from '../
 import { runFullRepair } from '../lib/dataRepair'
 import { primeAudio, playCompleteDing } from '../lib/sound'
 import { db, type MobilityGoal, type SessionDuration } from '../db/db'
-import { collection, getDocs } from 'firebase/firestore'
+import { collection, getDocs, addDoc } from 'firebase/firestore'
 import { db as firestoreDb } from '../lib/firebase'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -34,6 +34,78 @@ export default function Profile() {
     error?: string
   } | null>(null)
   const [diagLoading, setDiagLoading] = useState(false)
+  const [pushResult, setPushResult] = useState<{ pushed: number; errors: string[] } | null>(null)
+  const [pushing, setPushing] = useState(false)
+
+  async function handleForcePush() {
+    if (!user) return
+    setPushing(true)
+    setPushResult(null)
+    const errors: string[] = []
+    let pushed = 0
+
+    try {
+      const calRef = collection(firestoreDb, `users/${user.uid}/calisthenicsLogs`)
+      const bjjRef = collection(firestoreDb, `users/${user.uid}/bjjClassLogs`)
+
+      // Get existing remote keys to avoid duplicates
+      const [remoteCalSnap, remoteBjjSnap] = await Promise.all([
+        getDocs(calRef),
+        getDocs(bjjRef),
+      ])
+      const remoteCalKeys = new Set(remoteCalSnap.docs.map((d) => d.data().createdAt))
+      const remoteBjjKeys = new Set(remoteBjjSnap.docs.map((d) => d.data().createdAt))
+
+      // Push calisthenics logs
+      const localCal = await db.calisthenicsLogs.toArray()
+      for (const log of localCal) {
+        const createdAt = log.createdAt || `${log.date}T00:00:00.000Z`
+        if (remoteCalKeys.has(createdAt)) continue
+        try {
+          await addDoc(calRef, {
+            date: log.date,
+            exerciseId: log.exerciseId,
+            metric: log.metric || 'reps',
+            value: log.value,
+            sets: log.sets,
+            notes: log.notes,
+            createdAt,
+          })
+          pushed++
+        } catch (err: any) {
+          errors.push(`Cal ${log.exerciseId} ${log.date}: ${err?.message || err}`)
+          if (errors.length >= 3) break
+        }
+      }
+
+      // Push BJJ logs
+      const localBjj = await db.bjjClassLogs.toArray()
+      for (const log of localBjj) {
+        if (remoteBjjKeys.has(log.createdAt)) continue
+        try {
+          await addDoc(bjjRef, {
+            date: log.date,
+            className: log.className,
+            theme: log.theme,
+            tagIds: log.tagIds,
+            technicalMins: log.technicalMins,
+            sparringMins: log.sparringMins,
+            notes: log.notes,
+            createdAt: log.createdAt,
+          })
+          pushed++
+        } catch (err: any) {
+          errors.push(`BJJ ${log.date}: ${err?.message || err}`)
+          if (errors.length >= 3) break
+        }
+      }
+    } catch (err: any) {
+      errors.push(`Top-level: ${err?.message || err}`)
+    }
+
+    setPushResult({ pushed, errors })
+    setPushing(false)
+  }
 
   async function handleSyncDiagnostic() {
     if (!user) return
@@ -406,13 +478,42 @@ export default function Profile() {
                   )}
                   {syncDiag.remoteCal === 0 && syncDiag.localCal > 0 && (
                     <p className="text-[11px] text-orange font-semibold mt-2">
-                      Local has data but remote is empty — catch-up sync may have failed. Check Firestore rules allow writes.
+                      Local has data but remote is empty — use Force Push below.
                     </p>
                   )}
                 </div>
               )}
             </div>
           )}
+          <div className="mt-3 border-t border-border pt-3">
+            <button
+              onClick={handleForcePush}
+              disabled={pushing}
+              className="w-full rounded-xl bg-teal/15 py-3 text-sm font-bold text-teal border border-teal/40 disabled:opacity-50"
+            >
+              {pushing ? 'Pushing…' : 'Force push local → Firestore'}
+            </button>
+            {pushResult && (
+              <div className="mt-2">
+                {pushResult.pushed > 0 && (
+                  <p className="text-xs font-semibold text-teal">
+                    Pushed {pushResult.pushed} records to Firestore.
+                  </p>
+                )}
+                {pushResult.errors.length > 0 && (
+                  <div className="mt-1 space-y-1">
+                    <p className="text-xs font-semibold text-accent">Errors ({pushResult.errors.length}):</p>
+                    {pushResult.errors.map((e, i) => (
+                      <p key={i} className="text-[10px] text-accent break-all">{e}</p>
+                    ))}
+                  </div>
+                )}
+                {pushResult.pushed === 0 && pushResult.errors.length === 0 && (
+                  <p className="text-xs text-muted">Nothing new to push — all records already synced.</p>
+                )}
+              </div>
+            )}
+          </div>
         </Card>
       )}
 
