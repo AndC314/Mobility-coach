@@ -168,6 +168,13 @@ export type CalisthenicsExerciseId =
   | 'wall_plank'
   | 'wall_sit'
   | 'wide_push_ups'
+  | 'support_hold'
+  | 'knee_raises'
+  | 'tucked_front_lever'
+  | 'front_lever'
+  | 'back_lever'
+  | 'planche'
+  | 'press_to_handstand'
 
 export type CalisthenicsMetric = 'hold_sec' | 'reps'
 

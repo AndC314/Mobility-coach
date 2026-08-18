@@ -330,6 +330,50 @@ export const EXERCISE_MUSCLES: Partial<Record<CalisthenicsExerciseId, MuscleActi
     { muscle: 'quads', level: 'primary' },
     { muscle: 'glutes', level: 'primary' },
     { muscle: 'hamstrings', level: 'secondary' }
+  ],
+  support_hold: [
+    { muscle: 'triceps', level: 'primary' },
+    { muscle: 'front_delt', level: 'primary' },
+    { muscle: 'chest', level: 'secondary' },
+    { muscle: 'abs', level: 'secondary' }
+  ],
+  knee_raises: [
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'hip_flexors', level: 'primary' },
+    { muscle: 'triceps', level: 'secondary' }
+  ],
+  tucked_front_lever: [
+    { muscle: 'lats', level: 'primary' },
+    { muscle: 'rear_delt', level: 'primary' },
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'biceps', level: 'secondary' }
+  ],
+  front_lever: [
+    { muscle: 'lats', level: 'primary' },
+    { muscle: 'rear_delt', level: 'primary' },
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'lower_back', level: 'primary' },
+    { muscle: 'biceps', level: 'secondary' },
+    { muscle: 'glutes', level: 'secondary' }
+  ],
+  back_lever: [
+    { muscle: 'front_delt', level: 'primary' },
+    { muscle: 'biceps', level: 'primary' },
+    { muscle: 'chest', level: 'secondary' },
+    { muscle: 'abs', level: 'secondary' }
+  ],
+  planche: [
+    { muscle: 'front_delt', level: 'primary' },
+    { muscle: 'chest', level: 'primary' },
+    { muscle: 'triceps', level: 'primary' },
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'lower_back', level: 'secondary' }
+  ],
+  press_to_handstand: [
+    { muscle: 'front_delt', level: 'primary' },
+    { muscle: 'triceps', level: 'primary' },
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'hip_flexors', level: 'secondary' }
   ]
 }
 
