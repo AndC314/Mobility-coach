@@ -13,3 +13,4 @@ dist/
 CONTEXT.md
 *.md
 !docs/**/*.md
+.mcp.json
