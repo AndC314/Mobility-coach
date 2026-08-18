@@ -1,4 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
+import { useState, useEffect } from 'react'
 import { db } from '../db/db'
 import { PROGRESSION_CHAINS } from '../data/progressionChains'
 
@@ -10,6 +11,8 @@ interface DojoState {
   totalHours: number
   todayXP: number
   mobilityHours: number
+  calisthenicsHours: number
+  bjjHours: number
   calisthenicsUnlocks: string[]
 }
 
@@ -30,13 +33,6 @@ function getBelt(classes: number): BjjBelt {
 function getNextBeltThreshold(belt: BjjBelt): number | null {
   const idx = BELT_THRESHOLDS.findIndex((t) => t.belt === belt)
   return idx > 0 ? BELT_THRESHOLDS[idx - 1].classes : null
-}
-
-const BELT_SPRITE: Record<BjjBelt, string> = {
-  white: '/sprites/avatar/judoka/south.png',
-  blue: '/sprites/avatar/judoka/blue_belt/south.png',
-  purple: '/sprites/avatar/judoka/purple_belt/south.png',
-  black: '/sprites/avatar/judoka/black_belt/south.png',
 }
 
 const BELT_COLORS: Record<BjjBelt, string> = {
@@ -61,12 +57,24 @@ function getAura(mobilityHours: number) {
   return AURA_LEVELS[AURA_LEVELS.length - 1]
 }
 
-const EQUIPMENT: { chainIds: string[]; label: string; sprite: string; fallback: string }[] = [
-  { chainIds: ['pull_vertical', 'pull_levers'], label: 'Pull-up bar', sprite: '/sprites/avatar/equipment/pullup_bar.png', fallback: '🏗️' },
-  { chainIds: ['push_vertical'], label: 'Dip station', sprite: '/sprites/avatar/equipment/dip_station.png', fallback: '⬛' },
-  { chainIds: ['push_horizontal'], label: 'Parallettes', sprite: '/sprites/avatar/equipment/parallettes.png', fallback: '🪵' },
-  { chainIds: ['pull_horizontal'], label: 'Bands', sprite: '/sprites/avatar/equipment/bands.png', fallback: '🟡' },
+// Dojo backgrounds progress with total training hours
+const DOJO_LEVELS: { minHours: number; bg: string; label: string }[] = [
+  { minHours: 100, bg: '/sprites/avatar/dojo_bg_3.png', label: 'Master Dojo' },
+  { minHours: 40, bg: '/sprites/avatar/dojo_bg_2.png', label: 'Advanced Dojo' },
+  { minHours: 0, bg: '/sprites/avatar/dojo_bg.png', label: 'Training Hall' },
 ]
+
+function getDojo(totalHours: number) {
+  for (const d of DOJO_LEVELS) {
+    if (totalHours >= d.minHours) return d
+  }
+  return DOJO_LEVELS[DOJO_LEVELS.length - 1]
+}
+
+// Walk animation frames (south direction)
+const WALK_FRAMES = Array.from({ length: 6 }, (_, i) =>
+  `/sprites/avatar/judoka/animations/walk/south/frame_0${i}.png`
+)
 
 function useDojoState(): DojoState | null {
   return useLiveQuery(async () => {
@@ -80,17 +88,22 @@ function useDojoState(): DojoState | null {
     const belt = getBelt(bjjClasses)
 
     const totalSec = sessions.reduce((s, sess) => s + (sess.actualSec || sess.durationMin * 60), 0)
-    const totalHours = Math.round(totalSec / 3600)
+    const bjjSec = bjjLogs.reduce((s, l) => s + ((l.technicalMins ?? 0) + (l.sparringMins ?? 0)) * 60, 0)
+    const totalHours = Math.round((totalSec + bjjSec) / 3600)
 
     const today = new Date().toISOString().split('T')[0]
     const todaySessions = sessions.filter((s) => s.date === today)
     const todayBjj = bjjLogs.filter((l) => l.date === today)
     const todayMins = todaySessions.reduce((s, sess) => s + sess.durationMin, 0)
       + todayBjj.reduce((s, l) => s + (l.technicalMins ?? 0) + (l.sparringMins ?? 0), 0)
-    const todayXP = todayMins
 
     const mobSessions = sessions.filter((s) => s.type !== 'calisthenics' && s.type !== 'bjj' && s.type !== 'custom')
-    const mobilityHours = Math.round(mobSessions.reduce((s, sess) => s + sess.durationMin, 0) / 60)
+    const mobilityHours = Math.round(mobSessions.reduce((s, sess) => s + sess.durationMin, 0) / 60 * 10) / 10
+
+    const calSessions = sessions.filter((s) => s.type === 'calisthenics')
+    const calisthenicsHours = Math.round(calSessions.reduce((s, sess) => s + sess.durationMin, 0) / 60 * 10) / 10
+
+    const bjjHours = Math.round(bjjSec / 3600 * 10) / 10
 
     const calLogMap = new Map<string, number>()
     for (const log of calLogs) {
@@ -110,25 +123,30 @@ function useDojoState(): DojoState | null {
       if (hasLevel2) unlockedChains.push(chain.id)
     }
 
-    return { belt, bjjClasses, totalHours, todayXP, mobilityHours, calisthenicsUnlocks: unlockedChains }
+    return { belt, bjjClasses, totalHours, todayXP: todayMins, mobilityHours, calisthenicsHours, bjjHours, calisthenicsUnlocks: unlockedChains }
   }, [], null)
 }
 
 export default function DojoScene() {
   const state = useDojoState()
+  const [frame, setFrame] = useState(0)
+
+  // Walk animation loop
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFrame((f) => (f + 1) % WALK_FRAMES.length)
+    }, 200)
+    return () => clearInterval(interval)
+  }, [])
 
   if (!state) {
     return <div className="h-56 flex items-center justify-center text-muted text-sm">Loading...</div>
   }
 
-  const { belt, bjjClasses, totalHours, todayXP, mobilityHours, calisthenicsUnlocks } = state
+  const { belt, bjjClasses, totalHours, todayXP, mobilityHours, calisthenicsHours, bjjHours } = state
   const aura = getAura(mobilityHours)
   const nextThreshold = getNextBeltThreshold(belt)
-  const beltProgress = nextThreshold ? Math.min(100, (bjjClasses / nextThreshold) * 100) : 100
-
-  const visibleEquipment = EQUIPMENT.filter((eq) =>
-    eq.chainIds.some((id) => calisthenicsUnlocks.includes(id))
-  )
+  const dojo = getDojo(totalHours)
 
   const dailyTarget = 60
   const dailyPct = Math.min(100, (todayXP / dailyTarget) * 100)
@@ -140,9 +158,9 @@ export default function DojoScene() {
         className="relative rounded-2xl overflow-hidden border border-border"
         style={{ height: 240 }}
       >
-        {/* Dojo background */}
+        {/* Dojo background — progresses with total hours */}
         <img
-          src="/sprites/avatar/dojo_bg.png"
+          src={dojo.bg}
           alt=""
           className="absolute inset-0 w-full h-full object-cover"
           style={{ imageRendering: 'pixelated' }}
@@ -150,32 +168,6 @@ export default function DojoScene() {
 
         {/* Dark overlay for contrast */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />
-
-        {/* Equipment placed in scene — left side */}
-        <div className="absolute left-4 bottom-12 flex flex-col gap-2">
-          {visibleEquipment.slice(0, 2).map((eq) => (
-            <div
-              key={eq.label}
-              className="w-10 h-10 flex items-center justify-center"
-              title={eq.label}
-            >
-              <span className="text-2xl drop-shadow-lg">{eq.fallback}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Equipment placed in scene — right side */}
-        <div className="absolute right-4 bottom-12 flex flex-col gap-2">
-          {visibleEquipment.slice(2).map((eq) => (
-            <div
-              key={eq.label}
-              className="w-10 h-10 flex items-center justify-center"
-              title={eq.label}
-            >
-              <span className="text-2xl drop-shadow-lg">{eq.fallback}</span>
-            </div>
-          ))}
-        </div>
 
         {/* Aura behind character */}
         {aura.color !== 'transparent' && (
@@ -192,11 +184,11 @@ export default function DojoScene() {
           </div>
         )}
 
-        {/* Judoka character — centered, large */}
+        {/* Judoka character — walking animation, bigger */}
         <div className="absolute inset-0 flex items-center justify-center">
           <img
-            src={BELT_SPRITE[belt]}
-            alt={`${belt} belt judoka`}
+            src={WALK_FRAMES[frame]}
+            alt={`${belt} belt judoka walking`}
             className="w-28 h-28 drop-shadow-lg"
             style={{ imageRendering: 'pixelated' }}
           />
@@ -221,70 +213,121 @@ export default function DojoScene() {
         )}
       </div>
 
-      {/* Stats row below scene */}
-      <div className="grid grid-cols-2 gap-2">
-        {/* Today's XP */}
-        <div className="rounded-xl bg-card border border-border p-3">
-          <div className="flex items-baseline justify-between mb-1.5">
-            <span className="text-[10px] font-bold uppercase text-muted tracking-wide">Today</span>
-            <span className="text-sm font-bold text-ink">{todayXP} <span className="text-[10px] text-muted">min</span></span>
-          </div>
-          <div className="bg-border rounded-full h-2 overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all duration-500"
-              style={{
-                width: `${dailyPct}%`,
-                background: todayXP >= dailyTarget ? '#22c55e' : '#f59e0b',
-              }}
-            />
-          </div>
-          <div className="text-[10px] text-muted mt-1 text-right">
-            {todayXP >= dailyTarget ? '✓ goal hit' : `${dailyTarget - todayXP}m to go`}
-          </div>
+      {/* Today's XP bar */}
+      <div className="rounded-xl bg-card border border-border p-3">
+        <div className="flex items-baseline justify-between mb-1.5">
+          <span className="text-[10px] font-bold uppercase text-muted tracking-wide">Today</span>
+          <span className="text-sm font-bold text-ink">{todayXP} <span className="text-[10px] text-muted">min</span></span>
         </div>
-
-        {/* Belt progress */}
-        <div className="rounded-xl bg-card border border-border p-3">
-          <div className="flex items-baseline justify-between mb-1.5">
-            <span className="text-[10px] font-bold uppercase text-muted tracking-wide">Belt</span>
-            <span className="text-sm font-bold text-ink">{bjjClasses} <span className="text-[10px] text-muted">classes</span></span>
-          </div>
-          <div className="bg-border rounded-full h-2 overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all duration-500"
-              style={{
-                width: `${beltProgress}%`,
-                backgroundColor: BELT_COLORS[belt === 'black' ? 'black' : belt],
-              }}
-            />
-          </div>
-          <div className="text-[10px] text-muted mt-1 text-right">
-            {nextThreshold ? `${nextThreshold - bjjClasses} to next` : 'max rank'}
-          </div>
+        <div className="bg-border rounded-full h-2 overflow-hidden">
+          <div
+            className="h-full rounded-full transition-all duration-500"
+            style={{
+              width: `${dailyPct}%`,
+              background: todayXP >= dailyTarget ? '#22c55e' : '#f59e0b',
+            }}
+          />
+        </div>
+        <div className="text-[10px] text-muted mt-1 text-right">
+          {todayXP >= dailyTarget ? '✓ goal hit' : `${dailyTarget - todayXP}m to go`}
         </div>
       </div>
 
-      {/* Discipline pills */}
-      <div className="flex gap-2">
-        <DisciplinePill emoji="🥋" label="BJJ" value={`${bjjClasses} cls`} />
-        <DisciplinePill emoji="💪" label="CAL" value={`${calisthenicsUnlocks.length}/${PROGRESSION_CHAINS.length} chains`} />
-        <DisciplinePill
+      {/* Discipline level bars — 4 slots per level, each slot = 1h */}
+      <div className="space-y-2">
+        <LevelBar
+          emoji="🥋"
+          label="BJJ"
+          hours={bjjHours}
+          detail={`${bjjClasses} classes`}
+          nextBeltInfo={nextThreshold ? `${nextThreshold - bjjClasses} to ${belt === 'white' ? 'blue' : belt === 'blue' ? 'purple' : 'black'}` : 'max'}
+          color="#2ec4b6"
+        />
+        <LevelBar
+          emoji="💪"
+          label="Calisthenics"
+          hours={calisthenicsHours}
+          color="#e8622a"
+        />
+        <LevelBar
           emoji="🧘"
-          label="MOB"
-          value={aura.label || 'none'}
-          color={aura.color !== 'transparent' ? aura.color : undefined}
+          label="Mobility"
+          hours={mobilityHours}
+          color="#a78bfa"
         />
       </div>
     </div>
   )
 }
 
-function DisciplinePill({ emoji, label, value, color }: { emoji: string; label: string; value: string; color?: string }) {
+function LevelBar({ emoji, label, hours, detail, nextBeltInfo, color }: {
+  emoji: string
+  label: string
+  hours: number
+  detail?: string
+  nextBeltInfo?: string
+  color: string
+}) {
+  const hoursPerLevel = 4
+  const level = Math.floor(hours / hoursPerLevel)
+  const progressInLevel = hours - level * hoursPerLevel
+  const slots = 4
+
+  // Level tier colors
+  const levelTier = Math.min(4, Math.floor(level / 3))
+  const tierLabels = ['Beginner', 'Regular', 'Dedicated', 'Advanced', 'Elite']
+
   return (
-    <div className="flex-1 rounded-lg bg-card border border-border px-2 py-1.5 text-center">
-      <div className="text-sm">{emoji}</div>
-      <div className="text-[9px] font-bold uppercase text-muted tracking-wide">{label}</div>
-      <div className="text-[11px] font-semibold text-ink" style={color ? { color } : undefined}>{value}</div>
+    <div className="rounded-xl bg-card border border-border p-3">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <span className="text-base">{emoji}</span>
+          <div>
+            <span className="text-xs font-bold text-ink">{label}</span>
+            <span className="ml-1.5 text-[10px] text-muted">Lv.{level}</span>
+            <span className="ml-1 text-[9px] text-muted">({tierLabels[levelTier]})</span>
+          </div>
+        </div>
+        <div className="text-right">
+          <span className="text-xs font-semibold text-ink">{hours}h</span>
+          {detail && <span className="ml-1.5 text-[10px] text-muted">{detail}</span>}
+        </div>
+      </div>
+
+      {/* 4 slots bar */}
+      <div className="flex gap-1">
+        {Array.from({ length: slots }).map((_, i) => {
+          const slotFilled = progressInLevel >= i + 1
+          const slotPartial = !slotFilled && progressInLevel > i
+          const partialPct = slotPartial ? ((progressInLevel - i) * 100) : 0
+
+          return (
+            <div
+              key={i}
+              className="flex-1 h-3 rounded-sm overflow-hidden"
+              style={{ backgroundColor: `${color}20` }}
+            >
+              {slotFilled ? (
+                <div className="h-full rounded-sm" style={{ backgroundColor: color }} />
+              ) : slotPartial ? (
+                <div
+                  className="h-full rounded-sm transition-all"
+                  style={{ width: `${partialPct}%`, backgroundColor: color, opacity: 0.7 }}
+                />
+              ) : null}
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="flex justify-between mt-1">
+        <span className="text-[9px] text-muted">
+          {Math.round((hoursPerLevel - progressInLevel) * 10) / 10}h to Lv.{level + 1}
+        </span>
+        {nextBeltInfo && (
+          <span className="text-[9px] text-muted">{nextBeltInfo}</span>
+        )}
+      </div>
     </div>
   )
 }
