@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import AvatarDisplay from '../components/AvatarDisplay'
+import DojoScene from '../components/DojoScene'
 import TrainingCalendar from '../components/TrainingCalendar'
 import { Card, Tag } from '../components/Card'
 import SkillRadar from '../components/SkillRadar'
@@ -51,9 +51,7 @@ export default function Today() {
         <h1 className="text-2xl font-extrabold">Today</h1>
       </div>
 
-      <Card>
-        <AvatarDisplay useSpriteAnimation={true} compact={true} />
-      </Card>
+      <DojoScene />
 
       {trainingHours && trainingHours.length > 0 && (
         <Card>

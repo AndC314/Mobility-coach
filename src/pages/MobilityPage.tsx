@@ -5,15 +5,23 @@ import { upsertTodaySession } from '../hooks/useSessions'
 import { todayIso } from '../lib/date'
 
 function ExerciseThumb({ id, icon, className }: { id: string; icon: string; className?: string }) {
-  const [showImg, setShowImg] = useState(true)
+  const [src, setSrc] = useState<'sprite' | 'legacy' | 'emoji'>('sprite')
   return (
     <div className={`flex items-center justify-center bg-card ${className ?? ''}`}>
-      {showImg ? (
+      {src === 'sprite' ? (
+        <img
+          src={`/sprites/exercises/${id}.png`}
+          alt=""
+          className="h-12 w-12 object-contain"
+          style={{ imageRendering: 'pixelated' }}
+          onError={() => setSrc('legacy')}
+        />
+      ) : src === 'legacy' ? (
         <img
           src={`/exercises/${id}.png`}
           alt=""
           className="h-full w-full object-cover"
-          onError={() => setShowImg(false)}
+          onError={() => setSrc('emoji')}
         />
       ) : (
         <span className="text-2xl">{icon}</span>
