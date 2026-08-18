@@ -111,6 +111,16 @@ export default function MobilityPage() {
   }
 
   const categories = ['hip', 'spine', 'shoulder', 'full_body'] as const
+  const [openSections, setOpenSections] = useState<Set<string>>(new Set(['hip']))
+
+  function toggleSection(cat: string) {
+    setOpenSections((prev) => {
+      const next = new Set(prev)
+      if (next.has(cat)) next.delete(cat)
+      else next.add(cat)
+      return next
+    })
+  }
 
   return (
     <div className="space-y-4 pb-4 fade-in">
@@ -121,48 +131,70 @@ export default function MobilityPage() {
 
       {view === 'picker' ? (
         <>
-          {/* Exercise picker grid */}
+          {/* Exercise picker grid — collapsible sections */}
           {categories.map((category) => {
             const categoryName = {
               hip: 'Hip Mobility',
-              spine: 'Spine Mobility',
+              spine: 'Spine & Thoracic',
               shoulder: 'Shoulder Mobility',
               full_body: 'Full Body'
             }[category]
 
             const exercises = MOBILITY_EXERCISES.filter((e) => e.category === category)
+            const selectedInCategory = exercises.filter((e) => selected.some((s) => s.id === e.id)).length
+            const isOpen = openSections.has(category)
 
             return (
               <div key={category}>
-                <h2 className="mb-2 text-sm font-bold text-muted">{categoryName}</h2>
-                <div className="grid grid-cols-3 gap-2 mb-4">
-                  {exercises.map((ex) => {
-                    const isSelected = selected.some((s) => s.id === ex.id)
-                    return (
-                      <button
-                        key={ex.id}
-                        onClick={() => toggleExercise(ex.id)}
-                        className={`flex flex-col items-center gap-1.5 rounded-xl p-2 transition-colors ${
-                          isSelected
-                            ? 'bg-teal/20 border border-teal/50'
-                            : 'bg-card2 border border-border hover:bg-card2/80'
-                        }`}
-                      >
-                        <ExerciseThumb id={ex.id} icon={ex.icon} className="h-14 w-full rounded-lg overflow-hidden" />
-                        <span className={`text-[10px] font-semibold text-center leading-tight ${
-                          isSelected ? 'text-teal' : 'text-muted'
-                        }`}>
-                          {ex.name}
-                        </span>
-                      </button>
-                    )
-                  })}
-                </div>
+                <button
+                  onClick={() => toggleSection(category)}
+                  className="mb-2 flex w-full items-center justify-between"
+                >
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-sm font-bold text-ink">{categoryName}</h2>
+                    {selectedInCategory > 0 && (
+                      <span className="text-[10px] font-bold bg-teal/20 text-teal rounded-full px-1.5 py-0.5">
+                        {selectedInCategory}
+                      </span>
+                    )}
+                  </div>
+                  <svg
+                    width="12" height="12" viewBox="0 0 12 12"
+                    className={`text-muted transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                  >
+                    <path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+                {isOpen && (
+                  <div className="grid grid-cols-3 gap-2 mb-4">
+                    {exercises.map((ex) => {
+                      const isSelected = selected.some((s) => s.id === ex.id)
+                      return (
+                        <button
+                          key={ex.id}
+                          onClick={() => toggleExercise(ex.id)}
+                          className={`flex flex-col items-center gap-1.5 rounded-xl p-2 transition-colors ${
+                            isSelected
+                              ? 'bg-teal/20 border border-teal/50'
+                              : 'bg-card2 border border-border hover:bg-card2/80'
+                          }`}
+                        >
+                          <ExerciseThumb id={ex.id} icon={ex.icon} className="h-14 w-full rounded-lg overflow-hidden" />
+                          <span className={`text-[10px] font-semibold text-center leading-tight ${
+                            isSelected ? 'text-teal' : 'text-muted'
+                          }`}>
+                            {ex.name}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             )
           })}
 
-          {/* Selected exercises summary */}
+          {/* Selected exercises with inline duration controls */}
           {selected.length > 0 && (
             <Card>
               <h2 className="mb-3 text-base font-bold">Your session ({selected.length} exercises)</h2>
@@ -174,41 +206,94 @@ export default function MobilityPage() {
                   const totalExerciseTime = exerciseTime + restTime
 
                   return (
-                    <div key={sel.id} className="flex items-center justify-between rounded-lg bg-card2 p-3">
-                      <div className="flex-1">
-                        <div className="text-sm font-semibold text-ink">{ex.name}</div>
-                        <div className="text-xs text-muted">
-                          {sel.sets} × {sel.holdSec}s
-                          {sel.restSec > 0 ? ` + ${sel.restSec}s rest` : ''}
-                          {' = '}
-                          {Math.floor(totalExerciseTime / 60)}m {totalExerciseTime % 60}s
+                    <div key={sel.id} className="rounded-lg bg-card2 p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <ExerciseThumb id={sel.id} icon={ex.icon} className="h-8 w-8 flex-shrink-0 rounded overflow-hidden" />
+                          <div>
+                            <div className="text-xs font-semibold text-ink">{ex.name}</div>
+                            <div className="text-[10px] text-muted">
+                              {Math.floor(totalExerciseTime / 60)}m {totalExerciseTime % 60}s
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => removeExercise(sel.id)}
+                          className="text-xs text-muted hover:text-red"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      {/* Inline duration controls */}
+                      <div className="flex items-center gap-3 text-[10px]">
+                        <div className="flex items-center gap-1">
+                          <span className="text-muted">Hold</span>
+                          <button
+                            onClick={() => updateExercise(sel.id, { holdSec: Math.max(5, sel.holdSec - 15) })}
+                            className="w-5 h-5 rounded bg-border text-ink font-bold flex items-center justify-center"
+                          >−</button>
+                          <span className="w-7 text-center font-semibold text-ink">{sel.holdSec}s</span>
+                          <button
+                            onClick={() => updateExercise(sel.id, { holdSec: Math.min(ex.maxHoldSec, sel.holdSec + 15) })}
+                            className="w-5 h-5 rounded bg-border text-ink font-bold flex items-center justify-center"
+                          >+</button>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-muted">Sets</span>
+                          <button
+                            onClick={() => updateExercise(sel.id, { sets: Math.max(1, sel.sets - 1) })}
+                            className="w-5 h-5 rounded bg-border text-ink font-bold flex items-center justify-center"
+                          >−</button>
+                          <span className="w-4 text-center font-semibold text-ink">{sel.sets}</span>
+                          <button
+                            onClick={() => updateExercise(sel.id, { sets: Math.min(5, sel.sets + 1) })}
+                            className="w-5 h-5 rounded bg-border text-ink font-bold flex items-center justify-center"
+                          >+</button>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-muted">Rest</span>
+                          <button
+                            onClick={() => updateExercise(sel.id, { restSec: Math.max(0, sel.restSec - 10) })}
+                            className="w-5 h-5 rounded bg-border text-ink font-bold flex items-center justify-center"
+                          >−</button>
+                          <span className="w-7 text-center font-semibold text-ink">{sel.restSec}s</span>
+                          <button
+                            onClick={() => updateExercise(sel.id, { restSec: Math.min(120, sel.restSec + 10) })}
+                            className="w-5 h-5 rounded bg-border text-ink font-bold flex items-center justify-center"
+                          >+</button>
                         </div>
                       </div>
-                      <button
-                        onClick={() => removeExercise(sel.id)}
-                        className="ml-2 text-xs text-muted hover:text-red"
-                      >
-                        ✕
-                      </button>
                     </div>
                   )
                 })}
               </div>
 
               <div className="border-t border-border pt-3 mb-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted">Total session time:</span>
-                  <span className="font-bold text-ink">
-                    {Math.floor(totalSec / 60)}m {totalSec % 60}s
-                  </span>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-sm text-muted">Total: </span>
+                    <span className="text-sm font-bold text-ink">
+                      {Math.floor(totalSec / 60)}m {totalSec % 60}s
+                    </span>
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-muted mr-1.5">Date</label>
+                    <input
+                      type="date"
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
+                      className="rounded border border-border bg-card2 px-2 py-1 text-xs text-ink"
+                    />
+                  </div>
                 </div>
               </div>
 
               <button
-                onClick={() => setView('config')}
-                className="w-full rounded-lg bg-teal/20 py-2.5 text-sm font-bold text-teal border border-teal/40"
+                onClick={handleLogBulk}
+                disabled={saving}
+                className="w-full rounded-lg bg-teal/20 py-2.5 text-sm font-bold text-teal border border-teal/40 disabled:opacity-50"
               >
-                Configure & Log Session
+                {saved ? '✓ Logged!' : saving ? 'Saving…' : 'Log Session'}
               </button>
             </Card>
           )}
