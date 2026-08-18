@@ -4,6 +4,7 @@ import { useSkillTree } from '../hooks/useSkillTree'
 import { useProgressionState, useCurrentLevel, type ResolvedChain, type ResolvedNode, type NodeUnlockStatus } from '../hooks/useProgressionState'
 import { LEVEL_COLORS, LEVEL_LABELS } from '../data/progressionChains'
 import { getExerciseDef } from '../data/calisthenics'
+import ExerciseIcon from './ExerciseIcon'
 import LevelAssessment from './LevelAssessment'
 import TrendIndicator from './TrendIndicator'
 import type { SkillBranch, SkillNode, NodeStatus } from '../lib/skillTree'
@@ -208,17 +209,20 @@ function ProgressionNodeRow({ node, isLast }: { node: ResolvedNode; isLast: bool
           className="flex w-full items-center justify-between text-left"
           style={{ opacity: node.status === 'locked' ? 0.5 : 1 }}
         >
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-bold text-ink truncate">{node.exerciseName}</div>
-            <div className="text-[11px] text-muted flex items-center gap-1">
-              {node.best != null
-                ? <>
-                    <span>Best: {node.best}/{node.masteryTarget}{node.unit === 's' ? 's' : ' reps'}</span>
-                    <TrendIndicator exerciseId={node.exerciseId} />
-                  </>
-                : node.status === 'locked'
-                  ? 'Locked'
-                  : `Target: ${node.masteryTarget}${node.unit === 's' ? 's' : ' reps'}`}
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <ExerciseIcon exerciseId={node.exerciseId} fallbackEmoji={getExerciseDef(node.exerciseId)?.icon ?? '🏋️'} size="sm" />
+            <div className="min-w-0">
+              <div className="text-sm font-bold text-ink truncate">{node.exerciseName}</div>
+              <div className="text-[11px] text-muted flex items-center gap-1">
+                {node.best != null
+                  ? <>
+                      <span>Best: {node.best}/{node.masteryTarget}{node.unit === 's' ? 's' : ' reps'}</span>
+                      <TrendIndicator exerciseId={node.exerciseId} />
+                    </>
+                  : node.status === 'locked'
+                    ? 'Locked'
+                    : `Target: ${node.masteryTarget}${node.unit === 's' ? 's' : ' reps'}`}
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">

@@ -24,7 +24,7 @@ export default function Progress() {
         {(
           [
             { id: 'tree', label: 'Skill Tree' },
-            { id: 'trends', label: 'Strength Profile' },
+            { id: 'trends', label: 'Profile' },
             { id: 'activity', label: 'Activity' },
           ] as const
         ).map((t) => (

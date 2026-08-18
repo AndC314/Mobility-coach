@@ -1,11 +1,5 @@
 import { useAvatarStats, type AvatarAxis } from '../hooks/useAvatarStats'
-
-// ─────────────────────────────────────────────────────────────────────────
-// SKILL RADAR — 5-Axis SVG Pentagon Chart
-//
-// Minimal, high-contrast editorial style: sharp lines, desaturated tones,
-// transparent data polygon. Pure SVG, no external chart library needed.
-// ─────────────────────────────────────────────────────────────────────────
+import { Card } from './Card'
 
 interface SkillRadarProps {
   axes?: AvatarAxis[]
@@ -17,6 +11,14 @@ interface SkillRadarProps {
     Core: number
     Mobility: number
   }
+}
+
+const AXIS_CAPS: Record<string, string> = {
+  push: '40 reps',
+  pull: '15 reps',
+  core: '120s hold',
+  mobility: '60 sessions',
+  grappling: '50 classes',
 }
 
 const AXIS_COLORS = {
@@ -83,122 +85,139 @@ export default function SkillRadar({ axes, size = 260, recoveryReadiness }: Skil
     : ''
 
   return (
-    <div className="flex flex-col items-center">
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="overflow-visible">
-        {/* Grid rings */}
-        {rings.map((pct) => {
-          const points = Array.from({ length: n }, (_, i) => {
+    <Card>
+      <h2 className="text-base font-bold text-ink">Training Profile</h2>
+      <p className="mb-3 text-[11px] text-muted">Your best performance across disciplines, normalized to mastery caps</p>
+
+      <div className="flex flex-col items-center">
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="overflow-visible">
+          {/* Grid rings */}
+          {rings.map((pct) => {
+            const points = Array.from({ length: n }, (_, i) => {
+              const angle = startAngle + i * angleStep
+              return polarToXY(angle, radius * pct)
+            })
+            const path = points.map(([x, y], i) => `${i === 0 ? 'M' : 'L'} ${x} ${y}`).join(' ') + ' Z'
+            return (
+              <path
+                key={pct}
+                d={path}
+                fill="none"
+                stroke="#2e3248"
+                strokeWidth={pct === 1 ? 1.5 : 0.75}
+                opacity={pct === 1 ? 0.8 : 0.4}
+              />
+            )
+          })}
+
+          {/* Axis lines */}
+          {data.map((_, i) => {
             const angle = startAngle + i * angleStep
-            return polarToXY(angle, radius * pct)
-          })
-          const path = points.map(([x, y], i) => `${i === 0 ? 'M' : 'L'} ${x} ${y}`).join(' ') + ' Z'
-          return (
-            <path
-              key={pct}
-              d={path}
-              fill="none"
-              stroke="#2e3248"
-              strokeWidth={pct === 1 ? 1.5 : 0.75}
-              opacity={pct === 1 ? 0.8 : 0.4}
-            />
-          )
-        })}
+            const [x, y] = polarToXY(angle, radius)
+            return (
+              <line
+                key={`axis-${i}`}
+                x1={cx}
+                y1={cy}
+                x2={x}
+                y2={y}
+                stroke="#2e3248"
+                strokeWidth={0.75}
+                opacity={0.5}
+              />
+            )
+          })}
 
-        {/* Axis lines */}
-        {data.map((_, i) => {
-          const angle = startAngle + i * angleStep
-          const [x, y] = polarToXY(angle, radius)
-          return (
-            <line
-              key={`axis-${i}`}
-              x1={cx}
-              y1={cy}
-              x2={x}
-              y2={y}
-              stroke="#2e3248"
-              strokeWidth={0.75}
-              opacity={0.5}
-            />
-          )
-        })}
-
-        {/* Data polygon */}
-        <path
-          d={dataPath}
-          fill="rgba(46, 196, 182, 0.12)"
-          stroke="#2ec4b6"
-          strokeWidth={2}
-          strokeLinejoin="round"
-        />
-
-        {/* Readiness polygon (if provided) */}
-        {readinessPath && (
+          {/* Data polygon */}
           <path
-            d={readinessPath}
-            fill="none"
-            stroke="#a78bfa"
+            d={dataPath}
+            fill="rgba(46, 196, 182, 0.12)"
+            stroke="#2ec4b6"
             strokeWidth={2}
-            strokeDasharray="4 2"
-            opacity={0.5}
             strokeLinejoin="round"
           />
+
+          {/* Readiness polygon (if provided) */}
+          {readinessPath && (
+            <path
+              d={readinessPath}
+              fill="none"
+              stroke="#a78bfa"
+              strokeWidth={2}
+              strokeDasharray="4 2"
+              opacity={0.5}
+              strokeLinejoin="round"
+            />
+          )}
+
+          {/* Data points */}
+          {dataPoints.map(([x, y], i) => (
+            <circle
+              key={`pt-${i}`}
+              cx={x}
+              cy={y}
+              r={3.5}
+              fill={AXIS_COLORS[data[i].key] ?? '#2ec4b6'}
+              stroke="#1a1d2e"
+              strokeWidth={1.5}
+            />
+          ))}
+
+          {/* Labels */}
+          {data.map((axis, i) => {
+            const angle = startAngle + i * angleStep
+            const labelRadius = radius + 22
+            const [lx, ly] = polarToXY(angle, labelRadius)
+            const anchor = lx < cx - 5 ? 'end' : lx > cx + 5 ? 'start' : 'middle'
+            return (
+              <text
+                key={`label-${i}`}
+                x={lx}
+                y={ly}
+                textAnchor={anchor}
+                dominantBaseline="middle"
+                className="text-[10px] font-semibold"
+                fill={AXIS_COLORS[axis.key] ?? '#7a7d96'}
+              >
+                {axis.label}
+              </text>
+            )
+          })}
+        </svg>
+
+        {readinessPath && (
+          <div className="mt-2 flex items-center gap-2 text-[10px] text-muted">
+            <span className="inline-block w-4 border-t-2 border-dashed border-purple-400 opacity-50" />
+            <span>Recovery readiness</span>
+          </div>
         )}
+      </div>
 
-        {/* Data points */}
-        {dataPoints.map(([x, y], i) => (
-          <circle
-            key={`pt-${i}`}
-            cx={x}
-            cy={y}
-            r={3.5}
-            fill={AXIS_COLORS[data[i].key] ?? '#2ec4b6'}
-            stroke="#1a1d2e"
-            strokeWidth={1.5}
-          />
-        ))}
-
-        {/* Labels */}
-        {data.map((axis, i) => {
-          const angle = startAngle + i * angleStep
-          const labelRadius = radius + 22
-          const [lx, ly] = polarToXY(angle, labelRadius)
-          const anchor = lx < cx - 5 ? 'end' : lx > cx + 5 ? 'start' : 'middle'
-          return (
-            <text
-              key={`label-${i}`}
-              x={lx}
-              y={ly}
-              textAnchor={anchor}
-              dominantBaseline="middle"
-              className="text-[10px] font-semibold"
-              fill={AXIS_COLORS[axis.key] ?? '#7a7d96'}
-            >
-              {axis.label}
-            </text>
-          )
-        })}
-      </svg>
-
-      {/* Legend with axis breakdown */}
-      <div className="mt-4 w-full space-y-2 px-2">
+      {/* Axis breakdown */}
+      <div className="mt-4 space-y-2.5">
         {data.map((axis) => {
           const color = AXIS_COLORS[axis.key] ?? '#7a7d96'
           const pct = Math.round(axis.value)
           const rawLabel = axis.raw != null
             ? `${axis.raw}${axis.unit === 'reps' ? ' reps' : axis.unit === 's' ? 's' : axis.unit ? ` ${axis.unit}` : ''}`
-            : 'no data'
+            : '—'
+          const cap = AXIS_CAPS[axis.key] ?? ''
           return (
-            <div key={axis.key} className="flex items-center gap-2">
-              <div className="w-24 text-xs font-medium truncate" style={{ color }}>{axis.label}</div>
-              <div className="flex-1 h-1.5 rounded-full bg-border overflow-hidden">
-                <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
+            <div key={axis.key}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-semibold" style={{ color }}>{axis.label}</span>
+                <span className="text-xs font-bold text-ink">{rawLabel}</span>
               </div>
-              <div className="w-8 text-right text-xs font-bold" style={{ color }}>{pct}%</div>
-              <div className="w-16 text-right text-[10px] text-muted">{rawLabel}</div>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 h-1.5 rounded-full bg-border overflow-hidden">
+                  <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
+                </div>
+                <span className="text-[10px] text-muted w-20 text-right">/ {cap}</span>
+              </div>
             </div>
           )
         })}
       </div>
-    </div>
+    </Card>
   )
 }

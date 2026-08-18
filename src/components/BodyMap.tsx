@@ -1,18 +1,36 @@
 import type { MuscleScore } from '../data/muscleMap'
 import type { MuscleGroup } from '../data/muscleMap'
 
-const UNTRAINED = '#d0d3de'
+const UNTRAINED = '#2e3248'
 const PRIMARY_FULL = '#d9472b'
 const SECONDARY_FULL = '#f5c842'
 
 function scoreColor(score: number, level: 'primary' | 'secondary'): string {
   if (score === 0) return UNTRAINED
   if (level === 'secondary') {
-    const alpha = Math.round((score / 100) * 200 + 55)
-    return SECONDARY_FULL + alpha.toString(16).padStart(2, '0').slice(0, 2)
+    const t = score / 100
+    return interpolateColor('#2e3248', SECONDARY_FULL, t)
   }
-  if (score < 50) return `hsl(38, ${Math.round(score * 1.6)}%, 55%)`
-  return PRIMARY_FULL
+  const t = score / 100
+  return interpolateColor('#2e3248', PRIMARY_FULL, t)
+}
+
+function interpolateColor(from: string, to: string, t: number): string {
+  const f = hexToRgb(from)
+  const toRgb = hexToRgb(to)
+  const r = Math.round(f.r + (toRgb.r - f.r) * t)
+  const g = Math.round(f.g + (toRgb.g - f.g) * t)
+  const b = Math.round(f.b + (toRgb.b - f.b) * t)
+  return `rgb(${r},${g},${b})`
+}
+
+function hexToRgb(hex: string) {
+  const h = hex.replace('#', '')
+  return {
+    r: parseInt(h.substring(0, 2), 16),
+    g: parseInt(h.substring(2, 4), 16),
+    b: parseInt(h.substring(4, 6), 16),
+  }
 }
 
 interface BodyMapProps {
@@ -29,7 +47,7 @@ export default function BodyMap({ scores, width = 340 }: BodyMapProps) {
 
   return (
     <div className="w-full overflow-x-auto">
-      <div className="flex gap-4 justify-center" style={{ minWidth: width }}>
+      <div className="flex gap-3 justify-center" style={{ minWidth: width }}>
         <FrontView get={get} />
         <BackView get={get} />
       </div>
@@ -40,18 +58,18 @@ export default function BodyMap({ scores, width = 340 }: BodyMapProps) {
 
 function Legend() {
   return (
-    <div className="mt-3 flex justify-center gap-4 text-xs text-muted">
+    <div className="mt-3 flex justify-center gap-4 text-[10px] text-muted">
       <div className="flex items-center gap-1.5">
-        <span className="h-3 w-3 rounded-full bg-[#d9472b] inline-block" />
-        Primary Muscles
+        <span className="h-2.5 w-2.5 rounded-full bg-[#d9472b] inline-block" />
+        Primary
       </div>
       <div className="flex items-center gap-1.5">
-        <span className="h-3 w-3 rounded-full bg-[#f5c842] inline-block" />
-        Secondary Muscles
+        <span className="h-2.5 w-2.5 rounded-full bg-[#f5c842] inline-block" />
+        Secondary
       </div>
       <div className="flex items-center gap-1.5">
-        <span className="h-3 w-3 rounded-full bg-[#d0d3de] inline-block" />
-        Untargeted Muscles
+        <span className="h-2.5 w-2.5 rounded-full bg-[#2e3248] inline-block border border-[#3e4258]" />
+        Untrained
       </div>
     </div>
   )
@@ -59,263 +77,406 @@ function Legend() {
 
 function FrontView({ get }: { get: (m: MuscleGroup) => string }) {
   return (
-    <svg viewBox="0 0 200 420" width="155" height="320" aria-label="Front body view">
-      {/* Body outline */}
+    <svg viewBox="0 0 180 400" width="160" height="340" aria-label="Front body view">
+      {/* Body silhouette outline */}
       <path
-        d="M100 18 C88 18 80 26 78 38 C76 46 78 52 80 56 L80 58 C72 62 64 68 58 76 C52 84 48 94 46 106 L42 106 C36 108 32 114 30 122 C28 132 30 140 34 144 L38 146 C38 152 40 158 42 162 L42 164 C40 174 38 184 38 194 L40 200 L42 230 C42 240 44 250 46 260 L48 280 C48 290 50 300 52 310 L54 340 C54 350 56 358 58 364 L60 374 C58 378 56 382 56 386 C56 392 60 396 66 398 L72 398 C78 398 82 394 84 390 L86 386 C88 380 88 376 88 372 L88 340 C92 336 96 332 100 330 C104 332 108 336 112 340 L112 372 C112 376 112 380 114 386 L116 390 C118 394 122 398 128 398 L134 398 C140 396 144 392 144 386 C144 382 142 378 140 374 L142 364 C144 358 146 350 146 340 L148 310 C150 300 152 290 152 280 L154 260 C156 250 158 240 158 230 L160 200 L162 194 C162 184 160 174 158 164 L158 162 C160 158 162 152 162 146 L166 144 C170 140 172 132 170 122 C168 114 164 108 158 106 L154 106 C152 94 148 84 142 76 C136 68 128 62 120 58 L120 56 C122 52 124 46 122 38 C120 26 112 18 100 18 Z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.2"
-        className="text-border"
-        opacity="0.6"
+        d="M90 12 C80 12 73 18 71 28 C69 36 71 42 73 46 L73 48
+           C66 52 58 58 52 66 C46 74 42 84 40 96 L36 97
+           C30 99 27 105 25 112 C23 121 25 128 29 132 L33 134
+           C33 139 35 145 37 150 L37 154
+           C35 164 33 175 33 186 L35 192 L37 220
+           C37 230 39 240 41 250 L43 270
+           C43 280 45 290 47 300 L49 328
+           C49 338 51 346 53 352 L55 362
+           C53 365 51 370 51 374 C51 380 55 384 60 386 L66 386
+           C71 386 75 382 77 378 L79 374 C80 369 80 365 80 362
+           L80 330 C84 326 87 322 90 320
+           C93 322 96 326 100 330 L100 362
+           C100 365 100 369 101 374 L103 378
+           C105 382 109 386 114 386 L120 386
+           C125 384 129 380 129 374 C129 370 127 365 125 362
+           L127 352 C129 346 131 338 131 328 L133 300
+           C135 290 137 280 137 270 L139 250
+           C141 240 143 230 143 220 L145 192 L147 186
+           C147 175 145 164 143 154 L143 150
+           C145 145 147 139 147 134 L151 132
+           C155 128 157 121 155 112 C153 105 150 99 144 97
+           L140 96 C138 84 134 74 128 66
+           C122 58 114 52 107 48 L107 46
+           C109 42 111 36 109 28 C107 18 100 12 90 12 Z"
+        fill="#1a1d2e"
+        stroke="#3e4258"
+        strokeWidth="1"
       />
 
-      {/* Chest - pectorals */}
+      {/* === CHEST — Pectoralis Major === */}
+      {/* Left pec */}
       <path
-        d="M72 82 C72 78 76 74 82 72 C88 70 94 70 100 72 C106 70 112 70 118 72 C124 74 128 78 128 82 C128 90 124 96 118 100 C112 104 106 106 100 106 C94 106 88 104 82 100 C76 96 72 90 72 82 Z"
+        d="M63 74 C67 69 75 66 83 67 C87 68 89 70 90 73
+           L90 100 C87 103 82 105 76 104 C70 103 65 99 62 94
+           C59 88 60 80 63 74 Z"
         fill={get('chest')}
-        opacity="0.85"
       />
-      {/* Chest separation line */}
-      <line x1="100" y1="72" x2="100" y2="106" stroke="currentColor" strokeWidth="0.5" className="text-border" opacity="0.3" />
-
-      {/* Front deltoids */}
+      {/* Right pec */}
       <path
-        d="M58 76 C62 70 68 66 72 68 C74 70 74 76 72 82 C68 86 64 88 60 88 C56 86 54 82 58 76 Z"
+        d="M117 74 C113 69 105 66 97 67 C93 68 91 70 90 73
+           L90 100 C93 103 98 105 104 104 C110 103 115 99 118 94
+           C121 88 120 80 117 74 Z"
+        fill={get('chest')}
+      />
+      {/* Pec fiber lines */}
+      <path d="M70 78 Q80 82 88 85" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.15" />
+      <path d="M68 84 Q78 88 87 92" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.15" />
+      <path d="M110 78 Q100 82 92 85" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.15" />
+      <path d="M112 84 Q102 88 93 92" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.15" />
+
+      {/* === FRONT DELTOIDS === */}
+      <path
+        d="M52 66 C56 61 62 58 66 60 C68 62 67 68 65 74
+           C63 79 59 82 55 81 C51 79 49 74 52 66 Z"
         fill={get('front_delt')}
-        opacity="0.85"
       />
       <path
-        d="M142 76 C138 70 132 66 128 68 C126 70 126 76 128 82 C132 86 136 88 140 88 C144 86 146 82 142 76 Z"
+        d="M128 66 C124 61 118 58 114 60 C112 62 113 68 115 74
+           C117 79 121 82 125 81 C129 79 131 74 128 66 Z"
         fill={get('front_delt')}
-        opacity="0.85"
       />
 
-      {/* Biceps */}
+      {/* === BICEPS === */}
       <path
-        d="M52 94 C50 100 48 110 48 120 C48 130 50 138 52 142 L58 140 C56 134 54 126 54 118 C54 108 56 100 58 94 Z"
+        d="M47 86 C45 92 43 102 43 112 C43 120 45 127 47 132
+           L54 130 C52 124 50 117 50 110 C50 101 52 93 54 86 Z"
         fill={get('biceps')}
-        opacity="0.85"
       />
       <path
-        d="M148 94 C150 100 152 110 152 120 C152 130 150 138 148 142 L142 140 C144 134 146 126 146 118 C146 108 144 100 142 94 Z"
+        d="M133 86 C135 92 137 102 137 112 C137 120 135 127 133 132
+           L126 130 C128 124 130 117 130 110 C130 101 128 93 126 86 Z"
         fill={get('biceps')}
-        opacity="0.85"
       />
+      {/* Bicep peak line */}
+      <path d="M47 106 Q50 104 54 106" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.15" />
+      <path d="M133 106 Q130 104 126 106" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.15" />
 
-      {/* Triceps (front — lateral head visible) */}
+      {/* === TRICEPS (lateral head visible from front) === */}
       <path
-        d="M58 94 C60 100 62 108 62 118 C62 126 60 134 58 140 L52 142 L52 94 Z"
+        d="M54 86 C56 92 57 100 57 110 C57 118 56 124 54 130
+           L47 132 L47 86 Z"
         fill={get('triceps')}
-        opacity="0.55"
+        opacity="0.6"
       />
       <path
-        d="M142 94 C140 100 138 108 138 118 C138 126 140 134 142 140 L148 142 L148 94 Z"
+        d="M126 86 C124 92 123 100 123 110 C123 118 124 124 126 130
+           L133 132 L133 86 Z"
         fill={get('triceps')}
-        opacity="0.55"
+        opacity="0.6"
       />
 
-      {/* Forearms */}
+      {/* === FOREARMS === */}
       <path
-        d="M46 148 C44 158 42 170 42 180 C42 188 44 194 46 198 L54 196 C52 190 50 184 50 176 C50 166 52 156 54 148 Z"
+        d="M41 138 C39 148 37 160 37 170 C37 178 39 184 41 188
+           L49 186 C47 181 46 174 46 167 C46 157 48 147 49 138 Z"
         fill={get('forearms')}
-        opacity="0.85"
       />
       <path
-        d="M154 148 C156 158 158 170 158 180 C158 188 156 194 154 198 L146 196 C148 190 150 184 150 176 C150 166 148 156 146 148 Z"
+        d="M139 138 C141 148 143 160 143 170 C143 178 141 184 139 188
+           L131 186 C133 181 134 174 134 167 C134 157 132 147 131 138 Z"
         fill={get('forearms')}
-        opacity="0.85"
       />
 
-      {/* Abs — six-pack sections */}
+      {/* === ABS — Rectus Abdominis (6 sections) === */}
+      {/* Upper abs */}
       <path
-        d="M86 108 C86 106 90 104 100 104 C110 104 114 106 114 108 L114 130 C114 132 110 134 100 134 C90 134 86 132 86 130 Z"
+        d="M80 102 C82 100 86 99 90 99 C94 99 98 100 100 102
+           L100 118 C98 120 94 121 90 121 C86 121 82 120 80 118 Z"
         fill={get('abs')}
-        opacity="0.8"
       />
+      {/* Middle abs */}
       <path
-        d="M86 136 C86 134 90 133 100 133 C110 133 114 134 114 136 L114 156 C114 158 110 160 100 160 C90 160 86 158 86 156 Z"
+        d="M80 123 C82 121 86 120 90 120 C94 120 98 121 100 123
+           L100 142 C98 144 94 145 90 145 C86 145 82 144 80 142 Z"
         fill={get('abs')}
-        opacity="0.85"
       />
+      {/* Lower abs */}
       <path
-        d="M86 162 C86 160 90 159 100 159 C110 159 114 160 114 162 L114 178 C114 180 110 182 100 182 C90 182 86 180 86 178 Z"
+        d="M80 147 C82 145 86 144 90 144 C94 144 98 145 100 147
+           L100 168 C98 170 94 172 90 172 C86 172 82 170 80 168 Z"
         fill={get('abs')}
-        opacity="0.85"
       />
-      {/* Ab center line */}
-      <line x1="100" y1="104" x2="100" y2="182" stroke="currentColor" strokeWidth="0.4" className="text-border" opacity="0.25" />
+      {/* Linea alba (center line) */}
+      <line x1="90" y1="99" x2="90" y2="172" stroke="#000" strokeWidth="0.5" opacity="0.2" />
+      {/* Tendinous inscriptions (horizontal lines) */}
+      <line x1="81" y1="119" x2="99" y2="119" stroke="#000" strokeWidth="0.4" opacity="0.15" />
+      <line x1="81" y1="143" x2="99" y2="143" stroke="#000" strokeWidth="0.4" opacity="0.15" />
 
-      {/* Hip flexors */}
+      {/* === OBLIQUES (serratus + external oblique) === */}
       <path
-        d="M80 182 C78 190 76 198 76 206 L88 206 L92 182 Z"
+        d="M66 96 C64 104 63 114 64 124 C65 132 67 138 70 142
+           L80 140 C78 134 77 126 77 118 C77 108 78 100 79 94 Z"
+        fill={get('abs')}
+        opacity="0.5"
+      />
+      <path
+        d="M114 96 C116 104 117 114 116 124 C115 132 113 138 110 142
+           L100 140 C102 134 103 126 103 118 C103 108 102 100 101 94 Z"
+        fill={get('abs')}
+        opacity="0.5"
+      />
+      {/* Serratus digitations */}
+      <path d="M68 98 L77 96" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.12" />
+      <path d="M66 104 L77 101" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.12" />
+      <path d="M65 110 L77 107" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.12" />
+      <path d="M112 98 L103 96" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.12" />
+      <path d="M114 104 L103 101" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.12" />
+      <path d="M115 110 L103 107" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.12" />
+
+      {/* === HIP FLEXORS === */}
+      <path
+        d="M74 170 C72 178 70 186 70 194 L82 194 L84 170 Z"
         fill={get('hip_flexors')}
         opacity="0.7"
       />
       <path
-        d="M120 182 C122 190 124 198 124 206 L112 206 L108 182 Z"
+        d="M106 170 C108 178 110 186 110 194 L98 194 L96 170 Z"
         fill={get('hip_flexors')}
         opacity="0.7"
       />
 
-      {/* Quads */}
+      {/* === QUADS — Rectus Femoris + Vastus === */}
+      {/* Left quad */}
       <path
-        d="M72 214 C70 230 68 250 68 268 C68 280 70 290 72 296 L88 296 C90 290 92 280 92 268 C92 250 90 230 88 214 Z"
+        d="M66 202 C64 218 62 238 62 256 C62 268 64 278 66 284
+           L82 284 C84 278 86 268 86 256 C86 238 84 218 82 202 Z"
         fill={get('quads')}
-        opacity="0.85"
+      />
+      {/* Right quad */}
+      <path
+        d="M114 202 C116 218 118 238 118 256 C118 268 116 278 114 284
+           L98 284 C96 278 94 268 94 256 C94 238 96 218 98 202 Z"
+        fill={get('quads')}
+      />
+      {/* Quad fiber lines */}
+      <path d="M70 220 L70 260" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.1" />
+      <path d="M76 215 L76 270" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.1" />
+      <path d="M110 220 L110 260" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.1" />
+      <path d="M104 215 L104 270" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.1" />
+
+      {/* Vastus medialis (teardrop) */}
+      <path
+        d="M80 268 C82 272 83 278 82 284 L74 284 C73 278 74 272 76 268 Z"
+        fill={get('quads')}
+        opacity="0.9"
       />
       <path
-        d="M128 214 C130 230 132 250 132 268 C132 280 130 290 128 296 L112 296 C110 290 108 280 108 268 C108 250 110 230 112 214 Z"
+        d="M100 268 C98 272 97 278 98 284 L106 284 C107 278 106 272 104 268 Z"
         fill={get('quads')}
-        opacity="0.85"
+        opacity="0.9"
       />
 
-      {/* Inner thigh / adductors */}
+      {/* === INNER THIGH / ADDUCTORS === */}
       <path
-        d="M88 214 C90 230 92 248 92 268 L100 268 L100 214 Z"
+        d="M82 202 C84 218 86 238 86 256 L90 256 L90 202 Z"
         fill={get('inner_thigh')}
         opacity="0.7"
       />
       <path
-        d="M112 214 C110 230 108 248 108 268 L100 268 L100 214 Z"
+        d="M98 202 C96 218 94 238 94 256 L90 256 L90 202 Z"
         fill={get('inner_thigh')}
         opacity="0.7"
       />
 
-      {/* Calves (front — tibialis) */}
+      {/* === CALVES (Tibialis Anterior from front) === */}
       <path
-        d="M70 302 C68 320 68 338 70 354 L82 354 C84 338 84 320 82 302 Z"
+        d="M64 290 C62 306 62 322 64 340 L76 340 C78 322 78 306 76 290 Z"
         fill={get('calves')}
-        opacity="0.6"
+        opacity="0.7"
       />
       <path
-        d="M130 302 C132 320 132 338 130 354 L118 354 C116 338 116 320 118 302 Z"
+        d="M116 290 C118 306 118 322 116 340 L104 340 C102 322 102 306 104 290 Z"
         fill={get('calves')}
-        opacity="0.6"
+        opacity="0.7"
       />
+      {/* Tibialis ridge */}
+      <path d="M68 295 L68 335" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.1" />
+      <path d="M112 295 L112 335" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.1" />
+
+      {/* Front label */}
+      <text x="90" y="394" textAnchor="middle" className="text-[9px]" fill="#7a7d96">FRONT</text>
     </svg>
   )
 }
 
 function BackView({ get }: { get: (m: MuscleGroup) => string }) {
   return (
-    <svg viewBox="0 0 200 420" width="155" height="320" aria-label="Back body view">
-      {/* Body outline (mirrored) */}
+    <svg viewBox="0 0 180 400" width="160" height="340" aria-label="Back body view">
+      {/* Body silhouette outline */}
       <path
-        d="M100 18 C88 18 80 26 78 38 C76 46 78 52 80 56 L80 58 C72 62 64 68 58 76 C52 84 48 94 46 106 L42 106 C36 108 32 114 30 122 C28 132 30 140 34 144 L38 146 C38 152 40 158 42 162 L42 164 C40 174 38 184 38 194 L40 200 L42 230 C42 240 44 250 46 260 L48 280 C48 290 50 300 52 310 L54 340 C54 350 56 358 58 364 L60 374 C58 378 56 382 56 386 C56 392 60 396 66 398 L72 398 C78 398 82 394 84 390 L86 386 C88 380 88 376 88 372 L88 340 C92 336 96 332 100 330 C104 332 108 336 112 340 L112 372 C112 376 112 380 114 386 L116 390 C118 394 122 398 128 398 L134 398 C140 396 144 392 144 386 C144 382 142 378 140 374 L142 364 C144 358 146 350 146 340 L148 310 C150 300 152 290 152 280 L154 260 C156 250 158 240 158 230 L160 200 L162 194 C162 184 160 174 158 164 L158 162 C160 158 162 152 162 146 L166 144 C170 140 172 132 170 122 C168 114 164 108 158 106 L154 106 C152 94 148 84 142 76 C136 68 128 62 120 58 L120 56 C122 52 124 46 122 38 C120 26 112 18 100 18 Z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.2"
-        className="text-border"
-        opacity="0.6"
+        d="M90 12 C80 12 73 18 71 28 C69 36 71 42 73 46 L73 48
+           C66 52 58 58 52 66 C46 74 42 84 40 96 L36 97
+           C30 99 27 105 25 112 C23 121 25 128 29 132 L33 134
+           C33 139 35 145 37 150 L37 154
+           C35 164 33 175 33 186 L35 192 L37 220
+           C37 230 39 240 41 250 L43 270
+           C43 280 45 290 47 300 L49 328
+           C49 338 51 346 53 352 L55 362
+           C53 365 51 370 51 374 C51 380 55 384 60 386 L66 386
+           C71 386 75 382 77 378 L79 374 C80 369 80 365 80 362
+           L80 330 C84 326 87 322 90 320
+           C93 322 96 326 100 330 L100 362
+           C100 365 100 369 101 374 L103 378
+           C105 382 109 386 114 386 L120 386
+           C125 384 129 380 129 374 C129 370 127 365 125 362
+           L127 352 C129 346 131 338 131 328 L133 300
+           C135 290 137 280 137 270 L139 250
+           C141 240 143 230 143 220 L145 192 L147 186
+           C147 175 145 164 143 154 L143 150
+           C145 145 147 139 147 134 L151 132
+           C155 128 157 121 155 112 C153 105 150 99 144 97
+           L140 96 C138 84 134 74 128 66
+           C122 58 114 52 107 48 L107 46
+           C109 42 111 36 109 28 C107 18 100 12 90 12 Z"
+        fill="#1a1d2e"
+        stroke="#3e4258"
+        strokeWidth="1"
       />
 
-      {/* Traps — diamond shape from neck to mid-back */}
+      {/* === TRAPS — Upper trapezius diamond === */}
       <path
-        d="M82 56 C86 52 94 50 100 50 C106 50 114 52 118 56 L124 68 C120 74 110 78 100 78 C90 78 80 74 76 68 Z"
+        d="M76 48 C80 44 86 42 90 42 C94 42 100 44 104 48
+           L112 60 C108 66 100 70 90 70 C80 70 72 66 68 60 Z"
         fill={get('traps')}
-        opacity="0.85"
+      />
+      {/* Trap fiber lines (converge to spine) */}
+      <path d="M76 52 Q83 56 88 60" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.12" />
+      <path d="M104 52 Q97 56 92 60" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.12" />
+      <path d="M72 58 Q80 62 88 64" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.12" />
+      <path d="M108 58 Q100 62 92 64" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.12" />
+
+      {/* === REAR DELTOIDS === */}
+      <path
+        d="M52 66 C56 60 62 58 66 60 C68 63 66 70 63 76
+           C60 80 55 81 52 78 C49 75 49 70 52 66 Z"
+        fill={get('rear_delt')}
+      />
+      <path
+        d="M128 66 C124 60 118 58 114 60 C112 63 114 70 117 76
+           C120 80 125 81 128 78 C131 75 131 70 128 66 Z"
+        fill={get('rear_delt')}
       />
 
-      {/* Rear deltoids */}
+      {/* === RHOMBOIDS (between shoulder blades) === */}
       <path
-        d="M58 76 C62 70 68 68 72 70 C74 74 72 80 68 86 C64 90 58 90 56 86 C54 82 54 78 58 76 Z"
-        fill={get('rear_delt')}
-        opacity="0.85"
-      />
-      <path
-        d="M142 76 C138 70 132 68 128 70 C126 74 128 80 132 86 C136 90 142 90 144 86 C146 82 146 78 142 76 Z"
-        fill={get('rear_delt')}
-        opacity="0.85"
-      />
-
-      {/* Rhomboids — mid-back between shoulder blades */}
-      <path
-        d="M82 68 C86 64 94 62 100 62 C106 62 114 64 118 68 L118 98 C114 102 106 104 100 104 C94 104 86 102 82 98 Z"
+        d="M76 62 C80 58 86 56 90 56 C94 56 100 58 104 62
+           L104 90 C100 94 94 96 90 96 C86 96 80 94 76 90 Z"
         fill={get('rhomboids')}
-        opacity="0.85"
       />
       {/* Spine line */}
-      <line x1="100" y1="56" x2="100" y2="180" stroke="currentColor" strokeWidth="0.6" className="text-border" opacity="0.3" />
+      <line x1="90" y1="42" x2="90" y2="170" stroke="#000" strokeWidth="0.6" opacity="0.2" />
 
-      {/* Lats — large wing shape */}
+      {/* === LATS — Latissimus Dorsi (wing) === */}
       <path
-        d="M68 82 C64 90 60 100 58 112 C56 124 58 132 62 136 L78 136 C80 128 82 118 82 108 C82 98 78 90 74 82 Z"
+        d="M62 76 C58 84 54 94 52 106 C50 118 52 128 56 132
+           L74 130 C76 122 77 112 76 102 C75 92 72 84 68 76 Z"
         fill={get('lats')}
-        opacity="0.85"
       />
       <path
-        d="M132 82 C136 90 140 100 142 112 C144 124 142 132 138 136 L122 136 C120 128 118 118 118 108 C118 98 122 90 126 82 Z"
+        d="M118 76 C122 84 126 94 128 106 C130 118 128 128 124 132
+           L106 130 C104 122 103 112 104 102 C105 92 108 84 112 76 Z"
         fill={get('lats')}
-        opacity="0.85"
       />
+      {/* Lat fiber lines (fan down toward iliac crest) */}
+      <path d="M64 82 Q68 94 72 110" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.1" />
+      <path d="M60 90 Q64 102 68 118" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.1" />
+      <path d="M116 82 Q112 94 108 110" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.1" />
+      <path d="M120 90 Q116 102 112 118" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.1" />
 
-      {/* Triceps (back — long head) */}
+      {/* === TRICEPS (long head — posterior) === */}
       <path
-        d="M50 94 C48 104 46 116 46 126 C46 134 48 140 50 144 L58 142 C56 136 54 128 54 120 C54 110 56 100 58 94 Z"
+        d="M44 86 C42 96 40 108 40 118 C40 126 42 132 44 136
+           L52 134 C50 128 48 120 48 112 C48 102 50 92 52 86 Z"
         fill={get('triceps')}
-        opacity="0.85"
       />
       <path
-        d="M150 94 C152 104 154 116 154 126 C154 134 152 140 150 144 L142 142 C144 136 146 128 146 120 C146 110 144 100 142 94 Z"
+        d="M136 86 C138 96 140 108 140 118 C140 126 138 132 136 136
+           L128 134 C130 128 132 120 132 112 C132 102 130 92 128 86 Z"
         fill={get('triceps')}
-        opacity="0.85"
+      />
+      {/* Tricep horseshoe line */}
+      <path d="M45 108 Q48 106 52 108" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.15" />
+      <path d="M135 108 Q132 106 128 108" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.15" />
+
+      {/* === FOREARMS === */}
+      <path
+        d="M38 142 C36 152 34 164 34 174 C34 182 36 188 38 192
+           L46 190 C44 185 43 178 43 171 C43 161 45 151 46 142 Z"
+        fill={get('forearms')}
+      />
+      <path
+        d="M142 142 C144 152 146 164 146 174 C146 182 144 188 142 192
+           L134 190 C136 185 137 178 137 171 C137 161 135 151 134 142 Z"
+        fill={get('forearms')}
       />
 
-      {/* Forearms */}
+      {/* === LOWER BACK — Erector Spinae === */}
       <path
-        d="M44 150 C42 160 40 172 40 182 C40 190 42 196 44 200 L52 198 C50 192 48 186 48 178 C48 168 50 158 52 150 Z"
-        fill={get('forearms')}
-        opacity="0.85"
-      />
-      <path
-        d="M156 150 C158 160 160 172 160 182 C160 190 158 196 156 200 L148 198 C150 192 152 186 152 178 C152 168 150 158 148 150 Z"
-        fill={get('forearms')}
-        opacity="0.85"
-      />
-
-      {/* Lower back — erector spinae */}
-      <path
-        d="M86 108 C86 106 92 104 100 104 C108 104 114 106 114 108 L114 148 C114 152 108 154 100 154 C92 154 86 152 86 148 Z"
+        d="M78 98 C80 96 84 95 90 95 C96 95 100 96 102 98
+           L102 142 C100 146 96 148 90 148 C84 148 80 146 78 142 Z"
         fill={get('lower_back')}
-        opacity="0.85"
       />
+      {/* Erector columns */}
+      <path d="M84 100 L84 142" fill="none" stroke="#000" strokeWidth="0.4" opacity="0.12" />
+      <path d="M96 100 L96 142" fill="none" stroke="#000" strokeWidth="0.4" opacity="0.12" />
 
-      {/* Glutes */}
+      {/* === GLUTES — Gluteus Maximus === */}
       <path
-        d="M72 160 C68 172 68 186 72 198 C76 208 84 212 92 212 L100 212 L100 160 C92 158 82 158 72 160 Z"
+        d="M66 152 C62 164 62 178 66 190 C70 200 78 204 86 204
+           L90 204 L90 152 C84 150 76 150 66 152 Z"
         fill={get('glutes')}
-        opacity="0.85"
       />
       <path
-        d="M128 160 C132 172 132 186 128 198 C124 208 116 212 108 212 L100 212 L100 160 C108 158 118 158 128 160 Z"
+        d="M114 152 C118 164 118 178 114 190 C110 200 102 204 94 204
+           L90 204 L90 152 C96 150 104 150 114 152 Z"
         fill={get('glutes')}
-        opacity="0.85"
       />
+      {/* Glute fiber lines */}
+      <path d="M70 160 Q78 170 84 180" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.1" />
+      <path d="M66 170 Q74 180 82 190" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.1" />
+      <path d="M110 160 Q102 170 96 180" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.1" />
+      <path d="M114 170 Q106 180 98 190" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.1" />
+      {/* Glute separation */}
+      <line x1="90" y1="152" x2="90" y2="204" stroke="#000" strokeWidth="0.5" opacity="0.15" />
 
-      {/* Hamstrings */}
+      {/* === HAMSTRINGS === */}
       <path
-        d="M72 218 C70 236 68 256 70 274 C72 286 74 294 76 300 L90 300 C92 294 94 284 94 272 C94 254 92 236 90 218 Z"
+        d="M66 210 C64 228 62 248 64 264 C66 276 68 284 70 290
+           L84 290 C86 284 88 274 88 262 C88 244 86 226 84 210 Z"
         fill={get('hamstrings')}
-        opacity="0.85"
       />
       <path
-        d="M128 218 C130 236 132 256 130 274 C128 286 126 294 124 300 L110 300 C108 294 106 284 106 272 C106 254 108 236 110 218 Z"
+        d="M114 210 C116 228 118 248 116 264 C114 276 112 284 110 290
+           L96 290 C94 284 92 274 92 262 C92 244 94 226 96 210 Z"
         fill={get('hamstrings')}
-        opacity="0.85"
       />
+      {/* Hamstring separation (biceps femoris vs semitendinosus) */}
+      <path d="M76 215 L76 280" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.12" />
+      <path d="M104 215 L104 280" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.12" />
 
-      {/* Calves (gastrocnemius) */}
+      {/* === CALVES — Gastrocnemius === */}
       <path
-        d="M72 306 C70 316 68 330 70 344 C72 354 76 360 80 362 L90 362 C92 356 92 346 90 336 C88 326 86 316 84 306 Z"
+        d="M66 296 C64 306 62 320 64 334 C66 344 70 350 74 352
+           L84 352 C86 346 86 336 84 326 C82 316 80 306 78 296 Z"
         fill={get('calves')}
-        opacity="0.85"
       />
       <path
-        d="M128 306 C130 316 132 330 130 344 C128 354 124 360 120 362 L110 362 C108 356 108 346 110 336 C112 326 114 316 116 306 Z"
+        d="M114 296 C116 306 118 320 116 334 C114 344 110 350 106 352
+           L96 352 C94 346 94 336 96 326 C98 316 100 306 102 296 Z"
         fill={get('calves')}
-        opacity="0.85"
       />
+      {/* Calf heads separation */}
+      <path d="M72 300 L72 340" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.12" />
+      <path d="M108 300 L108 340" fill="none" stroke="#000" strokeWidth="0.3" opacity="0.12" />
+
+      {/* Back label */}
+      <text x="90" y="394" textAnchor="middle" className="text-[9px]" fill="#7a7d96">BACK</text>
     </svg>
   )
 }
