@@ -67,6 +67,21 @@ const SPRITE_MAP: Record<string, string> = {
   lunge_rotation: '/sprites/exercises/lunge_rotation.png',
   pike_stretch: '/sprites/exercises/pike_stretch.png',
   shoulder_stand: '/sprites/exercises/shoulder_stand.png',
+  ninety_ninety: '/sprites/exercises/ninety_ninety.png',
+  childs_pose: '/sprites/exercises/childs_pose.png',
+  figure_four: '/sprites/exercises/figure_four.png',
+  pancake: '/sprites/exercises/pancake.png',
+  thread_needle: '/sprites/exercises/thread_needle.png',
+  lat_hang: '/sprites/exercises/lat_hang.png',
+  pelvic_clock: '/sprites/exercises/pelvic_clock.png',
+  doorway_pec_stretch: '/sprites/exercises/doorway_pec_stretch.png',
+  shoulder_pass_through: '/sprites/exercises/shoulder_pass_through.png',
+  pelvic_tilt: '/sprites/exercises/pelvic_tilt.png',
+  pigeon_pose: '/sprites/exercises/pigeon_pose.png',
+  couch_stretch: '/sprites/exercises/couch_stretch.png',
+  calf_stretch: '/sprites/exercises/calf_stretch.png',
+  standing_hamstring_stretch: '/sprites/exercises/standing_hamstring_stretch.png',
+  low_lunge_hip_flexor: '/sprites/exercises/low_lunge_hip_flexor.png',
 }
 
 interface Props {
