@@ -6,7 +6,9 @@ import { useAuth } from '../hooks/useAuth'
 import { downloadExport, importData, readFileAsJson, type ImportMode } from '../lib/dataTransfer'
 import { runFullRepair } from '../lib/dataRepair'
 import { primeAudio, playCompleteDing } from '../lib/sound'
-import type { MobilityGoal, SessionDuration } from '../db/db'
+import { db, type MobilityGoal, type SessionDuration } from '../db/db'
+import { collection, getDocs } from 'firebase/firestore'
+import { db as firestoreDb } from '../lib/firebase'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const DURATIONS: SessionDuration[] = [10, 20, 30]
@@ -26,6 +28,44 @@ export default function Profile() {
   const [exporting, setExporting] = useState(false)
   const [repairing, setRepairing] = useState(false)
   const [repairResult, setRepairResult] = useState<{ removed: number; fixed: number } | null>(null)
+  const [syncDiag, setSyncDiag] = useState<{
+    localSessions: number; localCal: number; localBjj: number
+    remoteSessions: number; remoteCal: number; remoteBjj: number
+    error?: string
+  } | null>(null)
+  const [diagLoading, setDiagLoading] = useState(false)
+
+  async function handleSyncDiagnostic() {
+    if (!user) return
+    setDiagLoading(true)
+    setSyncDiag(null)
+    try {
+      const [localSessions, localCal, localBjj] = await Promise.all([
+        db.sessions.count(),
+        db.calisthenicsLogs.count(),
+        db.bjjClassLogs.count(),
+      ])
+      const [remoteSessionsSnap, remoteCalSnap, remoteBjjSnap] = await Promise.all([
+        getDocs(collection(firestoreDb, `users/${user.uid}/workouts`)),
+        getDocs(collection(firestoreDb, `users/${user.uid}/calisthenicsLogs`)),
+        getDocs(collection(firestoreDb, `users/${user.uid}/bjjClassLogs`)),
+      ])
+      setSyncDiag({
+        localSessions, localCal, localBjj,
+        remoteSessions: remoteSessionsSnap.size,
+        remoteCal: remoteCalSnap.size,
+        remoteBjj: remoteBjjSnap.size,
+      })
+    } catch (err: any) {
+      setSyncDiag({
+        localSessions: 0, localCal: 0, localBjj: 0,
+        remoteSessions: 0, remoteCal: 0, remoteBjj: 0,
+        error: err?.message || 'Failed to read Firestore — check security rules',
+      })
+    } finally {
+      setDiagLoading(false)
+    }
+  }
 
   async function handleRepair() {
     setRepairing(true)
@@ -318,6 +358,63 @@ export default function Profile() {
           </p>
         )}
       </Card>
+
+      {user && (
+        <Card>
+          <h2 className="mb-1 text-base font-bold">Sync diagnostic</h2>
+          <p className="mb-3 text-xs text-muted">
+            Compare local (this device) vs remote (Firestore) record counts to diagnose sync issues.
+          </p>
+          <button
+            onClick={handleSyncDiagnostic}
+            disabled={diagLoading}
+            className="w-full rounded-xl bg-purple/15 py-3 text-sm font-bold text-purple border border-purple/40 disabled:opacity-50"
+          >
+            {diagLoading ? 'Checking…' : 'Run sync check'}
+          </button>
+          {syncDiag && (
+            <div className="mt-3 space-y-2">
+              {syncDiag.error ? (
+                <p className="text-xs font-semibold text-accent">{syncDiag.error}</p>
+              ) : (
+                <div className="space-y-1.5">
+                  <div className="grid grid-cols-3 gap-2 text-center text-[10px]">
+                    <div className="font-bold text-muted">Table</div>
+                    <div className="font-bold text-muted">Local</div>
+                    <div className="font-bold text-muted">Remote</div>
+                  </div>
+                  {[
+                    { label: 'Sessions', local: syncDiag.localSessions, remote: syncDiag.remoteSessions },
+                    { label: 'Calisthenics', local: syncDiag.localCal, remote: syncDiag.remoteCal },
+                    { label: 'BJJ', local: syncDiag.localBjj, remote: syncDiag.remoteBjj },
+                  ].map((row) => (
+                    <div key={row.label} className="grid grid-cols-3 gap-2 text-center text-xs">
+                      <div className="text-left text-ink font-semibold">{row.label}</div>
+                      <div className={row.local > 0 ? 'text-teal font-bold' : 'text-muted'}>{row.local}</div>
+                      <div className={row.remote > 0 ? 'text-teal font-bold' : 'text-muted'}>{row.remote}</div>
+                    </div>
+                  ))}
+                  {syncDiag.remoteCal === 0 && syncDiag.localCal === 0 && (
+                    <p className="text-[11px] text-orange font-semibold mt-2">
+                      Both empty — log in from the device where you trained to push data to Firestore.
+                    </p>
+                  )}
+                  {syncDiag.remoteCal > 0 && syncDiag.localCal === 0 && (
+                    <p className="text-[11px] text-orange font-semibold mt-2">
+                      Remote has data but local is empty — onSnapshot listener may have failed. Try closing and reopening the app.
+                    </p>
+                  )}
+                  {syncDiag.remoteCal === 0 && syncDiag.localCal > 0 && (
+                    <p className="text-[11px] text-orange font-semibold mt-2">
+                      Local has data but remote is empty — catch-up sync may have failed. Check Firestore rules allow writes.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </Card>
+      )}
 
       <Card>
         <h2 className="mb-2 text-base font-bold">Integrations</h2>
