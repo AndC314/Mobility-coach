@@ -22,10 +22,10 @@ const SUPERCOMP_GAIN = 6
 // Maintenance session: small dip, recovers to same level
 const MAINT_FATIGUE_DIP = 4
 const RECOVERY_DAYS = 2
-const DECAY_RATE = 0.03
-// Below-baseline decay after prolonged inactivity (2+ weeks)
-const INACTIVITY_THRESHOLD_DAYS = 14
-const BELOW_BASELINE_DECAY = 0.01
+const DECAY_RATE = 0.12
+// Below-baseline decay after prolonged inactivity
+const INACTIVITY_THRESHOLD_DAYS = 10
+const BELOW_BASELINE_DECAY = 0.015
 // Intensity threshold: daily volume must be >= 70% of running best to trigger supercompensation
 const INTENSITY_THRESHOLD = 0.7
 
@@ -140,15 +140,10 @@ export function computeSupercompensation(
     mob_hips: 0, mob_hamstrings: 0, mob_lats: 0,
   }
 
-  const state: Record<FitnessCategory, { level: number; daysSinceTraining: number; lastWasHard: boolean; everTrained: boolean }> = {
-    push: { level: BASELINE, daysSinceTraining: 999, lastWasHard: false, everTrained: false },
-    pull: { level: BASELINE, daysSinceTraining: 999, lastWasHard: false, everTrained: false },
-    legs: { level: BASELINE, daysSinceTraining: 999, lastWasHard: false, everTrained: false },
-    core: { level: BASELINE, daysSinceTraining: 999, lastWasHard: false, everTrained: false },
-    grappling: { level: BASELINE, daysSinceTraining: 999, lastWasHard: false, everTrained: false },
-    mob_hips: { level: BASELINE, daysSinceTraining: 999, lastWasHard: false, everTrained: false },
-    mob_hamstrings: { level: BASELINE, daysSinceTraining: 999, lastWasHard: false, everTrained: false },
-    mob_lats: { level: BASELINE, daysSinceTraining: 999, lastWasHard: false, everTrained: false },
+  const initState = () => ({ level: BASELINE, daysSinceTraining: 999, lastWasHard: false, everTrained: false, levelAtDip: BASELINE })
+  const state: Record<FitnessCategory, { level: number; daysSinceTraining: number; lastWasHard: boolean; everTrained: boolean; levelAtDip: number }> = {
+    push: initState(), pull: initState(), legs: initState(), core: initState(),
+    grappling: initState(), mob_hips: initState(), mob_hamstrings: initState(), mob_lats: initState(),
   }
 
   const result: DayPoint[] = []
@@ -163,10 +158,8 @@ export function computeSupercompensation(
       const volume = dayMap?.get(cat) ?? 0
 
       if (volume > 0) {
-        // Update running best
         if (volume > simBest[cat]) simBest[cat] = volume
         s.everTrained = true
-        // Determine if this is a hard (red zone) or maintenance session
         const threshold = simBest[cat] * INTENSITY_THRESHOLD
         const isHard = volume >= threshold || simBest[cat] === 0
 
@@ -177,32 +170,27 @@ export function computeSupercompensation(
           s.level = s.level - MAINT_FATIGUE_DIP
           s.lastWasHard = false
         }
+        s.levelAtDip = s.level
         s.daysSinceTraining = 0
       } else {
         s.daysSinceTraining++
 
         if (s.daysSinceTraining <= RECOVERY_DAYS) {
-          // Recovery phase
-          if (s.lastWasHard) {
-            // Supercompensation: recover above where we started
-            const peak = s.level + HARD_FATIGUE_DIP + SUPERCOMP_GAIN
-            const t = s.daysSinceTraining / RECOVERY_DAYS
-            s.level = s.level + (peak - s.level) * Math.pow(t, 0.6)
-          } else {
-            // Maintenance: recover back to pre-session level
-            const peak = s.level + MAINT_FATIGUE_DIP
-            const t = s.daysSinceTraining / RECOVERY_DAYS
-            s.level = s.level + (peak - s.level) * Math.pow(t, 0.6)
-          }
+          // Recovery: compute peak from the DIP level (not current level)
+          const peak = s.lastWasHard
+            ? s.levelAtDip + HARD_FATIGUE_DIP + SUPERCOMP_GAIN
+            : s.levelAtDip + MAINT_FATIGUE_DIP
+          const t = s.daysSinceTraining / RECOVERY_DAYS
+          s.level = s.levelAtDip + (peak - s.levelAtDip) * Math.pow(t, 0.6)
         } else if (s.level > BASELINE) {
           // Detraining: decay back toward baseline
           s.level = BASELINE + (s.level - BASELINE) * (1 - DECAY_RATE)
-          if (s.level - BASELINE < 0.5) s.level = BASELINE
+          if (s.level - BASELINE < 0.3) s.level = BASELINE
         } else if (s.level < BASELINE && s.daysSinceTraining <= INACTIVITY_THRESHOLD_DAYS) {
-          // Still recovering from deep fatigue (within 2 weeks)
-          s.level = s.level + (BASELINE - s.level) * 0.15
+          // Still recovering from deep fatigue
+          s.level = s.level + (BASELINE - s.level) * 0.2
         } else if (s.daysSinceTraining > INACTIVITY_THRESHOLD_DAYS && s.everTrained) {
-          // Slow decay below baseline after 2+ weeks inactivity
+          // Slow decay below baseline after 10+ days inactivity
           s.level = s.level * (1 - BELOW_BASELINE_DECAY)
         }
       }

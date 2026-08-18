@@ -22,7 +22,16 @@ export default {
       },
       borderRadius: {
         xl2: '1.25rem'
-      }
+      },
+      animation: {
+        'dojo-walk': 'dojoWalk 6s ease-in-out infinite',
+      },
+      keyframes: {
+        dojoWalk: {
+          '0%, 100%': { transform: 'translateX(-30px)' },
+          '50%': { transform: 'translateX(30px)' },
+        },
+      },
     }
   },
   plugins: []

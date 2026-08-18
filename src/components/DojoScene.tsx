@@ -130,13 +130,17 @@ function useDojoState(): DojoState | null {
 export default function DojoScene() {
   const state = useDojoState()
   const [frame, setFrame] = useState(0)
+  const [facingRight, setFacingRight] = useState(true)
 
-  // Walk animation loop
+  // Walk animation loop + flip direction every 3s (half of 6s walk cycle)
   useEffect(() => {
-    const interval = setInterval(() => {
+    const frameInterval = setInterval(() => {
       setFrame((f) => (f + 1) % WALK_FRAMES.length)
     }, 200)
-    return () => clearInterval(interval)
+    const flipInterval = setInterval(() => {
+      setFacingRight((f) => !f)
+    }, 3000)
+    return () => { clearInterval(frameInterval); clearInterval(flipInterval) }
   }, [])
 
   if (!state) {
@@ -184,13 +188,13 @@ export default function DojoScene() {
           </div>
         )}
 
-        {/* Judoka character — walking animation, bigger */}
-        <div className="absolute inset-0 flex items-center justify-center">
+        {/* Judoka character — walks across the dojo */}
+        <div className="absolute inset-0 flex items-center justify-center animate-dojo-walk">
           <img
             src={WALK_FRAMES[frame]}
             alt={`${belt} belt judoka walking`}
-            className="w-28 h-28 drop-shadow-lg"
-            style={{ imageRendering: 'pixelated' }}
+            className="w-28 h-28 drop-shadow-lg transition-transform duration-300"
+            style={{ imageRendering: 'pixelated', transform: facingRight ? 'scaleX(1)' : 'scaleX(-1)' }}
           />
         </div>
 
