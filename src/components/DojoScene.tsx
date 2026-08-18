@@ -46,12 +46,12 @@ const BELT_COLORS: Record<BjjBelt, string> = {
   black: '#1a1a2e',
 }
 
-const AURA_LEVELS: { minHours: number; color: string; label: string }[] = [
-  { minHours: 100, color: '#ef4444', label: 'Red' },
-  { minHours: 50, color: '#3b82f6', label: 'Blue' },
-  { minHours: 20, color: '#eab308', label: 'Yellow' },
-  { minHours: 5, color: '#9ca3af', label: 'Grey' },
-  { minHours: 0, color: 'transparent', label: '' },
+const AURA_LEVELS: { minHours: number; color: string; label: string; shadow: string }[] = [
+  { minHours: 100, color: '#ef4444', label: 'Red', shadow: '0 0 40px 16px rgba(239,68,68,0.5)' },
+  { minHours: 50, color: '#3b82f6', label: 'Blue', shadow: '0 0 40px 16px rgba(59,130,246,0.5)' },
+  { minHours: 20, color: '#eab308', label: 'Yellow', shadow: '0 0 40px 16px rgba(234,179,8,0.4)' },
+  { minHours: 5, color: '#9ca3af', label: 'Grey', shadow: '0 0 30px 12px rgba(156,163,175,0.3)' },
+  { minHours: 0, color: 'transparent', label: '', shadow: 'none' },
 ]
 
 function getAura(mobilityHours: number) {
@@ -61,11 +61,11 @@ function getAura(mobilityHours: number) {
   return AURA_LEVELS[AURA_LEVELS.length - 1]
 }
 
-const EQUIPMENT_ICONS: { chainIds: string[]; label: string; emoji: string }[] = [
-  { chainIds: ['pull_vertical', 'pull_levers'], label: 'Pull-up bar', emoji: '🏗️' },
-  { chainIds: ['push_vertical'], label: 'Dip station', emoji: '⬛' },
-  { chainIds: ['push_horizontal'], label: 'Parallettes', emoji: '🪵' },
-  { chainIds: ['pull_horizontal'], label: 'Bands', emoji: '🟡' },
+const EQUIPMENT: { chainIds: string[]; label: string; sprite: string; fallback: string }[] = [
+  { chainIds: ['pull_vertical', 'pull_levers'], label: 'Pull-up bar', sprite: '/sprites/avatar/equipment/pullup_bar.png', fallback: '🏗️' },
+  { chainIds: ['push_vertical'], label: 'Dip station', sprite: '/sprites/avatar/equipment/dip_station.png', fallback: '⬛' },
+  { chainIds: ['push_horizontal'], label: 'Parallettes', sprite: '/sprites/avatar/equipment/parallettes.png', fallback: '🪵' },
+  { chainIds: ['pull_horizontal'], label: 'Bands', sprite: '/sprites/avatar/equipment/bands.png', fallback: '🟡' },
 ]
 
 function useDojoState(): DojoState | null {
@@ -92,7 +92,6 @@ function useDojoState(): DojoState | null {
     const mobSessions = sessions.filter((s) => s.type !== 'calisthenics' && s.type !== 'bjj' && s.type !== 'custom')
     const mobilityHours = Math.round(mobSessions.reduce((s, sess) => s + sess.durationMin, 0) / 60)
 
-    // Determine unlocked equipment based on progression chain completion
     const calLogMap = new Map<string, number>()
     for (const log of calLogs) {
       const cur = calLogMap.get(log.exerciseId) ?? 0
@@ -119,7 +118,7 @@ export default function DojoScene() {
   const state = useDojoState()
 
   if (!state) {
-    return <div className="h-48 flex items-center justify-center text-muted text-sm">Loading...</div>
+    return <div className="h-56 flex items-center justify-center text-muted text-sm">Loading...</div>
   }
 
   const { belt, bjjClasses, totalHours, todayXP, mobilityHours, calisthenicsUnlocks } = state
@@ -127,7 +126,7 @@ export default function DojoScene() {
   const nextThreshold = getNextBeltThreshold(belt)
   const beltProgress = nextThreshold ? Math.min(100, (bjjClasses / nextThreshold) * 100) : 100
 
-  const visibleEquipment = EQUIPMENT_ICONS.filter((eq) =>
+  const visibleEquipment = EQUIPMENT.filter((eq) =>
     eq.chainIds.some((id) => calisthenicsUnlocks.includes(id))
   )
 
@@ -136,74 +135,96 @@ export default function DojoScene() {
 
   return (
     <div className="space-y-3">
-      {/* Dojo scene */}
-      <div className="relative rounded-xl bg-card2 border border-border overflow-hidden" style={{ minHeight: 180 }}>
-        {/* Aura glow behind character */}
-        {aura.color !== 'transparent' && (
-          <div
-            className="absolute inset-0 flex items-center justify-center pointer-events-none"
-            style={{ opacity: 0.3 }}
-          >
+      {/* Dojo environment scene */}
+      <div
+        className="relative rounded-2xl overflow-hidden border border-border"
+        style={{ height: 240 }}
+      >
+        {/* Dojo background */}
+        <img
+          src="/sprites/avatar/dojo_bg.png"
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ imageRendering: 'pixelated' }}
+        />
+
+        {/* Dark overlay for contrast */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />
+
+        {/* Equipment placed in scene — left side */}
+        <div className="absolute left-4 bottom-12 flex flex-col gap-2">
+          {visibleEquipment.slice(0, 2).map((eq) => (
             <div
-              className="rounded-full blur-2xl"
+              key={eq.label}
+              className="w-10 h-10 flex items-center justify-center"
+              title={eq.label}
+            >
+              <span className="text-2xl drop-shadow-lg">{eq.fallback}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Equipment placed in scene — right side */}
+        <div className="absolute right-4 bottom-12 flex flex-col gap-2">
+          {visibleEquipment.slice(2).map((eq) => (
+            <div
+              key={eq.label}
+              className="w-10 h-10 flex items-center justify-center"
+              title={eq.label}
+            >
+              <span className="text-2xl drop-shadow-lg">{eq.fallback}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Aura behind character */}
+        {aura.color !== 'transparent' && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div
+              className="rounded-full animate-pulse"
               style={{
-                width: 120,
-                height: 120,
-                background: `radial-gradient(circle, ${aura.color} 0%, transparent 70%)`,
+                width: 100,
+                height: 100,
+                boxShadow: aura.shadow,
+                background: `radial-gradient(circle, ${aura.color}33 0%, transparent 70%)`,
               }}
             />
           </div>
         )}
 
-        {/* Equipment on sides */}
-        <div className="absolute left-3 bottom-3 flex flex-col gap-1.5">
-          {visibleEquipment.slice(0, 2).map((eq) => (
-            <div
-              key={eq.label}
-              className="w-7 h-7 rounded bg-card/80 border border-border/50 flex items-center justify-center text-sm"
-              title={eq.label}
-            >
-              {eq.emoji}
-            </div>
-          ))}
-        </div>
-        <div className="absolute right-3 bottom-3 flex flex-col gap-1.5">
-          {visibleEquipment.slice(2).map((eq) => (
-            <div
-              key={eq.label}
-              className="w-7 h-7 rounded bg-card/80 border border-border/50 flex items-center justify-center text-sm"
-              title={eq.label}
-            >
-              {eq.emoji}
-            </div>
-          ))}
-        </div>
-
-        {/* Character */}
-        <div className="relative z-10 flex flex-col items-center pt-4 pb-3">
+        {/* Judoka character — centered, large */}
+        <div className="absolute inset-0 flex items-center justify-center">
           <img
             src={BELT_SPRITE[belt]}
             alt={`${belt} belt judoka`}
-            className="w-16 h-16"
+            className="w-28 h-28 drop-shadow-lg"
             style={{ imageRendering: 'pixelated' }}
           />
-          <div className="mt-2 text-center">
-            <div className="flex items-center justify-center gap-1.5">
-              <div
-                className="w-3 h-1.5 rounded-sm"
-                style={{ backgroundColor: BELT_COLORS[belt], border: belt === 'white' ? '1px solid #ccc' : 'none' }}
-              />
-              <span className="text-sm font-bold text-ink">{belt} belt</span>
-            </div>
-            <div className="text-[11px] text-muted">{totalHours}h total training</div>
-          </div>
         </div>
+
+        {/* Belt badge — bottom center overlay */}
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm rounded-full px-3 py-1">
+          <div
+            className="w-3 h-2 rounded-sm"
+            style={{ backgroundColor: BELT_COLORS[belt], border: belt === 'white' ? '1px solid #888' : 'none' }}
+          />
+          <span className="text-xs font-bold text-white">{belt} belt</span>
+          <span className="text-[10px] text-white/60">· {totalHours}h</span>
+        </div>
+
+        {/* Aura label — top right */}
+        {aura.label && (
+          <div className="absolute top-3 right-3 flex items-center gap-1 bg-black/50 backdrop-blur-sm rounded-full px-2 py-0.5">
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: aura.color }} />
+            <span className="text-[10px] font-semibold text-white">{aura.label} aura</span>
+          </div>
+        )}
       </div>
 
-      {/* Daily XP + Belt progress */}
+      {/* Stats row below scene */}
       <div className="grid grid-cols-2 gap-2">
         {/* Today's XP */}
-        <div className="rounded-lg bg-card border border-border p-3">
+        <div className="rounded-xl bg-card border border-border p-3">
           <div className="flex items-baseline justify-between mb-1.5">
             <span className="text-[10px] font-bold uppercase text-muted tracking-wide">Today</span>
             <span className="text-sm font-bold text-ink">{todayXP} <span className="text-[10px] text-muted">min</span></span>
@@ -223,7 +244,7 @@ export default function DojoScene() {
         </div>
 
         {/* Belt progress */}
-        <div className="rounded-lg bg-card border border-border p-3">
+        <div className="rounded-xl bg-card border border-border p-3">
           <div className="flex items-baseline justify-between mb-1.5">
             <span className="text-[10px] font-bold uppercase text-muted tracking-wide">Belt</span>
             <span className="text-sm font-bold text-ink">{bjjClasses} <span className="text-[10px] text-muted">classes</span></span>
@@ -243,7 +264,7 @@ export default function DojoScene() {
         </div>
       </div>
 
-      {/* Discipline mini-stats */}
+      {/* Discipline pills */}
       <div className="flex gap-2">
         <DisciplinePill emoji="🥋" label="BJJ" value={`${bjjClasses} cls`} />
         <DisciplinePill emoji="💪" label="CAL" value={`${calisthenicsUnlocks.length}/${PROGRESSION_CHAINS.length} chains`} />
