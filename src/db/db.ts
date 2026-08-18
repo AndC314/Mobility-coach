@@ -175,6 +175,7 @@ export type CalisthenicsExerciseId =
   | 'back_lever'
   | 'planche'
   | 'press_to_handstand'
+  | 'tricep_extension'
 
 export type CalisthenicsMetric = 'hold_sec' | 'reps'
 

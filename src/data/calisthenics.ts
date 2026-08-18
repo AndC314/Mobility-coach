@@ -775,6 +775,20 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     cue: 'From support, lean forward and pike your hips overhead while pressing through the shoulders. Stack hips over shoulders, then extend legs to full handstand. Control throughout — no kipping.',
     feelIt: 'Shoulders and core under heavy compression load. If you can\'t press past 45°, you need more pike compression strength.',
   },
+  {
+    id: 'tricep_extension',
+    name: 'Tricep Extension',
+    type: 'dynamic',
+    metric: 'reps',
+    unit: 'reps',
+    icon: '💪',
+    category: 'push',
+    primaryMuscles: ['Triceps'],
+    equipment: ['parallel_bars'],
+    description: 'Bodyweight tricep isolation on a bar. Lower forehead toward the bar by bending only at the elbows, then press back to lockout. Adjust bar height to scale difficulty.',
+    cue: 'Grip bar overhand, step back to form a straight body line. Bend elbows to lower your head toward the bar — keep elbows tucked tight, don\'t flare. Press back to full extension squeezing triceps at top.',
+    feelIt: 'Pure tricep burn. If you feel it in your shoulders, your elbows are flaring out — tuck them in.',
+  },
 ]
 
 export const DEPRECATED_EXERCISE_MAP: Partial<Record<string, CalisthenicsExerciseId>> = {

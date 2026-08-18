@@ -374,6 +374,11 @@ export const EXERCISE_MUSCLES: Partial<Record<CalisthenicsExerciseId, MuscleActi
     { muscle: 'triceps', level: 'primary' },
     { muscle: 'abs', level: 'primary' },
     { muscle: 'hip_flexors', level: 'secondary' }
+  ],
+  tricep_extension: [
+    { muscle: 'triceps', level: 'primary' },
+    { muscle: 'front_delt', level: 'secondary' },
+    { muscle: 'abs', level: 'secondary' }
   ]
 }
 
