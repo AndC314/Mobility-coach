@@ -1,6 +1,12 @@
 import type { CalisthenicsExerciseId } from '../db/db'
 
-export type ChallengeType = 'target_reps' | 'max_reps' | 'accumulate_hold'
+export type ChallengeType = 'target_reps' | 'max_reps' | 'accumulate_hold' | 'circuit_amrap'
+
+export interface CircuitExercise {
+  exerciseId: CalisthenicsExerciseId
+  reps: number
+  label: string
+}
 
 export interface ChallengeDef {
   id: string
@@ -15,6 +21,10 @@ export interface ChallengeDef {
   icon: string
   /** Category for filtering */
   category: 'push' | 'pull' | 'legs' | 'core' | 'full_body'
+  /** For circuit_amrap: exercises per round */
+  circuitExercises?: CircuitExercise[]
+  /** Notable benchmark to display */
+  benchmark?: string
 }
 
 export const CHALLENGES: ChallengeDef[] = [
@@ -153,5 +163,23 @@ export const CHALLENGES: ChallengeDef[] = [
     description: 'Accumulate 2 minutes of L-sit hold within 5 minutes. Use parallettes. Tuck allowed if legs fatigue.',
     icon: '📐',
     category: 'core',
+  },
+
+  // ─── CIRCUIT AMRAP ────────────────────────────────────────────────────
+  {
+    id: 'cindy',
+    name: 'Cindy',
+    exerciseId: 'pullups',
+    type: 'circuit_amrap',
+    timeLimitSec: 1200,
+    description: '20 minutes AMRAP: 5 Pull-ups → 10 Push-ups → 15 Air Squats. Move smoothly between exercises with minimal rest.',
+    icon: '🔁',
+    category: 'full_body',
+    benchmark: "Tom Holland's PR: 27 rounds",
+    circuitExercises: [
+      { exerciseId: 'pullups', reps: 5, label: 'Pull-ups' },
+      { exerciseId: 'pushups', reps: 10, label: 'Push-ups' },
+      { exerciseId: 'squats', reps: 15, label: 'Air Squats' },
+    ],
   },
 ]

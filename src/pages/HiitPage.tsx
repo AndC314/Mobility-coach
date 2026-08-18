@@ -6,6 +6,7 @@ import { CHALLENGES, type ChallengeDef } from '../data/challenges'
 import { db, type CalisthenicsExerciseId } from '../db/db'
 import HiitTimer from '../components/HiitTimer'
 import ChallengeTimer from '../components/ChallengeTimer'
+import CircuitTimer from '../components/CircuitTimer'
 
 export default function HiitPage() {
   const [activeWorkout, setActiveWorkout] = useState<HiitWorkoutDef | null>(null)
@@ -43,6 +44,15 @@ export default function HiitPage() {
   }
 
   if (activeChallenge) {
+    if (activeChallenge.type === 'circuit_amrap') {
+      return (
+        <CircuitTimer
+          challenge={activeChallenge}
+          onClose={() => setActiveChallenge(null)}
+          previousBest={challengeBests.get(activeChallenge.exerciseId) ?? null}
+        />
+      )
+    }
     return (
       <ChallengeTimer
         challenge={activeChallenge}
@@ -280,8 +290,8 @@ function ChallengesView({
                             <span className={`text-sm font-bold ${cooldown.onCooldown ? 'text-muted' : 'text-ink'}`}>
                               {c.icon} {c.name}
                             </span>
-                            <Tag color={c.type === 'max_reps' ? '#f5c842' : c.type === 'accumulate_hold' ? '#a78bfa' : '#2ec4b6'}>
-                              {c.type === 'max_reps' ? 'Max' : c.type === 'accumulate_hold' ? 'Hold' : 'Target'}
+                            <Tag color={c.type === 'max_reps' ? '#f5c842' : c.type === 'accumulate_hold' ? '#a78bfa' : c.type === 'circuit_amrap' ? '#e8622a' : '#2ec4b6'}>
+                              {c.type === 'max_reps' ? 'Max' : c.type === 'accumulate_hold' ? 'Hold' : c.type === 'circuit_amrap' ? 'AMRAP' : 'Target'}
                             </Tag>
                           </div>
                           {cooldown.onCooldown ? (
@@ -293,7 +303,7 @@ function ChallengesView({
                           )}
                           {best != null && best > 0 && (
                             <p className={`text-[11px] font-semibold mt-0.5 ${cooldown.onCooldown ? 'text-muted' : 'text-accent'}`}>
-                              PR: {c.type === 'accumulate_hold' ? formatTimeMini(best) : `${best} reps`}
+                              PR: {c.type === 'accumulate_hold' ? formatTimeMini(best) : c.type === 'circuit_amrap' ? `${best} rounds` : `${best} reps`}
                             </p>
                           )}
                         </div>
