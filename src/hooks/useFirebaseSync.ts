@@ -16,6 +16,14 @@ import { db as dexieDb, type SessionType, type CalisthenicsExerciseId, type User
 import { sessionToWorkoutDoc } from '../lib/firebase-workout-sync'
 import type { WorkoutDoc, BjjClassLogDoc, CalisthenicsLogDoc, PreferencesDoc, BjjSkillTagDoc, CustomExerciseDoc } from '../types/firebase'
 
+function stripUndefined<T extends Record<string, any>>(obj: T): T {
+  const result = {} as any
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined) result[key] = value
+  }
+  return result
+}
+
 export interface UseSyncState {
   allWorkouts: WorkoutDoc[]
   conflictDays: string[]
@@ -194,7 +202,7 @@ export function useFirebaseSync(user: User | null): UseSyncState {
   const addBjjClassLogToFirestore = async (log: Omit<BjjClassLogDoc, 'id'>): Promise<string> => {
     if (!user) throw new Error('User must be logged in')
     const fsRef = collection(firestoreDb, `users/${user.uid}/bjjClassLogs`)
-    const docRef = await addDoc(fsRef, log)
+    const docRef = await addDoc(fsRef, stripUndefined(log))
     return docRef.id
   }
 
@@ -203,7 +211,7 @@ export function useFirebaseSync(user: User | null): UseSyncState {
   ): Promise<string> => {
     if (!user) throw new Error('User must be logged in')
     const fsRef = collection(firestoreDb, `users/${user.uid}/calisthenicsLogs`)
-    const docRef = await addDoc(fsRef, log)
+    const docRef = await addDoc(fsRef, stripUndefined(log))
     return docRef.id
   }
 
@@ -450,16 +458,17 @@ async function catchUpSync(uid: string): Promise<void> {
   let pushedBjj = 0
   for (const log of localBjj) {
     if (!remoteBjjKeys.has(log.createdAt)) {
-      await addDoc(bjjRef, {
+      const bjjDoc: Record<string, any> = {
         date: log.date,
-        className: log.className,
-        theme: log.theme,
-        tagIds: log.tagIds,
-        technicalMins: log.technicalMins,
-        sparringMins: log.sparringMins,
-        notes: log.notes,
+        tagIds: log.tagIds ?? [],
         createdAt: log.createdAt,
-      })
+      }
+      if (log.className != null) bjjDoc.className = log.className
+      if (log.theme != null) bjjDoc.theme = log.theme
+      if (log.technicalMins != null) bjjDoc.technicalMins = log.technicalMins
+      if (log.sparringMins != null) bjjDoc.sparringMins = log.sparringMins
+      if (log.notes != null) bjjDoc.notes = log.notes
+      await addDoc(bjjRef, bjjDoc)
       pushedBjj++
     }
   }
@@ -471,15 +480,16 @@ async function catchUpSync(uid: string): Promise<void> {
     try {
       const createdAt = log.createdAt || `${log.date}T00:00:00.000Z`
       if (!remoteCalKeys.has(createdAt)) {
-        await addDoc(calRef, {
+        const calDoc: Record<string, any> = {
           date: log.date,
           exerciseId: log.exerciseId,
           metric: log.metric || 'reps',
           value: log.value,
-          sets: log.sets,
-          notes: log.notes,
           createdAt,
-        })
+        }
+        if (log.sets != null) calDoc.sets = log.sets
+        if (log.notes != null) calDoc.notes = log.notes
+        await addDoc(calRef, calDoc)
         pushedCal++
       }
     } catch (err) {

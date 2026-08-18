@@ -62,15 +62,16 @@ export default function Profile() {
         const createdAt = log.createdAt || `${log.date}T00:00:00.000Z`
         if (remoteCalKeys.has(createdAt)) continue
         try {
-          await addDoc(calRef, {
+          const calDoc: Record<string, any> = {
             date: log.date,
             exerciseId: log.exerciseId,
             metric: log.metric || 'reps',
             value: log.value,
-            sets: log.sets,
-            notes: log.notes,
             createdAt,
-          })
+          }
+          if (log.sets != null) calDoc.sets = log.sets
+          if (log.notes != null) calDoc.notes = log.notes
+          await addDoc(calRef, calDoc)
           pushed++
         } catch (err: any) {
           errors.push(`Cal ${log.exerciseId} ${log.date}: ${err?.message || err}`)
@@ -83,16 +84,17 @@ export default function Profile() {
       for (const log of localBjj) {
         if (remoteBjjKeys.has(log.createdAt)) continue
         try {
-          await addDoc(bjjRef, {
+          const bjjDoc: Record<string, any> = {
             date: log.date,
-            className: log.className,
-            theme: log.theme,
-            tagIds: log.tagIds,
-            technicalMins: log.technicalMins,
-            sparringMins: log.sparringMins,
-            notes: log.notes,
+            tagIds: log.tagIds ?? [],
             createdAt: log.createdAt,
-          })
+          }
+          if (log.className != null) bjjDoc.className = log.className
+          if (log.theme != null) bjjDoc.theme = log.theme
+          if (log.technicalMins != null) bjjDoc.technicalMins = log.technicalMins
+          if (log.sparringMins != null) bjjDoc.sparringMins = log.sparringMins
+          if (log.notes != null) bjjDoc.notes = log.notes
+          await addDoc(bjjRef, bjjDoc)
           pushed++
         } catch (err: any) {
           errors.push(`BJJ ${log.date}: ${err?.message || err}`)
