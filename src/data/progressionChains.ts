@@ -86,6 +86,11 @@ const PUSH_VERTICAL: ProgressionChain = {
       level: 2,
     },
     {
+      exerciseId: 'straight_bar_dips',
+      unlockRequirements: [{ exerciseId: 'dips', threshold: 10, unit: 'reps' }],
+      level: 3,
+    },
+    {
       exerciseId: 'pike_pushups',
       unlockRequirements: [{ exerciseId: 'dips', threshold: 5, unit: 'reps' }],
       level: 3,
@@ -117,19 +122,19 @@ const PULL_VERTICAL: ProgressionChain = {
       level: 1,
     },
     {
-      exerciseId: 'australian_pullups',
-      unlockRequirements: [{ exerciseId: 'scapular_pullups', threshold: 10, unit: 'reps' }],
-      level: 1,
-    },
-    {
       exerciseId: 'pullups',
-      unlockRequirements: [{ exerciseId: 'australian_pullups', threshold: 10, unit: 'reps' }],
+      unlockRequirements: [{ exerciseId: 'scapular_pullups', threshold: 10, unit: 'reps' }],
       level: 2,
     },
     {
       exerciseId: 'hanging_knee_to_chest',
       unlockRequirements: [{ exerciseId: 'pullups', threshold: 3, unit: 'reps' }],
       level: 3,
+    },
+    {
+      exerciseId: 'muscle_ups',
+      unlockRequirements: [{ exerciseId: 'pullups', threshold: 10, unit: 'reps' }],
+      level: 4,
     },
   ],
 }
@@ -149,6 +154,11 @@ const PULL_HORIZONTAL: ProgressionChain = {
       exerciseId: 'ring_rows',
       unlockRequirements: [{ exerciseId: 'door_pull', threshold: 12, unit: 'reps' }],
       level: 2,
+    },
+    {
+      exerciseId: 'australian_pullups',
+      unlockRequirements: [{ exerciseId: 'ring_rows', threshold: 12, unit: 'reps' }],
+      level: 3,
     },
   ],
 }
@@ -346,6 +356,35 @@ const PULL_GRIP_NECK: ProgressionChain = {
   ],
 }
 
+const PULL_LEVERS: ProgressionChain = {
+  id: 'pull_levers',
+  category: 'pull',
+  label: 'Levers & Statics',
+  description: 'Straight-arm pulling strength: skin the cat to full levers',
+  nodes: [
+    {
+      exerciseId: 'skin_the_cat',
+      unlockRequirements: [{ exerciseId: 'dead_hang', threshold: 30, unit: 's' }],
+      level: 2,
+    },
+    {
+      exerciseId: 'tucked_front_lever',
+      unlockRequirements: [{ exerciseId: 'skin_the_cat', threshold: 5, unit: 'reps' }],
+      level: 3,
+    },
+    {
+      exerciseId: 'back_lever',
+      unlockRequirements: [{ exerciseId: 'skin_the_cat', threshold: 8, unit: 'reps' }],
+      level: 4,
+    },
+    {
+      exerciseId: 'front_lever',
+      unlockRequirements: [{ exerciseId: 'tucked_front_lever', threshold: 10, unit: 's' }],
+      level: 5,
+    },
+  ],
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // EXPORTS
 // ─────────────────────────────────────────────────────────────────────────
@@ -355,6 +394,7 @@ export const PROGRESSION_CHAINS: ProgressionChain[] = [
   PUSH_VERTICAL,
   PULL_VERTICAL,
   PULL_HORIZONTAL,
+  PULL_LEVERS,
   PULL_GRIP_NECK,
   LEGS_SQUAT,
   LEGS_ADDUCTOR,

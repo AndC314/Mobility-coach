@@ -379,6 +379,27 @@ export const EXERCISE_MUSCLES: Partial<Record<CalisthenicsExerciseId, MuscleActi
     { muscle: 'triceps', level: 'primary' },
     { muscle: 'front_delt', level: 'secondary' },
     { muscle: 'abs', level: 'secondary' }
+  ],
+  straight_bar_dips: [
+    { muscle: 'triceps', level: 'primary' },
+    { muscle: 'chest', level: 'primary' },
+    { muscle: 'front_delt', level: 'secondary' },
+    { muscle: 'abs', level: 'secondary' }
+  ],
+  muscle_ups: [
+    { muscle: 'lats', level: 'primary' },
+    { muscle: 'chest', level: 'primary' },
+    { muscle: 'triceps', level: 'secondary' },
+    { muscle: 'biceps', level: 'secondary' },
+    { muscle: 'front_delt', level: 'secondary' },
+    { muscle: 'abs', level: 'secondary' }
+  ],
+  skin_the_cat: [
+    { muscle: 'lats', level: 'primary' },
+    { muscle: 'rear_delt', level: 'primary' },
+    { muscle: 'biceps', level: 'secondary' },
+    { muscle: 'abs', level: 'secondary' },
+    { muscle: 'front_delt', level: 'secondary' }
   ]
 }
 

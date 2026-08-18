@@ -176,6 +176,9 @@ export type CalisthenicsExerciseId =
   | 'planche'
   | 'press_to_handstand'
   | 'tricep_extension'
+  | 'straight_bar_dips'
+  | 'muscle_ups'
+  | 'skin_the_cat'
 
 export type CalisthenicsMetric = 'hold_sec' | 'reps'
 

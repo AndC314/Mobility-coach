@@ -52,6 +52,9 @@ const SPRITE_MAP: Record<string, string> = {
   wall_plank: '/sprites/exercises/wall_plank.png',
   wall_sit: '/sprites/exercises/wall_sit.png',
   wide_push_ups: '/sprites/exercises/wide_push_ups.png',
+  straight_bar_dips: '/sprites/exercises/straight_bar_dips.png',
+  muscle_ups: '/sprites/exercises/muscle_ups.png',
+  skin_the_cat: '/sprites/exercises/skin_the_cat.png',
   // Mobility exercises
   butterfly: '/sprites/exercises/butterfly.png',
   cat_cow: '/sprites/exercises/cat_cow.png',

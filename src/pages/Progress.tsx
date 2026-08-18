@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import {
-  BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Legend
+  BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Legend, ReferenceLine, Cell
 } from 'recharts'
 import SkillTree from '../components/SkillTree'
 import SkillRadar from '../components/SkillRadar'
@@ -88,42 +88,73 @@ export default function Progress() {
             {timeseries.every((w) => w.totalMins === 0) ? (
               <p className="py-6 text-center text-sm text-muted">No sessions logged yet</p>
             ) : (
-              <div style={{ height: 220 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={timeseries} margin={{ left: -16, right: 4 }}>
-                    <XAxis
-                      dataKey="weekLabel"
-                      tick={{ fill: '#7a7d96', fontSize: 10 }}
-                      axisLine={false}
-                      tickLine={false}
-                      interval={1}
-                    />
-                    <YAxis
-                      tick={{ fill: '#7a7d96', fontSize: 10 }}
-                      axisLine={false}
-                      tickLine={false}
-                      unit="m"
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        background: '#22263a',
-                        border: '1px solid #2e3248',
-                        borderRadius: 8,
-                        fontSize: 12
-                      }}
-                      labelStyle={{ color: '#e8e8f0', fontWeight: 600 }}
-                      formatter={(value: number, name: string) => [`${value} min`, name]}
-                    />
-                    <Legend
-                      wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
-                      formatter={(value) => <span style={{ color: '#b0b3c6' }}>{value}</span>}
-                    />
-                    <Bar dataKey="bjjMins" name="BJJ" stackId="a" fill="#2ec4b6" radius={[0, 0, 0, 0]} />
-                    <Bar dataKey="calisthenicsMins" name="Calisthenics" stackId="a" fill="#e8622a" radius={[0, 0, 0, 0]} />
-                    <Bar dataKey="mobilityMins" name="Mobility" stackId="a" fill="#a78bfa" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              (() => {
+                const currentWeekIdx = timeseries.length - 1
+                const completedWeeks = timeseries.slice(0, -1).filter((w) => w.totalMins > 0)
+                const avgTarget = completedWeeks.length >= 2
+                  ? Math.round(
+                      completedWeeks
+                        .sort((a, b) => b.totalMins - a.totalMins)
+                        .slice(0, 4)
+                        .reduce((s, w) => s + w.totalMins, 0) / Math.min(4, completedWeeks.length)
+                    )
+                  : 0
+                const chartData = timeseries.map((w, i) => ({
+                  ...w,
+                  weekLabel: i === currentWeekIdx ? `${w.weekLabel} ⬅` : w.weekLabel
+                }))
+                return (
+                  <div style={{ height: 220 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={chartData} margin={{ left: -16, right: 4 }}>
+                        <XAxis
+                          dataKey="weekLabel"
+                          tick={{ fill: '#7a7d96', fontSize: 10 }}
+                          axisLine={false}
+                          tickLine={false}
+                          interval={1}
+                        />
+                        <YAxis
+                          tick={{ fill: '#7a7d96', fontSize: 10 }}
+                          axisLine={false}
+                          tickLine={false}
+                          unit="m"
+                        />
+                        {avgTarget > 0 && (
+                          <ReferenceLine
+                            y={avgTarget}
+                            stroke="#4ade80"
+                            strokeDasharray="4 3"
+                            strokeWidth={1.5}
+                            label={{ value: `Target ${avgTarget}m`, position: 'right', fill: '#4ade80', fontSize: 10 }}
+                          />
+                        )}
+                        <Tooltip
+                          contentStyle={{
+                            background: '#22263a',
+                            border: '1px solid #2e3248',
+                            borderRadius: 8,
+                            fontSize: 12
+                          }}
+                          labelStyle={{ color: '#e8e8f0', fontWeight: 600 }}
+                          formatter={(value: number, name: string) => [`${value} min`, name]}
+                        />
+                        <Legend
+                          wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
+                          formatter={(value) => <span style={{ color: '#b0b3c6' }}>{value}</span>}
+                        />
+                        <Bar dataKey="bjjMins" name="BJJ" stackId="a" fill="#2ec4b6" radius={[0, 0, 0, 0]} />
+                        <Bar dataKey="calisthenicsMins" name="Calisthenics" stackId="a" fill="#e8622a" radius={[0, 0, 0, 0]} />
+                        <Bar dataKey="mobilityMins" name="Mobility" stackId="a" fill="#a78bfa" radius={[4, 4, 0, 0]}>
+                          {chartData.map((_, i) => (
+                            <Cell key={i} opacity={i === currentWeekIdx ? 0.6 : 1} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )
+              })()
             )}
           </Card>
 
