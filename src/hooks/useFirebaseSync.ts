@@ -355,6 +355,7 @@ async function syncPreferencesToLocal(remote: PreferencesDoc): Promise<void> {
       weeklyGoalDays: remote.weeklyGoalDays,
       soundEnabled: remote.soundEnabled,
       avatarVariant: remote.avatarVariant as any,
+      availableEquipment: remote.availableEquipment ?? ['pull_up_bar', 'parallel_bars', 'parallettes'],
     })
   }
 }

@@ -31,11 +31,12 @@ export interface SessionGeneratorInput {
   logs: CalisthenicsLog[]
   bestMap: Map<CalisthenicsExerciseId, number>
   categoryScores: { category: ProgressionCategory; score: number }[]
+  availableEquipment?: string[]
   seed?: number
 }
 
 export function generateCalisthenicsSession(input: SessionGeneratorInput): GeneratedSession {
-  const { logs, bestMap, categoryScores, seed } = input
+  const { logs, bestMap, categoryScores, availableEquipment, seed } = input
   const now = Date.now()
 
   // Build soreness from recent logs (last 48h)
@@ -82,7 +83,7 @@ export function generateCalisthenicsSession(input: SessionGeneratorInput): Gener
   // First pass: one exercise per category (prioritize bottlenecks)
   for (const cat of ranked) {
     if (selected.length >= 6) break
-    const exercise = pickExerciseForCategory(cat, bestMap, selected, seed)
+    const exercise = pickExerciseForCategory(cat, bestMap, selected, availableEquipment, seed)
     if (exercise) {
       selected.push(exercise)
       usedCategories.set(cat, (usedCategories.get(cat) ?? 0) + 1)
@@ -93,7 +94,7 @@ export function generateCalisthenicsSession(input: SessionGeneratorInput): Gener
   for (const cat of ranked) {
     if (selected.length >= 6) break
     if ((usedCategories.get(cat) ?? 0) >= 2) continue
-    const exercise = pickExerciseForCategory(cat, bestMap, selected, seed ? seed + 1 : undefined)
+    const exercise = pickExerciseForCategory(cat, bestMap, selected, availableEquipment, seed ? seed + 1 : undefined)
     if (exercise) {
       selected.push(exercise)
       usedCategories.set(cat, (usedCategories.get(cat) ?? 0) + 1)
@@ -125,10 +126,12 @@ function pickExerciseForCategory(
   category: ProgressionCategory,
   bestMap: Map<CalisthenicsExerciseId, number>,
   alreadySelected: SessionExercise[],
+  availableEquipment?: string[],
   seed?: number
 ): SessionExercise | null {
   const chains = PROGRESSION_CHAINS.filter((c) => c.category === category)
   const alreadyIds = new Set(alreadySelected.map((e) => e.exerciseId))
+  const equipmentSet = availableEquipment ? new Set(availableEquipment) : null
 
   // Find all unlocked and in-progress exercises
   const candidates: { node: ProgressionNode; priority: number; reason: string }[] = []
@@ -136,6 +139,12 @@ function pickExerciseForCategory(
   for (const chain of chains) {
     for (const node of chain.nodes) {
       if (alreadyIds.has(node.exerciseId)) continue
+
+      // Filter by available equipment
+      if (equipmentSet) {
+        const def = CALISTHENICS_EXERCISES.find((e) => e.id === node.exerciseId)
+        if (def?.equipment && def.equipment.some((eq) => !equipmentSet.has(eq))) continue
+      }
 
       const isUnlocked = node.unlockRequirements.length === 0 ||
         node.unlockRequirements.every((req) => (bestMap.get(req.exerciseId) ?? 0) >= req.threshold)

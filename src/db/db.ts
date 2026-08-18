@@ -255,6 +255,7 @@ export interface UserPreferences {
   weeklyGoalDays: number // target number of days/week with a logged session
   soundEnabled: boolean // midpoint/end timer dings
   avatarVariant: AvatarVariant // character body type
+  availableEquipment: string[] // e.g. ['pull_up_bar', 'parallel_bars', 'parallettes']
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -373,7 +374,8 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   darkMode: false,
   weeklyGoalDays: 4,
   soundEnabled: true,
-  avatarVariant: 'balanced'
+  avatarVariant: 'balanced',
+  availableEquipment: ['pull_up_bar', 'parallel_bars', 'parallettes']
 }
 
 export const DEFAULT_PHASE_PROGRESS: Omit<PhaseProgress, 'id'>[] = [

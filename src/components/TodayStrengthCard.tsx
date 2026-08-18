@@ -1,13 +1,38 @@
+import { useState, useEffect } from 'react'
 import { Card, Tag } from './Card'
 import { useCalisthenicsSession } from '../hooks/useCalisthenicsSession'
+import { db, DEFAULT_PREFERENCES } from '../db/db'
+import { useLiveQuery } from 'dexie-react-hooks'
 import type { SessionExercise } from '../lib/calisthenicsSession'
+import type { Equipment } from '../data/calisthenics'
+
+const EQUIPMENT_OPTIONS: { id: Equipment; label: string; icon: string }[] = [
+  { id: 'pull_up_bar', label: 'Pull-up bar', icon: '🏋️' },
+  { id: 'parallel_bars', label: 'Dip station', icon: '🪵' },
+  { id: 'parallettes', label: 'Parallettes', icon: '🤸' },
+]
 
 interface Props {
   onStartSession?: (exercises: SessionExercise[]) => void
 }
 
 export default function TodayStrengthCard({ onStartSession }: Props) {
-  const { session, regenerate, isLoading } = useCalisthenicsSession()
+  const prefs = useLiveQuery(() => db.preferences.get(1))
+  const [equipment, setEquipment] = useState<string[]>(DEFAULT_PREFERENCES.availableEquipment)
+
+  useEffect(() => {
+    if (prefs?.availableEquipment) setEquipment(prefs.availableEquipment)
+  }, [prefs])
+
+  const { session, regenerate, isLoading } = useCalisthenicsSession(equipment)
+
+  function toggleEquipment(id: string) {
+    setEquipment((prev) => {
+      const next = prev.includes(id) ? prev.filter((e) => e !== id) : [...prev, id]
+      db.preferences.update(1, { availableEquipment: next })
+      return next
+    })
+  }
 
   if (isLoading) return null
   if (!session) return null
@@ -31,6 +56,25 @@ export default function TodayStrengthCard({ onStartSession }: Props) {
           >
             Shuffle
           </button>
+        </div>
+
+        <div className="flex gap-1.5 flex-wrap">
+          {EQUIPMENT_OPTIONS.map((eq) => {
+            const active = equipment.includes(eq.id)
+            return (
+              <button
+                key={eq.id}
+                onClick={() => toggleEquipment(eq.id)}
+                className={`rounded-full px-2.5 py-1 text-[10px] font-semibold border transition-colors ${
+                  active
+                    ? 'bg-purple-500/10 text-purple-400 border-purple-500/30'
+                    : 'bg-card2 text-muted border-border opacity-50'
+                }`}
+              >
+                {eq.icon} {eq.label}
+              </button>
+            )
+          })}
         </div>
 
         <div className="space-y-1.5">

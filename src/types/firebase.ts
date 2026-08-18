@@ -82,6 +82,7 @@ export interface PreferencesDoc {
   weeklyGoalDays: number
   soundEnabled: boolean
   avatarVariant: string
+  availableEquipment?: string[]
   updatedAt: number
 }
 
