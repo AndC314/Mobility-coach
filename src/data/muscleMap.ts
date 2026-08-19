@@ -1,4 +1,5 @@
 import type { CalisthenicsExerciseId } from '../db/db'
+import { getExerciseDef } from './calisthenics'
 
 // ─────────────────────────────────────────────────────────────────────────
 // MUSCLE GROUPS
@@ -520,7 +521,9 @@ export interface TargetedSuggestion {
   label: string
   targetSets: number
   targetReps: number
-  muscle: MuscleGroup
+  metric: 'reps' | 'hold_sec'
+  primaryMuscle: string // primary muscle of the exercise itself
+  muscle: MuscleGroup // the gap muscle that triggered this suggestion
   isNew: boolean // true if user has never logged this exercise
 }
 
@@ -544,22 +547,30 @@ export function computeSuggestions(
       if (seen.has(exerciseId)) continue
       seen.add(exerciseId)
 
+      const def = getExerciseDef(exerciseId)
+      const isHold = def?.metric === 'hold_sec'
       const best = bestByExercise.get(exerciseId)
       const isNew = best == null
       let targetReps: number
       if (isNew) {
-        targetReps = 5
+        targetReps = isHold ? 20 : 5
       } else if (best < 10) {
-        targetReps = best + 1
+        targetReps = best + (isHold ? 5 : 1)
       } else {
         targetReps = Math.ceil(best * 1.1)
       }
+
+      const activations = EXERCISE_MUSCLES[exerciseId] ?? []
+      const primary = activations.find((a) => a.level === 'primary')
+      const primaryMuscle = primary ? MUSCLE_LABELS[primary.muscle] : (def?.primaryMuscles?.[0] ?? '')
 
       suggestions.push({
         exerciseId,
         label,
         targetSets: 3,
         targetReps,
+        metric: isHold ? 'hold_sec' : 'reps',
+        primaryMuscle,
         muscle,
         isNew,
       })

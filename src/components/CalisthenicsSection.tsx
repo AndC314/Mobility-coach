@@ -551,17 +551,20 @@ function MuscleMapTab() {
               >
                 <div className="flex-1 min-w-0">
                   <span className="text-sm font-semibold text-ink">{s.label}</span>
-                  <span className="ml-2 text-[10px] text-muted">
-                    {MUSCLE_LABELS[s.muscle]}
-                  </span>
                   {s.isNew && (
                     <span className="ml-1.5 text-[9px] font-semibold text-teal bg-teal/10 rounded px-1 py-0.5">
                       NEW
                     </span>
                   )}
+                  <div className="text-[10px] text-muted mt-0.5">
+                    <span className="font-semibold text-ink/70">{s.primaryMuscle}</span>
+                    {s.primaryMuscle !== MUSCLE_LABELS[s.muscle] && (
+                      <span> · fills {MUSCLE_LABELS[s.muscle]} gap</span>
+                    )}
+                  </div>
                 </div>
                 <span className="text-sm font-bold text-teal tabular-nums">
-                  {s.targetSets}×{s.targetReps}
+                  {s.targetSets}×{s.targetReps}{s.metric === 'hold_sec' ? 's' : ''}
                 </span>
               </div>
             ))}
@@ -578,7 +581,7 @@ function MuscleMapTab() {
                 <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-border">
                   <div className="h-full rounded-full bg-gold" style={{ width: `${s.score}%` }} />
                 </div>
-                <span className="w-28 text-right text-xs text-muted">{MUSCLE_LABELS[s.muscle]}</span>
+                <span className="w-28 text-right text-xs font-medium text-ink/80">{MUSCLE_LABELS[s.muscle]}</span>
                 <span className="w-8 text-right text-xs font-bold text-gold">{s.score}%</span>
               </div>
             ))}
@@ -601,7 +604,7 @@ function MuscleMapTab() {
                     }}
                   />
                 </div>
-                <span className="w-28 text-right text-xs text-muted">{MUSCLE_LABELS[s.muscle]}</span>
+                <span className="w-28 text-right text-xs font-medium text-ink/80">{MUSCLE_LABELS[s.muscle]}</span>
                 <span className="w-8 text-right text-xs font-bold text-ink">{s.score}%</span>
               </div>
             ))}
