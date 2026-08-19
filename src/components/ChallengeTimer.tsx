@@ -82,6 +82,7 @@ export default function ChallengeTimer({ challenge, onClose, previousBest }: Pro
         metric: isHoldChallenge ? 'hold_sec' : 'reps',
         value: finalScore,
         sets: 1,
+        elapsedSec: elapsed,
         notes: `Challenge: ${challenge.name} — ${formatTime(elapsed)}`,
         createdAt: now,
       })

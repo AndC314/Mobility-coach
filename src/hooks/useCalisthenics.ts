@@ -16,12 +16,14 @@ export async function logCalisthenicsBase(params: {
   restSeconds?: number // override default 30s per-user preference
 }) {
   const date = params.date || todayIso()
+  const restSec = params.restSeconds ?? 90
   const id = await db.calisthenicsLogs.add({
     date,
     exerciseId: params.exerciseId,
     metric: params.metric,
     value: params.value,
     sets: params.sets,
+    restSec,
     notes: params.notes,
     createdAt: new Date().toISOString()
   })

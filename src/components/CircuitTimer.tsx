@@ -73,6 +73,7 @@ export default function CircuitTimer({ challenge, onClose, previousBest }: Props
         metric: 'reps',
         value: rounds,
         sets: 1,
+        elapsedSec: elapsed,
         notes: `Challenge: ${challenge.name} — ${rounds} rounds in ${formatTime(elapsed)}`,
         createdAt: now,
       })

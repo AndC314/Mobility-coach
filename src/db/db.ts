@@ -189,6 +189,8 @@ export interface CalisthenicsLog {
   metric: CalisthenicsMetric
   value: number // seconds for holds, rep count for reps (best/total set, per UI)
   sets?: number // optional, e.g. "3 sets of 12"
+  restSec?: number // rest between sets (default 90s assumed if missing)
+  elapsedSec?: number // total wall-clock time (for challenges/HIIT density)
   notes?: string
   createdAt: string
 }

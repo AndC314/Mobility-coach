@@ -48,6 +48,12 @@ const CATEGORY_PARAMS: Record<FitnessCategory, BanisterParams> = {
 // Base impulse for a "standard hard session" — scaled by actual volume/best volume
 const BASE_IMPULSE = 8
 
+// Density: rest time affects impulse magnitude
+// Reference rest = 90s between sets. Shorter rest = higher density = bigger impulse.
+const REFERENCE_REST_SEC = 90
+const DENSITY_MIN = 0.7
+const DENSITY_MAX = 1.5
+
 // Atrophy: additional detraining below baseline after extended inactivity
 const ATROPHY_THRESHOLD_DAYS = 10
 const ATROPHY_RATE = 0.4
@@ -118,7 +124,7 @@ export function computeSupercompensation(
 
   const chartStartIndex = lookbackDays
 
-  // Build per-category daily volume
+  // Build per-category daily volume (density-weighted)
   const categories: FitnessCategory[] = ['push', 'pull', 'legs', 'core', 'grappling', 'mob_hips', 'mob_hamstrings', 'mob_lats']
   const dailyVolume = new Map<string, Map<FitnessCategory, number>>()
 
@@ -127,7 +133,23 @@ export function computeSupercompensation(
     if (!cat) continue
     if (!dailyVolume.has(log.date)) dailyVolume.set(log.date, new Map())
     const dayMap = dailyVolume.get(log.date)!
-    dayMap.set(cat, (dayMap.get(cat) ?? 0) + log.value * (log.sets ?? 1))
+
+    const rawVolume = log.value * (log.sets ?? 1)
+
+    // Density factor from rest time or elapsed time
+    let densityFactor = 1.0
+    if (log.elapsedSec && log.elapsedSec > 0) {
+      // Challenge/HIIT: compare actual elapsed vs reference time
+      const repTimeSec = log.metric === 'hold_sec' ? log.value : log.value * 3
+      const sets = log.sets ?? 1
+      const refElapsed = repTimeSec * sets + REFERENCE_REST_SEC * Math.max(0, sets - 1)
+      densityFactor = Math.max(DENSITY_MIN, Math.min(DENSITY_MAX, refElapsed / log.elapsedSec))
+    } else if (log.restSec != null) {
+      // Regular set training: shorter rest = higher density
+      densityFactor = Math.max(DENSITY_MIN, Math.min(DENSITY_MAX, REFERENCE_REST_SEC / Math.max(10, log.restSec)))
+    }
+
+    dayMap.set(cat, (dayMap.get(cat) ?? 0) + rawVolume * densityFactor)
   }
 
   for (const log of bjjLogs) {
