@@ -78,7 +78,9 @@ export async function purgeGhostMobilitySessions(uid?: string): Promise<{ purged
   const MOBILITY_TYPES = ['morning', 'bjj_release', 'recovery', 'hip_mobility', 'pancake', 'pike', 'ninety_ninety']
   const toRemove: CompletedSession[] = []
   for (const s of sessions) {
-    if (MOBILITY_TYPES.includes(s.type) && bjjDates.has(s.date)) {
+    if (!MOBILITY_TYPES.includes(s.type)) continue
+    // Ghost if: shares a BJJ date OR abnormally long (app max is 30 min)
+    if (bjjDates.has(s.date) || s.durationMin > 45) {
       toRemove.push(s)
     }
   }
