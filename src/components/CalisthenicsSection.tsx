@@ -7,6 +7,7 @@ import ExerciseIcon from './ExerciseIcon'
 import { CALISTHENICS_EXERCISES, getExerciseDef } from '../data/calisthenics'
 import { MUSCLE_LABELS, computeMuscleScores, computeAdaptiveCaps, computeSuggestions } from '../data/muscleMap'
 import { useCalisthenics, useCalisthenicsLogs, logCalisthenicsBase } from '../hooks/useCalisthenics'
+import { useWakeLock } from '../hooks/useWakeLock'
 import { db } from '../db/db'
 import { todayIso } from '../lib/date'
 import type { CalisthenicsExerciseId } from '../db/db'
@@ -308,6 +309,8 @@ function BulkTab({ prefill, onPrefillConsumed }: { prefill?: BulkPrefill | null;
   const [date, setDate] = useState(todayIso())
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+
+  useWakeLock(selected.length > 0)
 
   useEffect(() => {
     if (prefill && prefill.exercises.length > 0) {

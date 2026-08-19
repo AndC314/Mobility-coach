@@ -3,6 +3,7 @@ import { Card } from '../components/Card'
 import { MOBILITY_EXERCISES, type MobilityExerciseId } from '../data/mobilityExercises'
 import { upsertTodaySession } from '../hooks/useSessions'
 import { todayIso } from '../lib/date'
+import { useWakeLock } from '../hooks/useWakeLock'
 import TodayMobilityCard from '../components/TodayMobilityCard'
 import type { MobilitySessionExercise } from '../lib/mobilitySession'
 
@@ -44,6 +45,8 @@ export default function MobilityPage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [date, setDate] = useState(todayIso())
+
+  useWakeLock(selected.length > 0)
   const [view, setView] = useState<'picker' | 'config'>('picker')
 
   function toggleExercise(id: MobilityExerciseId) {
