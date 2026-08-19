@@ -39,7 +39,12 @@ export default function TodayMobilityCard({ onStartSession }: Props) {
               key={ex.id}
               className="flex items-center gap-2.5 rounded-lg bg-card2 px-3 py-2"
             >
-              <span className="text-lg flex-shrink-0">{ex.icon}</span>
+              <img
+                src={`/sprites/exercises/${ex.id}.png`}
+                alt=""
+                className="w-8 h-8 flex-shrink-0"
+                style={{ imageRendering: 'pixelated' }}
+              />
               <div className="flex-1 min-w-0">
                 <div className="text-xs font-semibold text-ink truncate">{ex.name}</div>
                 <div className="text-[10px] text-muted capitalize">{ex.category.replace('_', ' ')}</div>
