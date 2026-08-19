@@ -134,18 +134,18 @@ export function computeSupercompensation(
     if (!dailyVolume.has(log.date)) dailyVolume.set(log.date, new Map())
     const dayMap = dailyVolume.get(log.date)!
 
-    const rawVolume = log.value * (log.sets ?? 1)
+    const isChallenge = log.notes?.startsWith('Challenge:')
+    // Challenge logs store total reps in value (already summed across sets)
+    const rawVolume = isChallenge ? log.value : log.value * (log.sets ?? 1)
 
-    // Density factor from rest time or elapsed time
     let densityFactor = 1.0
     if (log.elapsedSec && log.elapsedSec > 0) {
-      // Challenge/HIIT: compare actual elapsed vs reference time
-      const repTimeSec = log.metric === 'hold_sec' ? log.value : log.value * 3
       const sets = log.sets ?? 1
+      const perSetValue = isChallenge ? log.value / sets : log.value
+      const repTimeSec = log.metric === 'hold_sec' ? perSetValue : perSetValue * 3
       const refElapsed = repTimeSec * sets + REFERENCE_REST_SEC * Math.max(0, sets - 1)
       densityFactor = Math.max(DENSITY_MIN, Math.min(DENSITY_MAX, refElapsed / log.elapsedSec))
     } else if (log.restSec != null) {
-      // Regular set training: shorter rest = higher density
       densityFactor = Math.max(DENSITY_MIN, Math.min(DENSITY_MAX, REFERENCE_REST_SEC / Math.max(10, log.restSec)))
     }
 

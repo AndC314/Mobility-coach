@@ -17,9 +17,10 @@ export function usePlateauExercises(): PlateauExercise[] | undefined {
     const allLogs = await db.calisthenicsLogs.toArray()
     if (allLogs.length === 0) return []
 
-    // Group logs by exerciseId
+    // Group logs by exerciseId (skip challenge totals — they inflate the best)
     const byExercise = new Map<CalisthenicsExerciseId, { date: string; value: number }[]>()
     for (const log of allLogs) {
+      if (log.notes?.startsWith('Challenge:')) continue
       const arr = byExercise.get(log.exerciseId) ?? []
       arr.push({ date: log.date, value: log.value })
       byExercise.set(log.exerciseId, arr)

@@ -104,6 +104,7 @@ function useDojoState(): DojoState | null {
 
     const calLogMap = new Map<string, number>()
     for (const log of calLogs) {
+      if (log.notes?.startsWith('Challenge:')) continue
       const cur = calLogMap.get(log.exerciseId) ?? 0
       if (log.value > cur) calLogMap.set(log.exerciseId, log.value)
     }

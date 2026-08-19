@@ -17,6 +17,7 @@ export function useCalisthenicsSession(equipmentOverride?: string[]) {
 
     const bestMap = new Map<CalisthenicsExerciseId, number>()
     for (const log of logs) {
+      if (log.notes?.startsWith('Challenge:')) continue
       const current = bestMap.get(log.exerciseId) ?? 0
       if (log.value > current) bestMap.set(log.exerciseId, log.value)
     }

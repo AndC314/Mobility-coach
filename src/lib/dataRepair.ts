@@ -1,4 +1,6 @@
 import { db, type CompletedSession } from '../db/db'
+import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore'
+import { db as firestoreDb } from './firebase'
 
 /**
  * Removes duplicate session rows: same date + type + label, keeping only
@@ -63,12 +65,9 @@ export async function repairInvalidNumbers(): Promise<{ fixed: number }> {
 
 /**
  * Removes ghost mobility sessions that were duplicated from BJJ class logs.
- * Historically, logging a BJJ class also created a 'morning' or 'bjj_release'
- * session on the same date. These inflate the mobility level.
- * Criteria: type is 'morning' or 'bjj_release', AND a BJJ class log exists on
- * the same date, AND durationMin ≤ 15 (real mobility sessions are longer).
+ * Also deletes matching documents from Firestore so they don't re-sync.
  */
-export async function purgeGhostMobilitySessions(): Promise<{ purged: number }> {
+export async function purgeGhostMobilitySessions(uid?: string): Promise<{ purged: number }> {
   const [sessions, bjjLogs] = await Promise.all([
     db.sessions.toArray(),
     db.bjjClassLogs.toArray(),
@@ -76,23 +75,90 @@ export async function purgeGhostMobilitySessions(): Promise<{ purged: number }> 
 
   const bjjDates = new Set(bjjLogs.map((l) => l.date))
 
-  const idsToRemove: number[] = []
+  const toRemove: CompletedSession[] = []
   for (const s of sessions) {
     if ((s.type === 'morning' || s.type === 'bjj_release') && bjjDates.has(s.date) && s.durationMin <= 15) {
-      if (s.id != null) idsToRemove.push(s.id)
+      toRemove.push(s)
     }
   }
 
+  const idsToRemove = toRemove.filter((s) => s.id != null).map((s) => s.id!)
   if (idsToRemove.length > 0) {
     await db.sessions.bulkDelete(idsToRemove)
   }
 
-  return { purged: idsToRemove.length }
+  if (uid && toRemove.length > 0) {
+    await deleteMatchingWorkoutsFromFirestore(uid, toRemove)
+  }
+
+  return { purged: toRemove.length }
 }
 
-export async function runFullRepair(): Promise<{ removed: number; fixed: number; purged: number }> {
+/**
+ * Deletes calisthenics logs for exercises that were logged by mistake.
+ * Also removes from Firestore.
+ */
+export async function purgeWrongExerciseLogs(uid?: string): Promise<{ purgedLogs: number }> {
+  const wrongIds = ['gymnastics_bridge']
+  const toDelete = await db.calisthenicsLogs
+    .where('exerciseId')
+    .anyOf(wrongIds)
+    .toArray()
+
+  if (toDelete.length > 0) {
+    await db.calisthenicsLogs.bulkDelete(toDelete.map((l) => l.id!).filter(Boolean))
+  }
+
+  if (uid && toDelete.length > 0) {
+    try {
+      const calRef = collection(firestoreDb, `users/${uid}/calisthenicsLogs`)
+      const snapshot = await getDocs(calRef)
+      const deletes: Promise<void>[] = []
+      for (const d of snapshot.docs) {
+        const data = d.data()
+        if (wrongIds.includes(data.exerciseId)) {
+          deletes.push(deleteDoc(doc(firestoreDb, `users/${uid}/calisthenicsLogs`, d.id)))
+        }
+      }
+      await Promise.all(deletes)
+    } catch (err) {
+      console.error('[purgeWrongExerciseLogs] Firestore cleanup failed:', err)
+    }
+  }
+
+  return { purgedLogs: toDelete.length }
+}
+
+async function deleteMatchingWorkoutsFromFirestore(
+  uid: string,
+  sessions: CompletedSession[]
+): Promise<void> {
+  try {
+    const workoutsRef = collection(firestoreDb, `users/${uid}/workouts`)
+    const snapshot = await getDocs(workoutsRef)
+
+    const keysToDelete = new Set(
+      sessions.map((s) => `${s.date}|${s.type}|${s.label}`)
+    )
+
+    const deletes: Promise<void>[] = []
+    for (const d of snapshot.docs) {
+      const data = d.data()
+      const key = `${data.date}|${data.originalType || data.type}|${data.label || ''}`
+      if (keysToDelete.has(key)) {
+        deletes.push(deleteDoc(doc(firestoreDb, `users/${uid}/workouts`, d.id)))
+      }
+    }
+    await Promise.all(deletes)
+  } catch (err) {
+    console.error('[purgeGhostMobilitySessions] Firestore cleanup failed:', err)
+  }
+}
+
+export async function runFullRepair(uid?: string): Promise<{ removed: number; fixed: number; purged: number; purgedLogs: number }> {
   const { fixed } = await repairInvalidNumbers()
   const { removed } = await dedupeSessions()
-  const { purged } = await purgeGhostMobilitySessions()
-  return { removed, fixed, purged }
+  const { purged } = await purgeGhostMobilitySessions(uid)
+  const { purgedLogs } = await purgeWrongExerciseLogs(uid)
+  return { removed, fixed, purged, purgedLogs }
 }
