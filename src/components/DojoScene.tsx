@@ -84,7 +84,10 @@ function useDojoState(): DojoState | null {
     const belt = getBelt(bjjClasses)
 
     const totalSec = sessions.reduce((s, sess) => s + (sess.actualSec || sess.durationMin * 60), 0)
-    const bjjSec = bjjLogs.reduce((s, l) => s + ((l.technicalMins ?? 0) + (l.sparringMins ?? 0)) * 60, 0)
+    const bjjSec = bjjLogs.reduce((s, l) => {
+      const mins = (l.technicalMins ?? 0) + (l.sparringMins ?? 0)
+      return s + (mins > 0 ? mins : 60) * 60
+    }, 0)
     const totalHours = Math.round((totalSec + bjjSec) / 3600)
 
     const today = new Date().toISOString().split('T')[0]

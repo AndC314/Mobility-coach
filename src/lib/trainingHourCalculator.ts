@@ -43,7 +43,10 @@ export async function computeTrainingHours(category: TrainingCategory): Promise<
 
   if (category === 'bjj') {
     const bjjLogs = await db.bjjClassLogs.toArray()
-    const bjjSeconds = bjjLogs.reduce((sum) => sum + 3600, 0) // 60 min per class
+    const bjjSeconds = bjjLogs.reduce((sum, l) => {
+      const mins = (l.technicalMins ?? 0) + (l.sparringMins ?? 0)
+      return sum + (mins > 0 ? mins : 60) * 60
+    }, 0)
     categorySessionsSec += bjjSeconds
     allDates = bjjLogs.map(l => l.date)
     if (bjjLogs.length > 0) {
@@ -80,8 +83,13 @@ export async function computeTrainingHours(category: TrainingCategory): Promise<
 
   if (category === 'bjj') {
     const bjjLogs = await db.bjjClassLogs.toArray()
-    const recentBjj = bjjLogs.filter(l => l.date >= sevenDaysAgo).length
-    hoursThisWeekSec += recentBjj * 3600
+    const recentBjjSec = bjjLogs
+      .filter(l => l.date >= sevenDaysAgo)
+      .reduce((sum, l) => {
+        const mins = (l.technicalMins ?? 0) + (l.sparringMins ?? 0)
+        return sum + (mins > 0 ? mins : 60) * 60
+      }, 0)
+    hoursThisWeekSec += recentBjjSec
   }
 
   const hoursThisWeek = Math.round(hoursThisWeekSec / 3600 * 100) / 100
