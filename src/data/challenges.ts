@@ -2,6 +2,11 @@ import type { CalisthenicsExerciseId } from '../db/db'
 
 export type ChallengeType = 'target_reps' | 'max_reps' | 'accumulate_hold' | 'circuit_amrap'
 
+export interface ChallengePR {
+  bestReps: number
+  bestTimeSec: number | null // fastest time to hit target (null if never reached)
+}
+
 export interface CircuitExercise {
   exerciseId: CalisthenicsExerciseId
   reps: number

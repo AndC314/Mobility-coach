@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useState, useEffect } from 'react'
 import { db } from '../db/db'
 import { PROGRESSION_CHAINS } from '../data/progressionChains'
+import { BJJAvatarAnimator } from './BJJAvatarAnimator'
 
 type BjjBelt = 'white' | 'blue' | 'purple' | 'black'
 
@@ -71,11 +71,6 @@ function getDojo(totalHours: number) {
   return DOJO_LEVELS[DOJO_LEVELS.length - 1]
 }
 
-// Animation frames
-const IDLE_FRAME = '/sprites/avatar/judoka/animations/walk/south/frame_00.png'
-const JUMP_FRAMES = Array.from({ length: 13 }, (_, i) =>
-  `/sprites/avatar/judoka/animations/jump/frame_${i.toString().padStart(2, '0')}.png`
-)
 
 function useDojoState(): DojoState | null {
   return useLiveQuery(async () => {
@@ -130,35 +125,6 @@ function useDojoState(): DojoState | null {
 
 export default function DojoScene() {
   const state = useDojoState()
-  const [animFrame, setAnimFrame] = useState<string>(IDLE_FRAME)
-  const [isJumping, setIsJumping] = useState(false)
-
-  // Idle with periodic jump every 4-6 seconds
-  useEffect(() => {
-    let jumpTimeout: ReturnType<typeof setTimeout>
-    let frameInterval: ReturnType<typeof setInterval>
-
-    function scheduleJump() {
-      const delay = 4000 + Math.floor(Math.random() * 2000)
-      jumpTimeout = setTimeout(() => {
-        setIsJumping(true)
-        let f = 0
-        frameInterval = setInterval(() => {
-          setAnimFrame(JUMP_FRAMES[f])
-          f++
-          if (f >= JUMP_FRAMES.length) {
-            clearInterval(frameInterval)
-            setAnimFrame(IDLE_FRAME)
-            setIsJumping(false)
-            scheduleJump()
-          }
-        }, 100)
-      }, delay)
-    }
-
-    scheduleJump()
-    return () => { clearTimeout(jumpTimeout); clearInterval(frameInterval) }
-  }, [])
 
   if (!state) {
     return <div className="h-56 flex items-center justify-center text-muted text-sm">Loading...</div>
@@ -205,14 +171,9 @@ export default function DojoScene() {
           </div>
         )}
 
-        {/* Judoka character — stationary with jump animation */}
+        {/* BJJ character — cycles walk / jump / pushups */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <img
-            src={animFrame}
-            alt={`${belt} belt judoka`}
-            className="w-28 h-28 drop-shadow-lg"
-            style={{ imageRendering: 'pixelated' }}
-          />
+          <BJJAvatarAnimator scale={2.5} />
         </div>
 
         {/* Belt badge — bottom center overlay */}

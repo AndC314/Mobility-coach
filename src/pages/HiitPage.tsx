@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { Card, Tag } from '../components/Card'
 import { PRESET_WORKOUTS, HIIT_FORMAT_INFO, generateBalancedHiit, type HiitWorkoutDef, type HiitFormat } from '../data/hiitWorkouts'
 import { getExerciseDef } from '../data/calisthenics'
-import { CHALLENGES, type ChallengeDef } from '../data/challenges'
+import { CHALLENGES, type ChallengeDef, type ChallengePR } from '../data/challenges'
 import { db, type CalisthenicsExerciseId } from '../db/db'
 import HiitTimer from '../components/HiitTimer'
 import ChallengeTimer from '../components/ChallengeTimer'
@@ -14,23 +14,31 @@ export default function HiitPage() {
   const [filterFormat, setFilterFormat] = useState<HiitFormat | 'all'>('all')
   const [generatedWorkout, setGeneratedWorkout] = useState<HiitWorkoutDef | null>(null)
   const [tab, setTab] = useState<'workouts' | 'challenges'>('workouts')
-  const [challengeBests, setChallengeBests] = useState<Map<CalisthenicsExerciseId, number>>(new Map())
+  const [challengePRs, setChallengePRs] = useState<Map<string, ChallengePR>>(new Map())
   const [challengeLastDone, setChallengeLastDone] = useState<Map<string, string>>(new Map())
 
   useEffect(() => {
     db.calisthenicsLogs.toArray().then((logs) => {
-      const bests = new Map<CalisthenicsExerciseId, number>()
+      const prs = new Map<string, ChallengePR>()
       const lastDone = new Map<string, string>()
       for (const log of logs) {
         if (!log.notes?.startsWith('Challenge:')) continue
-        const prev = bests.get(log.exerciseId) ?? 0
-        if (log.value > prev) bests.set(log.exerciseId, log.value)
-        // Track last attempt date per challenge name (extracted from notes)
         const challengeName = log.notes.replace('Challenge: ', '').split(' — ')[0]
+        const challengeDef = CHALLENGES.find((c) => c.name === challengeName)
+
+        const prev = prs.get(challengeName) ?? { bestReps: 0, bestTimeSec: null }
+        if (log.value > prev.bestReps) prev.bestReps = log.value
+        if (challengeDef?.targetReps != null && log.value >= challengeDef.targetReps && log.elapsedSec) {
+          if (prev.bestTimeSec === null || log.elapsedSec < prev.bestTimeSec) {
+            prev.bestTimeSec = log.elapsedSec
+          }
+        }
+        prs.set(challengeName, prev)
+
         const prevDate = lastDone.get(challengeName) ?? ''
         if (log.date > prevDate) lastDone.set(challengeName, log.date)
       }
-      setChallengeBests(bests)
+      setChallengePRs(prs)
       setChallengeLastDone(lastDone)
     })
   }, [activeChallenge])
@@ -44,12 +52,13 @@ export default function HiitPage() {
   }
 
   if (activeChallenge) {
+    const pr = challengePRs.get(activeChallenge.name) ?? null
     if (activeChallenge.type === 'circuit_amrap') {
       return (
         <CircuitTimer
           challenge={activeChallenge}
           onClose={() => setActiveChallenge(null)}
-          previousBest={challengeBests.get(activeChallenge.exerciseId) ?? null}
+          previousBest={pr?.bestReps ?? null}
         />
       )
     }
@@ -57,7 +66,7 @@ export default function HiitPage() {
       <ChallengeTimer
         challenge={activeChallenge}
         onClose={() => setActiveChallenge(null)}
-        previousBest={challengeBests.get(activeChallenge.exerciseId) ?? null}
+        challengePR={pr}
       />
     )
   }
@@ -100,7 +109,7 @@ export default function HiitPage() {
       {tab === 'challenges' && (
         <ChallengesView
           challenges={CHALLENGES}
-          bests={challengeBests}
+          prs={challengePRs}
           lastDone={challengeLastDone}
           onSelect={setActiveChallenge}
         />
@@ -238,12 +247,12 @@ function getCooldownState(challengeName: string, lastDone: Map<string, string>):
 
 function ChallengesView({
   challenges,
-  bests,
+  prs,
   lastDone,
   onSelect,
 }: {
   challenges: ChallengeDef[]
-  bests: Map<CalisthenicsExerciseId, number>
+  prs: Map<string, ChallengePR>
   lastDone: Map<string, string>
   onSelect: (c: ChallengeDef) => void
 }) {
@@ -274,8 +283,9 @@ function ChallengesView({
             </h3>
             <div className="space-y-2">
               {catChallenges.map((c) => {
-                const best = bests.get(c.exerciseId)
+                const pr = prs.get(c.name)
                 const cooldown = getCooldownState(c.name, lastDone)
+                const prLabel = formatPRLabel(c, pr)
                 return (
                   <button
                     key={c.id}
@@ -301,9 +311,9 @@ function ChallengesView({
                           ) : (
                             <p className="text-[11px] text-muted truncate">{c.description}</p>
                           )}
-                          {best != null && best > 0 && (
+                          {prLabel && (
                             <p className={`text-[11px] font-semibold mt-0.5 ${cooldown.onCooldown ? 'text-muted' : 'text-accent'}`}>
-                              PR: {c.type === 'accumulate_hold' ? formatTimeMini(best) : c.type === 'circuit_amrap' ? `${best} rounds` : `${best} reps`}
+                              PR: {prLabel}
                             </p>
                           )}
                         </div>
@@ -324,6 +334,16 @@ function ChallengesView({
       })}
     </div>
   )
+}
+
+function formatPRLabel(challenge: ChallengeDef, pr: ChallengePR | undefined): string | null {
+  if (!pr || pr.bestReps === 0) return null
+  if (challenge.type === 'accumulate_hold') return formatTimeMini(pr.bestReps)
+  if (challenge.type === 'circuit_amrap') return `${pr.bestReps} rounds`
+  if (challenge.type === 'target_reps' && pr.bestTimeSec != null) {
+    return `${formatTimeMini(pr.bestTimeSec)} (${pr.bestReps} reps)`
+  }
+  return `${pr.bestReps} reps`
 }
 
 function formatTimeMini(sec: number): string {

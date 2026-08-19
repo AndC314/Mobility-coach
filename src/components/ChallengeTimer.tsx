@@ -2,21 +2,23 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { Card } from './Card'
 import { db } from '../db/db'
 import { getExerciseDef } from '../data/calisthenics'
-import type { ChallengeDef } from '../data/challenges'
+import type { ChallengeDef, ChallengePR } from '../data/challenges'
 import { useWakeLock } from '../hooks/useWakeLock'
 
 interface Props {
   challenge: ChallengeDef
   onClose: () => void
-  previousBest?: number | null
+  challengePR?: ChallengePR | null
 }
 
 type Phase = 'ready' | 'active' | 'done'
 
-export default function ChallengeTimer({ challenge, onClose, previousBest }: Props) {
+export default function ChallengeTimer({ challenge, onClose, challengePR }: Props) {
   const [phase, setPhase] = useState<Phase>('ready')
   const [elapsed, setElapsed] = useState(0)
   const [reps, setReps] = useState(0)
+  const [setLog, setSetLog] = useState<number[]>([])
+  const [customReps, setCustomReps] = useState('')
   const [holdActive, setHoldActive] = useState(false)
   const [holdAccumulated, setHoldAccumulated] = useState(0)
   const [running, setRunning] = useState(false)
@@ -61,7 +63,17 @@ export default function ChallengeTimer({ challenge, onClose, previousBest }: Pro
 
   const addReps = useCallback((count: number) => {
     setReps((r) => r + count)
+    setSetLog((log) => [...log, count])
   }, [])
+
+  const addCustomReps = useCallback(() => {
+    const n = parseInt(customReps, 10)
+    if (n > 0) {
+      setReps((r) => r + n)
+      setSetLog((log) => [...log, n])
+      setCustomReps('')
+    }
+  }, [customReps])
 
   const toggleHold = useCallback(() => {
     setHoldActive((h) => !h)
@@ -81,9 +93,9 @@ export default function ChallengeTimer({ challenge, onClose, previousBest }: Pro
         exerciseId: challenge.exerciseId,
         metric: isHoldChallenge ? 'hold_sec' : 'reps',
         value: finalScore,
-        sets: 1,
+        sets: setLog.length || 1,
         elapsedSec: elapsed,
-        notes: `Challenge: ${challenge.name} — ${formatTime(elapsed)}`,
+        notes: `Challenge: ${challenge.name} — ${formatTime(elapsed)}${setLog.length > 1 ? ` (${setLog.join('+')})` : ''}`,
         createdAt: now,
       })
     }
@@ -92,7 +104,23 @@ export default function ChallengeTimer({ challenge, onClose, previousBest }: Pro
   if (phase === 'done') {
     const finalScore = isHoldChallenge ? holdAccumulated : reps
     const success = challenge.targetReps != null ? finalScore >= challenge.targetReps : true
-    const isNewPR = previousBest != null && finalScore > previousBest
+
+    // Dual-metric PR: time-based when target reached, reps-based otherwise
+    let isNewPR = false
+    let previousBestLabel: string | null = null
+    if (challengePR) {
+      if (challenge.type === 'target_reps' && success && challengePR.bestTimeSec != null) {
+        isNewPR = elapsed < challengePR.bestTimeSec
+        previousBestLabel = `Previous best: ${formatTime(challengePR.bestTimeSec)}`
+      } else if (challenge.type === 'target_reps' && success && challengePR.bestTimeSec === null) {
+        isNewPR = true // first time hitting target
+      } else {
+        isNewPR = finalScore > challengePR.bestReps
+        previousBestLabel = challengePR.bestReps > 0
+          ? `Previous best: ${isHoldChallenge ? formatTime(challengePR.bestReps) : `${challengePR.bestReps} reps`}`
+          : null
+      }
+    }
 
     return (
       <div className="space-y-4 fade-in">
@@ -112,16 +140,20 @@ export default function ChallengeTimer({ challenge, onClose, previousBest }: Pro
               )}
             </div>
 
+            {setLog.length > 1 && !isHoldChallenge && (
+              <p className="text-xs text-muted font-mono">
+                {setLog.join(' + ')}
+              </p>
+            )}
+
             {isNewPR && (
               <div className="mt-2 inline-block rounded-full bg-purple/15 px-3 py-1 text-xs font-bold text-purple border border-purple/30">
                 New Personal Record!
               </div>
             )}
 
-            {previousBest != null && !isNewPR && (
-              <p className="text-xs text-muted mt-1">
-                Previous best: {isHoldChallenge ? formatTime(previousBest) : `${previousBest} reps`}
-              </p>
+            {!isNewPR && previousBestLabel && (
+              <p className="text-xs text-muted mt-1">{previousBestLabel}</p>
             )}
           </div>
         </Card>
@@ -156,9 +188,13 @@ export default function ChallengeTimer({ challenge, onClose, previousBest }: Pro
             <>
               <h2 className="text-lg font-bold text-ink">{challenge.name}</h2>
               <p className="text-sm text-muted">{challenge.description}</p>
-              {previousBest != null && previousBest > 0 && (
+              {challengePR && (challengePR.bestTimeSec != null || challengePR.bestReps > 0) && (
                 <p className="text-sm font-semibold text-accent">
-                  PR to beat: {isHoldChallenge ? formatTime(previousBest) : `${previousBest} ${exerciseDef?.type === 'hold' ? 's' : 'reps'}`}
+                  PR to beat: {challenge.type === 'target_reps' && challengePR.bestTimeSec != null
+                    ? formatTime(challengePR.bestTimeSec)
+                    : isHoldChallenge
+                      ? formatTime(challengePR.bestReps)
+                      : `${challengePR.bestReps} ${exerciseDef?.type === 'hold' ? 's' : 'reps'}`}
                 </p>
               )}
               <div className="flex justify-center gap-4 pt-2">
@@ -230,17 +266,47 @@ export default function ChallengeTimer({ challenge, onClose, previousBest }: Pro
               {holdActive ? 'Release (resting)' : 'Hold (tap & hold)'}
             </button>
           ) : (
-            <div className="grid grid-cols-4 gap-2">
-              {[1, 5, 10, 20].map((n) => (
+            <>
+              {/* Custom number input + quick buttons */}
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  placeholder="reps"
+                  value={customReps}
+                  onChange={(e) => setCustomReps(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && addCustomReps()}
+                  className="flex-1 rounded-xl border border-teal/30 bg-card px-3 py-3 text-center text-lg font-bold text-ink placeholder:text-muted/50 focus:outline-none focus:border-teal"
+                />
                 <button
-                  key={n}
-                  onClick={() => addReps(n)}
-                  className="rounded-xl bg-teal/15 py-3 text-base font-bold text-teal border border-teal/30 active:scale-95 transition-transform"
+                  onClick={addCustomReps}
+                  disabled={!customReps || parseInt(customReps, 10) <= 0}
+                  className="rounded-xl bg-teal px-5 py-3 text-base font-bold text-white active:scale-95 transition-transform disabled:opacity-40"
                 >
-                  +{n}
+                  + Add
                 </button>
-              ))}
-            </div>
+              </div>
+              <div className="grid grid-cols-5 gap-1.5">
+                {[5, 10, 15, 20, 25].map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => addReps(n)}
+                    className="rounded-xl bg-teal/15 py-2.5 text-sm font-bold text-teal border border-teal/30 active:scale-95 transition-transform"
+                  >
+                    +{n}
+                  </button>
+                ))}
+              </div>
+              {/* Set breakdown log */}
+              {setLog.length > 0 && (
+                <div className="rounded-xl bg-card2 border border-border px-3 py-2">
+                  <p className="text-xs text-muted font-semibold mb-1">Sets</p>
+                  <p className="text-sm text-ink font-mono">
+                    {setLog.join(' + ')} = {reps}
+                  </p>
+                </div>
+              )}
+            </>
           )}
 
           <div className="flex gap-2">
