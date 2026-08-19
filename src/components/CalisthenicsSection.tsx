@@ -532,8 +532,7 @@ function MuscleMapTab() {
       <Card>
         <h2 className="mb-1 text-base font-bold">Muscle load — last 48h</h2>
         <p className="mb-3 text-xs text-muted">
-          Progressive threshold: 100% = matching your best recent volume for each muscle.
-          Colour: red = heavy load, gold = moderate, grey = not yet trained.
+          % of your personal best volume per muscle. Red = heavy, gold = moderate, grey = untrained.
         </p>
         <BodyMap scores={scores} />
       </Card>

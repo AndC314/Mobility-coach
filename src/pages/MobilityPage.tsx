@@ -3,6 +3,8 @@ import { Card } from '../components/Card'
 import { MOBILITY_EXERCISES, type MobilityExerciseId } from '../data/mobilityExercises'
 import { upsertTodaySession } from '../hooks/useSessions'
 import { todayIso } from '../lib/date'
+import TodayMobilityCard from '../components/TodayMobilityCard'
+import type { MobilitySessionExercise } from '../lib/mobilitySession'
 
 function ExerciseThumb({ id, icon, className }: { id: string; icon: string; className?: string }) {
   const [src, setSrc] = useState<'sprite' | 'legacy' | 'emoji'>('sprite')
@@ -110,6 +112,16 @@ export default function MobilityPage() {
     }
   }
 
+  function handleStartMobilitySession(exercises: MobilitySessionExercise[]) {
+    const newSelected: SelectedExercise[] = exercises.map((ex) => ({
+      id: ex.id as MobilityExerciseId,
+      holdSec: ex.holdSec,
+      sets: ex.sets,
+      restSec: 30,
+    }))
+    setSelected(newSelected)
+  }
+
   const categories = ['hip', 'spine', 'shoulder', 'full_body'] as const
   const [openSections, setOpenSections] = useState<Set<string>>(new Set(['hip']))
 
@@ -128,6 +140,8 @@ export default function MobilityPage() {
         <p className="text-sm text-muted">Flexibility and joint mobility</p>
         <h1 className="text-2xl font-extrabold">Mobility</h1>
       </div>
+
+      <TodayMobilityCard onStartSession={handleStartMobilitySession} />
 
       {view === 'picker' ? (
         <>
