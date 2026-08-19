@@ -4,6 +4,7 @@ import { db } from '../db/db'
 import { getExerciseDef } from '../data/calisthenics'
 import type { ChallengeDef, ChallengePR } from '../data/challenges'
 import { useWakeLock } from '../hooks/useWakeLock'
+import { upsertTodaySession } from '../hooks/useSessions'
 
 interface Props {
   challenge: ChallengeDef
@@ -97,6 +98,13 @@ export default function ChallengeTimer({ challenge, onClose, challengePR }: Prop
         elapsedSec: elapsed,
         notes: `Challenge: ${challenge.name} — ${formatTime(elapsed)}${setLog.length > 1 ? ` (${setLog.join('+')})` : ''}`,
         createdAt: now,
+      })
+      await upsertTodaySession({
+        type: 'calisthenics',
+        label: `Challenge: ${challenge.name}`,
+        plannedSec: challenge.timeLimitSec,
+        actualSec: elapsed,
+        exerciseIds: [challenge.exerciseId],
       })
     }
   }

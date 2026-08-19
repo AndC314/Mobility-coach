@@ -3,6 +3,7 @@ import { Card } from './Card'
 import { db } from '../db/db'
 import type { ChallengeDef } from '../data/challenges'
 import { useWakeLock } from '../hooks/useWakeLock'
+import { upsertTodaySession } from '../hooks/useSessions'
 
 interface Props {
   challenge: ChallengeDef
@@ -76,6 +77,13 @@ export default function CircuitTimer({ challenge, onClose, previousBest }: Props
         elapsedSec: elapsed,
         notes: `Challenge: ${challenge.name} — ${rounds} rounds in ${formatTime(elapsed)}`,
         createdAt: now,
+      })
+      await upsertTodaySession({
+        type: 'calisthenics',
+        label: `Challenge: ${challenge.name}`,
+        plannedSec: challenge.timeLimitSec,
+        actualSec: elapsed,
+        exerciseIds: [challenge.exerciseId],
       })
     }
   }
