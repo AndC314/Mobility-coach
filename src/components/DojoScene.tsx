@@ -71,9 +71,10 @@ function getDojo(totalHours: number) {
   return DOJO_LEVELS[DOJO_LEVELS.length - 1]
 }
 
-// Walk animation frames (south direction)
-const WALK_FRAMES = Array.from({ length: 6 }, (_, i) =>
-  `/sprites/avatar/judoka/animations/walk/south/frame_0${i}.png`
+// Animation frames
+const IDLE_FRAME = '/sprites/avatar/judoka/animations/walk/south/frame_00.png'
+const JUMP_FRAMES = Array.from({ length: 13 }, (_, i) =>
+  `/sprites/avatar/judoka/animations/jump/frame_${i.toString().padStart(2, '0')}.png`
 )
 
 function useDojoState(): DojoState | null {
@@ -129,18 +130,34 @@ function useDojoState(): DojoState | null {
 
 export default function DojoScene() {
   const state = useDojoState()
-  const [frame, setFrame] = useState(0)
-  const [facingRight, setFacingRight] = useState(true)
+  const [animFrame, setAnimFrame] = useState<string>(IDLE_FRAME)
+  const [isJumping, setIsJumping] = useState(false)
 
-  // Walk animation loop + flip direction every 5s (half of 10s walk cycle)
+  // Idle with periodic jump every 4-6 seconds
   useEffect(() => {
-    const frameInterval = setInterval(() => {
-      setFrame((f) => (f + 1) % WALK_FRAMES.length)
-    }, 200)
-    const flipInterval = setInterval(() => {
-      setFacingRight((f) => !f)
-    }, 5000)
-    return () => { clearInterval(frameInterval); clearInterval(flipInterval) }
+    let jumpTimeout: ReturnType<typeof setTimeout>
+    let frameInterval: ReturnType<typeof setInterval>
+
+    function scheduleJump() {
+      const delay = 4000 + Math.floor(Math.random() * 2000)
+      jumpTimeout = setTimeout(() => {
+        setIsJumping(true)
+        let f = 0
+        frameInterval = setInterval(() => {
+          setAnimFrame(JUMP_FRAMES[f])
+          f++
+          if (f >= JUMP_FRAMES.length) {
+            clearInterval(frameInterval)
+            setAnimFrame(IDLE_FRAME)
+            setIsJumping(false)
+            scheduleJump()
+          }
+        }, 100)
+      }, delay)
+    }
+
+    scheduleJump()
+    return () => { clearTimeout(jumpTimeout); clearInterval(frameInterval) }
   }, [])
 
   if (!state) {
@@ -188,13 +205,13 @@ export default function DojoScene() {
           </div>
         )}
 
-        {/* Judoka character — walks across the dojo */}
-        <div className="absolute inset-0 flex items-center justify-center animate-dojo-walk">
+        {/* Judoka character — stationary with jump animation */}
+        <div className="absolute inset-0 flex items-center justify-center">
           <img
-            src={WALK_FRAMES[frame]}
-            alt={`${belt} belt judoka walking`}
-            className="w-28 h-28 drop-shadow-lg transition-transform duration-300"
-            style={{ imageRendering: 'pixelated', transform: facingRight ? 'scaleX(1)' : 'scaleX(-1)' }}
+            src={animFrame}
+            alt={`${belt} belt judoka`}
+            className="w-28 h-28 drop-shadow-lg"
+            style={{ imageRendering: 'pixelated' }}
           />
         </div>
 
