@@ -132,14 +132,14 @@ export default function DojoScene() {
   const [frame, setFrame] = useState(0)
   const [facingRight, setFacingRight] = useState(true)
 
-  // Walk animation loop + flip direction every 3s (half of 6s walk cycle)
+  // Walk animation loop + flip direction every 5s (half of 10s walk cycle)
   useEffect(() => {
     const frameInterval = setInterval(() => {
       setFrame((f) => (f + 1) % WALK_FRAMES.length)
     }, 200)
     const flipInterval = setInterval(() => {
       setFacingRight((f) => !f)
-    }, 3000)
+    }, 5000)
     return () => { clearInterval(frameInterval); clearInterval(flipInterval) }
   }, [])
 

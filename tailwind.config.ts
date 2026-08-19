@@ -24,12 +24,12 @@ export default {
         xl2: '1.25rem'
       },
       animation: {
-        'dojo-walk': 'dojoWalk 6s ease-in-out infinite',
+        'dojo-walk': 'dojoWalk 10s ease-in-out infinite',
       },
       keyframes: {
         dojoWalk: {
-          '0%, 100%': { transform: 'translateX(-30px)' },
-          '50%': { transform: 'translateX(30px)' },
+          '0%, 100%': { transform: 'translateX(-24px)' },
+          '50%': { transform: 'translateX(24px)' },
         },
       },
     }

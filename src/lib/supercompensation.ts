@@ -15,19 +15,43 @@ export interface DayPoint {
   mob_lats: number
 }
 
+// Banister Two-Factor Model: P(t) = P₀ + Σ[k₁·wᵢ·e^(-(t-tᵢ)/τ₁)] - Σ[k₂·wᵢ·e^(-(t-tᵢ)/τ₂)]
+// τ₁ = fitness adaptation time constant (slow gain, slow decay)
+// τ₂ = fatigue time constant (fast onset, fast decay)
+// k₁ = fitness gain coefficient
+// k₂ = fatigue coefficient (k₂ > k₁ → immediate dip after training)
+
 const BASELINE = 100
-// Hard session (red zone): big dip, supercompensation
-const HARD_FATIGUE_DIP = 12
-const SUPERCOMP_GAIN = 6
-// Maintenance session: small dip, recovers to same level
-const MAINT_FATIGUE_DIP = 4
-const RECOVERY_DAYS = 2
-const DECAY_RATE = 0.12
-// Below-baseline decay after prolonged inactivity
-const INACTIVITY_THRESHOLD_DAYS = 10
-const BELOW_BASELINE_DECAY = 0.015
-// Intensity threshold: daily volume must be >= 70% of running best to trigger supercompensation
-const INTENSITY_THRESHOLD = 0.7
+
+interface BanisterParams {
+  tau1: number  // fitness time constant (days)
+  tau2: number  // fatigue time constant (days)
+  k1: number   // fitness gain multiplier
+  k2: number   // fatigue multiplier
+}
+
+const STRENGTH_PARAMS: BanisterParams = { tau1: 21, tau2: 3, k1: 1, k2: 2.2 }
+const GRAPPLING_PARAMS: BanisterParams = { tau1: 25, tau2: 4, k1: 1, k2: 2 }
+const MOBILITY_PARAMS: BanisterParams = { tau1: 30, tau2: 1.5, k1: 1, k2: 1.8 }
+
+const CATEGORY_PARAMS: Record<FitnessCategory, BanisterParams> = {
+  push: STRENGTH_PARAMS,
+  pull: STRENGTH_PARAMS,
+  legs: STRENGTH_PARAMS,
+  core: STRENGTH_PARAMS,
+  grappling: GRAPPLING_PARAMS,
+  mob_hips: MOBILITY_PARAMS,
+  mob_hamstrings: MOBILITY_PARAMS,
+  mob_lats: MOBILITY_PARAMS,
+}
+
+// Base impulse for a "standard hard session" — scaled by actual volume/best volume
+const BASE_IMPULSE = 8
+
+// Atrophy: additional detraining below baseline after extended inactivity
+const ATROPHY_THRESHOLD_DAYS = 10
+const ATROPHY_RATE = 0.4
+const ATROPHY_FLOOR = 70
 
 // Mobility exercise → muscle group mapping
 const MOBILITY_MUSCLE_MAP: Record<string, FitnessCategory[]> = {
@@ -65,9 +89,9 @@ function getExerciseCategory(exerciseId: string): ExerciseCategory | null {
   return def?.category ?? null
 }
 
-interface DayVolume {
-  volume: number
-  isHard: boolean
+interface TrainingImpulse {
+  dayIndex: number
+  w: number
 }
 
 export function computeSupercompensation(
@@ -81,7 +105,21 @@ export function computeSupercompensation(
   const startDate = new Date(today)
   startDate.setDate(startDate.getDate() - days + 1)
 
-  // Build per-category daily volume and compute running best
+  // Include lookback period for impulses that started before the chart window
+  const lookbackDays = 60
+  const fullStartDate = new Date(startDate)
+  fullStartDate.setDate(fullStartDate.getDate() - lookbackDays)
+
+  function dateToDayIndex(dateStr: string): number {
+    const d = new Date(dateStr)
+    d.setHours(0, 0, 0, 0)
+    return Math.round((d.getTime() - fullStartDate.getTime()) / 86400000)
+  }
+
+  const chartStartIndex = lookbackDays
+
+  // Build per-category daily volume
+  const categories: FitnessCategory[] = ['push', 'pull', 'legs', 'core', 'grappling', 'mob_hips', 'mob_hamstrings', 'mob_lats']
   const dailyVolume = new Map<string, Map<FitnessCategory, number>>()
 
   for (const log of calLogs) {
@@ -99,7 +137,6 @@ export function computeSupercompensation(
     dayMap.set('grappling', (dayMap.get('grappling') ?? 0) + mins)
   }
 
-  // Mobility sessions → muscle group volume (seconds held)
   for (const sess of sessions) {
     if (sess.type === 'calisthenics' || sess.type === 'bjj' || sess.type === 'custom') continue
     if (!sess.exerciseIds || sess.exerciseIds.length === 0) continue
@@ -115,100 +152,75 @@ export function computeSupercompensation(
     }
   }
 
-  // Compute running best per category (max daily volume seen so far)
-  const categories: FitnessCategory[] = ['push', 'pull', 'legs', 'core', 'grappling', 'mob_hips', 'mob_hamstrings', 'mob_lats']
+  // Compute running best per category and build impulse list
+  const impulses: Record<FitnessCategory, TrainingImpulse[]> = {
+    push: [], pull: [], legs: [], core: [], grappling: [],
+    mob_hips: [], mob_hamstrings: [], mob_lats: [],
+  }
   const runningBest: Record<FitnessCategory, number> = {
     push: 0, pull: 0, legs: 0, core: 0, grappling: 0,
     mob_hips: 0, mob_hamstrings: 0, mob_lats: 0,
   }
+  const lastTrainingDay: Record<FitnessCategory, number> = {
+    push: -999, pull: -999, legs: -999, core: -999, grappling: -999,
+    mob_hips: -999, mob_hamstrings: -999, mob_lats: -999,
+  }
 
-  // Pre-compute: scan all dates in chronological order to set running bests
   const allDates = Array.from(dailyVolume.keys()).sort()
-  const dateBestSnapshot = new Map<string, Record<FitnessCategory, number>>()
   for (const date of allDates) {
+    const dayIdx = dateToDayIndex(date)
     const dayMap = dailyVolume.get(date)!
     for (const cat of categories) {
       const vol = dayMap.get(cat) ?? 0
+      if (vol <= 0) continue
       if (vol > runningBest[cat]) runningBest[cat] = vol
+      // Impulse magnitude: scaled by intensity relative to running best
+      const intensity = runningBest[cat] > 0 ? Math.min(1, vol / runningBest[cat]) : 1
+      const w = BASE_IMPULSE * (0.4 + 0.6 * intensity) // minimum 40% impulse even for light sessions
+      impulses[cat].push({ dayIndex: dayIdx, w })
+      lastTrainingDay[cat] = dayIdx
     }
-    dateBestSnapshot.set(date, { ...runningBest })
   }
 
-  // Reset for simulation
-  const simBest: Record<FitnessCategory, number> = {
-    push: 0, pull: 0, legs: 0, core: 0, grappling: 0,
-    mob_hips: 0, mob_hamstrings: 0, mob_lats: 0,
-  }
-
-  const initState = () => ({ level: BASELINE, daysSinceTraining: 999, lastWasHard: false, everTrained: false, levelAtDip: BASELINE })
-  const state: Record<FitnessCategory, { level: number; daysSinceTraining: number; lastWasHard: boolean; everTrained: boolean; levelAtDip: number }> = {
-    push: initState(), pull: initState(), legs: initState(), core: initState(),
-    grappling: initState(), mob_hips: initState(), mob_hamstrings: initState(), mob_lats: initState(),
-  }
-
+  // Compute chart points using Banister summation
   const result: DayPoint[] = []
-  const cursor = new Date(startDate)
+  const totalDays = lookbackDays + days
 
-  for (let d = 0; d < days; d++) {
-    const dateStr = cursor.toISOString().slice(0, 10)
-    const dayMap = dailyVolume.get(dateStr)
+  for (let d = chartStartIndex; d < totalDays; d++) {
+    const point: Partial<DayPoint> = {}
+    const cursor = new Date(fullStartDate)
+    cursor.setDate(cursor.getDate() + d)
+    point.date = cursor.toISOString().slice(0, 10)
 
     for (const cat of categories) {
-      const s = state[cat]
-      const volume = dayMap?.get(cat) ?? 0
+      const params = CATEGORY_PARAMS[cat]
+      const catImpulses = impulses[cat]
+      let fitness = 0
+      let fatigue = 0
 
-      if (volume > 0) {
-        if (volume > simBest[cat]) simBest[cat] = volume
-        s.everTrained = true
-        const threshold = simBest[cat] * INTENSITY_THRESHOLD
-        const isHard = volume >= threshold || simBest[cat] === 0
-
-        if (isHard) {
-          s.level = s.level - HARD_FATIGUE_DIP
-          s.lastWasHard = true
-        } else {
-          s.level = s.level - MAINT_FATIGUE_DIP
-          s.lastWasHard = false
-        }
-        s.levelAtDip = s.level
-        s.daysSinceTraining = 0
-      } else {
-        s.daysSinceTraining++
-
-        if (s.daysSinceTraining <= RECOVERY_DAYS) {
-          // Recovery: compute peak from the DIP level (not current level)
-          const peak = s.lastWasHard
-            ? s.levelAtDip + HARD_FATIGUE_DIP + SUPERCOMP_GAIN
-            : s.levelAtDip + MAINT_FATIGUE_DIP
-          const t = s.daysSinceTraining / RECOVERY_DAYS
-          s.level = s.levelAtDip + (peak - s.levelAtDip) * Math.pow(t, 0.6)
-        } else if (s.level > BASELINE) {
-          // Detraining: decay back toward baseline
-          s.level = BASELINE + (s.level - BASELINE) * (1 - DECAY_RATE)
-          if (s.level - BASELINE < 0.3) s.level = BASELINE
-        } else if (s.level < BASELINE && s.daysSinceTraining <= INACTIVITY_THRESHOLD_DAYS) {
-          // Still recovering from deep fatigue
-          s.level = s.level + (BASELINE - s.level) * 0.2
-        } else if (s.daysSinceTraining > INACTIVITY_THRESHOLD_DAYS && s.everTrained) {
-          // Slow decay below baseline after 10+ days inactivity
-          s.level = s.level * (1 - BELOW_BASELINE_DECAY)
-        }
+      for (const imp of catImpulses) {
+        const t = d - imp.dayIndex
+        if (t < 0) continue
+        fitness += params.k1 * imp.w * Math.exp(-t / params.tau1)
+        fatigue += params.k2 * imp.w * Math.exp(-t / params.tau2)
       }
+
+      let level = BASELINE + fitness - fatigue
+
+      // Atrophy: detraining below baseline after extended inactivity
+      const daysSinceLast = d - lastTrainingDay[cat]
+      const everTrained = catImpulses.length > 0 && lastTrainingDay[cat] >= 0
+      if (everTrained && daysSinceLast > ATROPHY_THRESHOLD_DAYS) {
+        const atrophyDays = daysSinceLast - ATROPHY_THRESHOLD_DAYS
+        const atrophy = ATROPHY_RATE * atrophyDays
+        level -= atrophy
+        if (level < ATROPHY_FLOOR) level = ATROPHY_FLOOR
+      }
+
+      ;(point as any)[cat] = Math.round(level * 10) / 10
     }
 
-    result.push({
-      date: dateStr,
-      push: Math.round(state.push.level * 10) / 10,
-      pull: Math.round(state.pull.level * 10) / 10,
-      legs: Math.round(state.legs.level * 10) / 10,
-      core: Math.round(state.core.level * 10) / 10,
-      grappling: Math.round(state.grappling.level * 10) / 10,
-      mob_hips: Math.round(state.mob_hips.level * 10) / 10,
-      mob_hamstrings: Math.round(state.mob_hamstrings.level * 10) / 10,
-      mob_lats: Math.round(state.mob_lats.level * 10) / 10,
-    })
-
-    cursor.setDate(cursor.getDate() + 1)
+    result.push(point as DayPoint)
   }
 
   return result
