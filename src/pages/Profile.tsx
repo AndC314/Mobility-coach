@@ -3,7 +3,7 @@ import { Card } from '../components/Card'
 import { usePreferences } from '../hooks/usePreferences'
 import { useAuth } from '../hooks/useAuth'
 import { downloadExport, importData, readFileAsJson, type ImportMode } from '../lib/dataTransfer'
-import { runFullRepair } from '../lib/dataRepair'
+import { runFullRepair, purgeGhostMobilitySessions } from '../lib/dataRepair'
 import { primeAudio, playCompleteDing } from '../lib/sound'
 import { db, type MobilityGoal, type SessionDuration } from '../db/db'
 import { collection, getDocs, addDoc, deleteDoc, doc } from 'firebase/firestore'
@@ -44,118 +44,57 @@ export default function Profile() {
     let pushed = 0
 
     try {
+      // ── Step 0: Purge ghost mobility sessions from local first ─────────
+      await purgeGhostMobilitySessions(user.uid)
+
       const calRef = collection(firestoreDb, `users/${user.uid}/calisthenicsLogs`)
       const bjjRef = collection(firestoreDb, `users/${user.uid}/bjjClassLogs`)
       const workoutsRef = collection(firestoreDb, `users/${user.uid}/workouts`)
 
+      // ── Step 1: Delete ALL remote records ──────────────────────────────
       const [remoteCalSnap, remoteBjjSnap, remoteWorkoutsSnap] = await Promise.all([
         getDocs(calRef),
         getDocs(bjjRef),
         getDocs(workoutsRef),
       ])
 
-      // ── Delete excess remote records (count-based dedup) ────────────────
-      // Remote has duplicates with the same key — keep only as many copies
-      // per key as exist locally, delete the rest.
-
-      // Sessions/workouts: key by date|type|label
-      const localSessions = await db.sessions.toArray()
-      const localSessionCounts = new Map<string, number>()
-      for (const s of localSessions) {
-        const key = `${s.date}|${s.type}|${s.label}`
-        localSessionCounts.set(key, (localSessionCounts.get(key) ?? 0) + 1)
-      }
-      const sessionKeyClaimed = new Map<string, number>()
       for (const d of remoteWorkoutsSnap.docs) {
-        const data = d.data()
-        const key = `${data.date}|${data.originalType || data.type}|${data.label || ''}`
-        const allowed = localSessionCounts.get(key) ?? 0
-        const claimed = sessionKeyClaimed.get(key) ?? 0
-        if (claimed >= allowed) {
-          try {
-            await deleteDoc(doc(firestoreDb, `users/${user.uid}/workouts`, d.id))
-            pushed++
-          } catch (err: any) {
-            errors.push(`Del workout ${key}: ${err?.message || err}`)
-            if (errors.length >= 5) break
-          }
-        } else {
-          sessionKeyClaimed.set(key, claimed + 1)
+        try {
+          await deleteDoc(doc(firestoreDb, `users/${user.uid}/workouts`, d.id))
+          pushed++
+        } catch (err: any) {
+          errors.push(`Del workout: ${err?.message || err}`)
+          if (errors.length >= 3) break
         }
       }
-
-      // Calisthenics: key by createdAt
-      const localCal = await db.calisthenicsLogs.toArray()
-      const localCalCounts = new Map<string, number>()
-      for (const l of localCal) {
-        const key = l.createdAt || `${l.date}T00:00:00.000Z`
-        localCalCounts.set(key, (localCalCounts.get(key) ?? 0) + 1)
-      }
-      const calKeyClaimed = new Map<string, number>()
       for (const d of remoteCalSnap.docs) {
-        const data = d.data()
-        const key = data.createdAt ?? ''
-        const allowed = localCalCounts.get(key) ?? 0
-        const claimed = calKeyClaimed.get(key) ?? 0
-        if (claimed >= allowed) {
-          try {
-            await deleteDoc(doc(firestoreDb, `users/${user.uid}/calisthenicsLogs`, d.id))
-            pushed++
-          } catch (err: any) {
-            errors.push(`Del cal ${key}: ${err?.message || err}`)
-            if (errors.length >= 5) break
-          }
-        } else {
-          calKeyClaimed.set(key, claimed + 1)
+        try {
+          await deleteDoc(doc(firestoreDb, `users/${user.uid}/calisthenicsLogs`, d.id))
+          pushed++
+        } catch (err: any) {
+          errors.push(`Del cal: ${err?.message || err}`)
+          if (errors.length >= 3) break
         }
       }
-
-      // BJJ: key by createdAt
-      const localBjj = await db.bjjClassLogs.toArray()
-      const localBjjCounts = new Map<string, number>()
-      for (const l of localBjj) {
-        localBjjCounts.set(l.createdAt, (localBjjCounts.get(l.createdAt) ?? 0) + 1)
-      }
-      const bjjKeyClaimed = new Map<string, number>()
       for (const d of remoteBjjSnap.docs) {
-        const data = d.data()
-        const key = data.createdAt ?? ''
-        const allowed = localBjjCounts.get(key) ?? 0
-        const claimed = bjjKeyClaimed.get(key) ?? 0
-        if (claimed >= allowed) {
-          try {
-            await deleteDoc(doc(firestoreDb, `users/${user.uid}/bjjClassLogs`, d.id))
-            pushed++
-          } catch (err: any) {
-            errors.push(`Del bjj ${key}: ${err?.message || err}`)
-            if (errors.length >= 5) break
-          }
-        } else {
-          bjjKeyClaimed.set(key, claimed + 1)
+        try {
+          await deleteDoc(doc(firestoreDb, `users/${user.uid}/bjjClassLogs`, d.id))
+          pushed++
+        } catch (err: any) {
+          errors.push(`Del bjj: ${err?.message || err}`)
+          if (errors.length >= 3) break
         }
       }
 
-      // ── Add local records missing from remote ──────────────────────────
-
-      const remoteCalKeys = new Set(remoteCalSnap.docs.map((d) => d.data().createdAt))
-      const remoteBjjKeys = new Set(remoteBjjSnap.docs.map((d) => d.data().createdAt))
-      const remoteWorkoutKeys = new Set(
-        remoteWorkoutsSnap.docs.map((d) => {
-          const data = d.data()
-          return `${data.date}|${data.originalType || data.type}|${data.label || ''}`
-        })
-      )
-
-      // Push sessions/workouts
+      // ── Step 2: Re-upload all local records ────────────────────────────
+      const localSessions = await db.sessions.toArray()
       for (const s of localSessions) {
-        const key = `${s.date}|${s.type}|${s.label}`
-        if (remoteWorkoutKeys.has(key)) continue
         try {
           const wDoc: Record<string, any> = {
             date: s.date,
             type: s.type,
             originalType: s.type,
-            label: s.label,
+            label: s.label || '',
             durationMin: s.durationMin,
             plannedSec: s.plannedSec,
             actualSec: s.actualSec,
@@ -167,21 +106,19 @@ export default function Profile() {
           pushed++
         } catch (err: any) {
           errors.push(`Add workout ${s.date}: ${err?.message || err}`)
-          if (errors.length >= 5) break
+          if (errors.length >= 3) break
         }
       }
 
-      // Push calisthenics logs
+      const localCal = await db.calisthenicsLogs.toArray()
       for (const log of localCal) {
-        const createdAt = log.createdAt || `${log.date}T00:00:00.000Z`
-        if (remoteCalKeys.has(createdAt)) continue
         try {
           const calDoc: Record<string, any> = {
             date: log.date,
             exerciseId: log.exerciseId,
             metric: log.metric || 'reps',
             value: log.value,
-            createdAt,
+            createdAt: log.createdAt || `${log.date}T00:00:00.000Z`,
           }
           if (log.sets != null) calDoc.sets = log.sets
           if (log.notes != null) calDoc.notes = log.notes
@@ -190,14 +127,13 @@ export default function Profile() {
           await addDoc(calRef, calDoc)
           pushed++
         } catch (err: any) {
-          errors.push(`Add cal ${log.exerciseId} ${log.date}: ${err?.message || err}`)
-          if (errors.length >= 5) break
+          errors.push(`Add cal ${log.exerciseId}: ${err?.message || err}`)
+          if (errors.length >= 3) break
         }
       }
 
-      // Push BJJ logs
+      const localBjj = await db.bjjClassLogs.toArray()
       for (const log of localBjj) {
-        if (remoteBjjKeys.has(log.createdAt)) continue
         try {
           const bjjDoc: Record<string, any> = {
             date: log.date,
@@ -213,7 +149,7 @@ export default function Profile() {
           pushed++
         } catch (err: any) {
           errors.push(`Add bjj ${log.date}: ${err?.message || err}`)
-          if (errors.length >= 5) break
+          if (errors.length >= 3) break
         }
       }
     } catch (err: any) {
@@ -609,13 +545,13 @@ export default function Profile() {
               disabled={pushing}
               className="w-full rounded-xl bg-teal/15 py-3 text-sm font-bold text-teal border border-teal/40 disabled:opacity-50"
             >
-              {pushing ? 'Syncing…' : 'Force sync local → Firestore (delete excess)'}
+              {pushing ? 'Syncing…' : 'Force sync local → Firestore (purge + reset)'}
             </button>
             {pushResult && (
               <div className="mt-2">
                 {pushResult.pushed > 0 && (
                   <p className="text-xs font-semibold text-teal">
-                    Synced {pushResult.pushed} changes (added + deleted) to Firestore.
+                    Done — {pushResult.pushed} operations (purged ghosts, wiped remote, re-uploaded local).
                   </p>
                 )}
                 {pushResult.errors.length > 0 && (

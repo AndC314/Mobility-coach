@@ -77,7 +77,7 @@ export async function purgeGhostMobilitySessions(uid?: string): Promise<{ purged
 
   const toRemove: CompletedSession[] = []
   for (const s of sessions) {
-    if ((s.type === 'morning' || s.type === 'bjj_release') && bjjDates.has(s.date) && s.durationMin <= 15) {
+    if ((s.type === 'morning' || s.type === 'bjj_release') && bjjDates.has(s.date)) {
       toRemove.push(s)
     }
   }
