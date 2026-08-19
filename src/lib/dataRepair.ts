@@ -61,8 +61,38 @@ export async function repairInvalidNumbers(): Promise<{ fixed: number }> {
   return { fixed }
 }
 
-export async function runFullRepair(): Promise<{ removed: number; fixed: number }> {
+/**
+ * Removes ghost mobility sessions that were duplicated from BJJ class logs.
+ * Historically, logging a BJJ class also created a 'morning' or 'bjj_release'
+ * session on the same date. These inflate the mobility level.
+ * Criteria: type is 'morning' or 'bjj_release', AND a BJJ class log exists on
+ * the same date, AND durationMin ≤ 15 (real mobility sessions are longer).
+ */
+export async function purgeGhostMobilitySessions(): Promise<{ purged: number }> {
+  const [sessions, bjjLogs] = await Promise.all([
+    db.sessions.toArray(),
+    db.bjjClassLogs.toArray(),
+  ])
+
+  const bjjDates = new Set(bjjLogs.map((l) => l.date))
+
+  const idsToRemove: number[] = []
+  for (const s of sessions) {
+    if ((s.type === 'morning' || s.type === 'bjj_release') && bjjDates.has(s.date) && s.durationMin <= 15) {
+      if (s.id != null) idsToRemove.push(s.id)
+    }
+  }
+
+  if (idsToRemove.length > 0) {
+    await db.sessions.bulkDelete(idsToRemove)
+  }
+
+  return { purged: idsToRemove.length }
+}
+
+export async function runFullRepair(): Promise<{ removed: number; fixed: number; purged: number }> {
   const { fixed } = await repairInvalidNumbers()
   const { removed } = await dedupeSessions()
-  return { removed, fixed }
+  const { purged } = await purgeGhostMobilitySessions()
+  return { removed, fixed, purged }
 }

@@ -93,7 +93,8 @@ function useDojoState(): DojoState | null {
     const todayMins = todaySessions.reduce((s, sess) => s + sess.durationMin, 0)
       + todayBjj.reduce((s, l) => s + (l.technicalMins ?? 0) + (l.sparringMins ?? 0), 0)
 
-    const mobSessions = sessions.filter((s) => s.type !== 'calisthenics' && s.type !== 'bjj' && s.type !== 'custom')
+    const MOBILITY_TYPES: string[] = ['morning', 'bjj_release', 'recovery', 'hip_mobility', 'pancake', 'pike', 'ninety_ninety']
+    const mobSessions = sessions.filter((s) => MOBILITY_TYPES.includes(s.type))
     const mobilityHours = Math.round(mobSessions.reduce((s, sess) => s + sess.durationMin, 0) / 60 * 10) / 10
 
     const calSessions = sessions.filter((s) => s.type === 'calisthenics')

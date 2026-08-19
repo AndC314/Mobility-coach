@@ -27,7 +27,7 @@ export default function Profile() {
   const [confirmingReplace, setConfirmingReplace] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [repairing, setRepairing] = useState(false)
-  const [repairResult, setRepairResult] = useState<{ removed: number; fixed: number } | null>(null)
+  const [repairResult, setRepairResult] = useState<{ removed: number; fixed: number; purged: number } | null>(null)
   const [syncDiag, setSyncDiag] = useState<{
     localSessions: number; localCal: number; localBjj: number
     remoteSessions: number; remoteCal: number; remoteBjj: number
@@ -424,9 +424,13 @@ export default function Profile() {
         </button>
         {repairResult && (
           <p className="mt-3 text-xs font-semibold text-teal">
-            {repairResult.removed === 0 && repairResult.fixed === 0
+            {repairResult.removed === 0 && repairResult.fixed === 0 && repairResult.purged === 0
               ? 'No issues found — your data looks clean.'
-              : `Fixed ${repairResult.fixed} record${repairResult.fixed === 1 ? '' : 's'} and removed ${repairResult.removed} duplicate${repairResult.removed === 1 ? '' : 's'}.`}
+              : [
+                  repairResult.fixed > 0 && `Fixed ${repairResult.fixed} record${repairResult.fixed === 1 ? '' : 's'}`,
+                  repairResult.removed > 0 && `removed ${repairResult.removed} duplicate${repairResult.removed === 1 ? '' : 's'}`,
+                  repairResult.purged > 0 && `purged ${repairResult.purged} ghost mobility session${repairResult.purged === 1 ? '' : 's'}`,
+                ].filter(Boolean).join(', ') + '.'}
           </p>
         )}
       </Card>
