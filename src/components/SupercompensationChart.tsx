@@ -57,6 +57,14 @@ export default function SupercompensationChart() {
     return fullData.slice(-timeRange)
   }, [fullData, timeRange])
 
+  useEffect(() => {
+    if (scrollRef.current && timeRange > 30) {
+      requestAnimationFrame(() => {
+        scrollRef.current!.scrollLeft = scrollRef.current!.scrollWidth
+      })
+    }
+  }, [timeRange])
+
   function toggleCat(cat: FitnessCategory) {
     setVisibleCats((prev) => {
       const next = new Set(prev)
@@ -114,14 +122,6 @@ export default function SupercompensationChart() {
     .filter(([, cfg]) => cfg.group === 'mobility')
 
   const chartWidth = timeRange <= 30 ? '100%' : `${Math.max(100, timeRange * 2.5)}%`
-
-  useEffect(() => {
-    if (scrollRef.current && timeRange > 30) {
-      requestAnimationFrame(() => {
-        scrollRef.current!.scrollLeft = scrollRef.current!.scrollWidth
-      })
-    }
-  }, [timeRange])
 
   return (
     <Card>
