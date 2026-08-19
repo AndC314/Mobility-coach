@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef } from 'react'
+import { useMemo, useState, useRef, useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import {
   LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, ReferenceLine
@@ -114,6 +114,14 @@ export default function SupercompensationChart() {
     .filter(([, cfg]) => cfg.group === 'mobility')
 
   const chartWidth = timeRange <= 30 ? '100%' : `${Math.max(100, timeRange * 2.5)}%`
+
+  useEffect(() => {
+    if (scrollRef.current && timeRange > 30) {
+      requestAnimationFrame(() => {
+        scrollRef.current!.scrollLeft = scrollRef.current!.scrollWidth
+      })
+    }
+  }, [timeRange])
 
   return (
     <Card>
