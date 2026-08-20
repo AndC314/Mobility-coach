@@ -121,6 +121,30 @@ export interface CustomExerciseDoc {
   updatedAt?: string
 }
 
+export interface HealthMetricsDoc {
+  id?: string
+  date: string       // YYYY-MM-DD
+  sleepScore?: number
+  sleepHours?: number
+  hrv?: number
+  restingHr?: number
+  trainingReadiness?: number
+  energy?: number
+  mood?: number
+  vo2max?: number
+  notes?: string
+  source?: string
+  createdAt: string  // ISO string — used as dedup key on sync
+}
+
+export interface BodyMeasurementDoc {
+  id?: string
+  date: string       // YYYY-MM-DD
+  site: string
+  valueCm: number
+  createdAt: string  // ISO string — used as dedup key on sync
+}
+
 export interface UseAuthState {
   user: User | null
   loading: boolean

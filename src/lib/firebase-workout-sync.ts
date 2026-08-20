@@ -4,8 +4,8 @@
  * and provides sync callbacks for logging functions
  */
 
-import type { WorkoutDoc, BjjClassLogDoc, CalisthenicsLogDoc, RunningLogDoc } from '../types/firebase'
-import type { CompletedSession, BjjClassLog, CalisthenicsLog, RunningLog } from '../db/db'
+import type { WorkoutDoc, BjjClassLogDoc, CalisthenicsLogDoc, RunningLogDoc, HealthMetricsDoc, BodyMeasurementDoc } from '../types/firebase'
+import type { CompletedSession, BjjClassLog, CalisthenicsLog, RunningLog, HealthMetrics, BodyMeasurementLog } from '../db/db'
 
 /**
  * Converts a CompletedSession (Dexie) to a WorkoutDoc (Firestore)
@@ -41,11 +41,15 @@ type AddWorkoutFn = (workout: Omit<WorkoutDoc, 'id'>) => Promise<string>
 type AddBjjClassLogFn = (log: Omit<BjjClassLogDoc, 'id'>) => Promise<string>
 type AddCalisthenicsLogFn = (log: Omit<CalisthenicsLogDoc, 'id'>) => Promise<string>
 type AddRunningLogFn = (log: Omit<RunningLogDoc, 'id'>) => Promise<string>
+type AddHealthMetricsFn = (doc: Omit<HealthMetricsDoc, 'id'>) => Promise<string>
+type AddBodyMeasurementFn = (doc: Omit<BodyMeasurementDoc, 'id'>) => Promise<string>
 
 let globalAddWorkoutToFirestore: AddWorkoutFn | null = null
 let globalAddBjjClassLog: AddBjjClassLogFn | null = null
 let globalAddCalisthenicsLog: AddCalisthenicsLogFn | null = null
 let globalAddRunningLog: AddRunningLogFn | null = null
+let globalAddHealthMetrics: AddHealthMetricsFn | null = null
+let globalAddBodyMeasurement: AddBodyMeasurementFn | null = null
 
 export function setFirebaseSyncCallback(callback: AddWorkoutFn | null) {
   globalAddWorkoutToFirestore = callback
@@ -61,6 +65,14 @@ export function setCalisthenicsLogSyncCallback(callback: AddCalisthenicsLogFn | 
 
 export function setRunningLogSyncCallback(callback: AddRunningLogFn | null) {
   globalAddRunningLog = callback
+}
+
+export function setHealthMetricsSyncCallback(callback: AddHealthMetricsFn | null) {
+  globalAddHealthMetrics = callback
+}
+
+export function setBodyMeasurementSyncCallback(callback: AddBodyMeasurementFn | null) {
+  globalAddBodyMeasurement = callback
 }
 
 export function getFirebaseSyncCallback() {
@@ -133,5 +145,42 @@ export async function syncRunningLogToFirebase(log: RunningLog) {
     })
   } catch (err) {
     console.error('[Firebase Sync] Failed to sync running log:', err)
+  }
+}
+
+export async function syncHealthMetricsToFirebase(entry: HealthMetrics) {
+  if (!globalAddHealthMetrics) return
+  try {
+    const doc: Omit<HealthMetricsDoc, 'id'> = {
+      date: entry.date,
+      createdAt: entry.createdAt ?? new Date().toISOString(),
+    }
+    if (entry.sleepScore != null) doc.sleepScore = entry.sleepScore
+    if (entry.sleepHours != null) doc.sleepHours = entry.sleepHours
+    if (entry.hrv != null) doc.hrv = entry.hrv
+    if (entry.restingHr != null) doc.restingHr = entry.restingHr
+    if (entry.trainingReadiness != null) doc.trainingReadiness = entry.trainingReadiness
+    if (entry.energy != null) doc.energy = entry.energy
+    if (entry.mood != null) doc.mood = entry.mood
+    if (entry.vo2max != null) doc.vo2max = entry.vo2max
+    if (entry.notes != null) doc.notes = entry.notes
+    if (entry.source != null) doc.source = entry.source
+    await globalAddHealthMetrics(doc)
+  } catch (err) {
+    console.error('[Firebase Sync] Failed to sync health metrics:', err)
+  }
+}
+
+export async function syncBodyMeasurementToFirebase(log: BodyMeasurementLog) {
+  if (!globalAddBodyMeasurement) return
+  try {
+    await globalAddBodyMeasurement({
+      date: log.date,
+      site: log.site,
+      valueCm: log.valueCm,
+      createdAt: log.createdAt
+    })
+  } catch (err) {
+    console.error('[Firebase Sync] Failed to sync body measurement:', err)
   }
 }

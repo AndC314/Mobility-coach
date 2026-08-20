@@ -12,6 +12,7 @@ import {
 } from '../data/muscleMap'
 import { MUSCLE_STRETCHES } from '../data/recovery'
 import { ALL_EXERCISES, type ExerciseItem } from '../data/exercises'
+import { useBiometricModifiers } from './useBiometricModifiers'
 
 export interface SmartRecovery {
   exercises: ExerciseItem[]
@@ -37,6 +38,7 @@ const LOADING: SmartRecovery = {
 }
 
 export function useSmartRecovery(): SmartRecovery {
+  const biometricModifiers = useBiometricModifiers()
   const today = todayIso()
   const now = new Date()
 
@@ -75,8 +77,8 @@ export function useSmartRecovery(): SmartRecovery {
     loggedAt: new Date(log.date + 'T12:00:00').getTime(),
   }))
 
-  // Run decay model on calisthenics
-  let muscleSoreness = computeMuscleSorenessDecay(decayInputs, nowMs)
+  // Run decay model on calisthenics (biometric modifiers scale recovery rate)
+  let muscleSoreness = computeMuscleSorenessDecay(decayInputs, nowMs, biometricModifiers)
 
   // Add BJJ contribution from the most recent attended class
   if (hasAttendedBjj) {

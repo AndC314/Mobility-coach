@@ -12,8 +12,10 @@ import {
   type MuscleSoreness,
 } from '../data/muscleMap'
 import { todayIso } from '../lib/date'
+import { useBiometricModifiers } from './useBiometricModifiers'
 
 export function useAllExerciseReadiness(): Map<string, ExerciseReadiness> {
+  const biometricModifiers = useBiometricModifiers()
   const today = todayIso()
   const sevenDaysAgo = (() => {
     const d = new Date(today)
@@ -50,7 +52,7 @@ export function useAllExerciseReadiness(): Map<string, ExerciseReadiness> {
     loggedAt: new Date(log.date + 'T12:00:00').getTime(),
   }))
 
-  let muscleSoreness: MuscleSoreness[] = computeMuscleSorenessDecay(decayInputs, nowMs)
+  let muscleSoreness: MuscleSoreness[] = computeMuscleSorenessDecay(decayInputs, nowMs, biometricModifiers)
 
   // BJJ contribution
   if (bjjLogs) {

@@ -275,11 +275,7 @@ export interface UserPreferences {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// FUTURE INTEGRATIONS (interfaces ready, not yet populated by any UI)
-// These tables exist now so a future Apple Health / Garmin companion app
-// can write into the same IndexedDB store (via a sync bridge) without a
-// schema migration. The recommendation engine already has optional hooks
-// to read from this table if data exists.
+// HEALTH & BIOMETRICS
 // ─────────────────────────────────────────────────────────────────────────
 
 export type HealthSource = 'apple_health' | 'garmin' | 'manual'
@@ -288,10 +284,30 @@ export interface HealthMetrics {
   id?: number
   date: string // YYYY-MM-DD
   sleepScore?: number // 0-100
+  sleepHours?: number // decimal hours, e.g. 7.5
   hrv?: number // ms
   restingHr?: number // bpm
   trainingReadiness?: number // 0-100, e.g. Garmin Training Readiness
+  energy?: number // 1-10 subjective
+  mood?: number // 1-5 (1=terrible, 5=great)
+  vo2max?: number // ml/kg/min
+  notes?: string
   source?: HealthSource
+  createdAt?: string // ISO timestamp
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// BODY MEASUREMENTS
+// ─────────────────────────────────────────────────────────────────────────
+
+export type BodySite = 'chest' | 'waist' | 'hips' | 'biceps' | 'thighs'
+
+export interface BodyMeasurementLog {
+  id?: number
+  date: string // YYYY-MM-DD
+  site: BodySite
+  valueCm: number
+  createdAt: string
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -337,6 +353,7 @@ export class MobilityDB extends Dexie {
   customExercises!: Table<CustomExercise, string>
   runningLogs!: Table<RunningLog, number>
   weightLogs!: Table<WeightLog, number>
+  bodyMeasurementLogs!: Table<BodyMeasurementLog, number>
 
   constructor() {
     super('mobilityCoachDB')
@@ -414,6 +431,9 @@ export class MobilityDB extends Dexie {
           }
         })
       })
+    this.version(7).stores({
+      bodyMeasurementLogs: '++id, date, site'
+    })
   }
 }
 

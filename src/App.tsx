@@ -12,6 +12,7 @@ import Profile from './pages/Profile'
 import Calendar from './pages/Calendar'
 import HiitPage from './pages/HiitPage'
 import RunningPage from './pages/RunningPage'
+import HealthPage from './pages/HealthPage'
 import { usePreferences } from './hooks/usePreferences'
 import { useAuth } from './hooks/useAuth'
 import { useFirebaseSync } from './hooks/useFirebaseSync'
@@ -22,6 +23,8 @@ import {
   setBjjClassLogSyncCallback,
   setCalisthenicsLogSyncCallback,
   setRunningLogSyncCallback,
+  setHealthMetricsSyncCallback,
+  setBodyMeasurementSyncCallback,
 } from './lib/firebase-workout-sync'
 
 function AppContent() {
@@ -34,6 +37,8 @@ function AppContent() {
     addBjjClassLogToFirestore,
     addCalisthenicsLogToFirestore,
     addRunningLogToFirestore,
+    addHealthMetricsToFirestore,
+    addBodyMeasurementToFirestore,
   } = useFirebaseSync(user)
 
   // Wire Firebase sync callbacks for all logging functions
@@ -43,13 +48,17 @@ function AppContent() {
       setBjjClassLogSyncCallback(addBjjClassLogToFirestore)
       setCalisthenicsLogSyncCallback(addCalisthenicsLogToFirestore)
       setRunningLogSyncCallback(addRunningLogToFirestore)
+      setHealthMetricsSyncCallback(addHealthMetricsToFirestore)
+      setBodyMeasurementSyncCallback(addBodyMeasurementToFirestore)
     } else {
       setFirebaseSyncCallback(null)
       setBjjClassLogSyncCallback(null)
       setCalisthenicsLogSyncCallback(null)
       setRunningLogSyncCallback(null)
+      setHealthMetricsSyncCallback(null)
+      setBodyMeasurementSyncCallback(null)
     }
-  }, [user, addWorkoutToFirestore, addBjjClassLogToFirestore, addCalisthenicsLogToFirestore, addRunningLogToFirestore])
+  }, [user, addWorkoutToFirestore, addBjjClassLogToFirestore, addCalisthenicsLogToFirestore, addRunningLogToFirestore, addHealthMetricsToFirestore, addBodyMeasurementToFirestore])
 
   useEffect(() => {
     const root = document.documentElement
@@ -84,6 +93,7 @@ function AppContent() {
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/hiit" element={<HiitPage />} />
             <Route path="/running" element={<RunningPage />} />
+            <Route path="/health" element={<HealthPage />} />
           </Routes>
         </div>
         <BottomNav />

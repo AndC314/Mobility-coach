@@ -13,6 +13,7 @@ import {
   type MuscleSoreness,
 } from '../data/muscleMap'
 import { todayIso, addDays } from '../lib/date'
+import { useBiometricModifiers } from './useBiometricModifiers'
 
 export interface AxisReadiness {
   axis: 'Push' | 'Pull' | 'Legs' | 'Core' | 'Mobility'
@@ -21,6 +22,7 @@ export interface AxisReadiness {
 }
 
 export function useRecoveryReadiness(): AxisReadiness[] {
+  const biometricModifiers = useBiometricModifiers()
   const today = todayIso()
   const sevenDaysAgo = (() => {
     const d = new Date(today)
@@ -71,8 +73,8 @@ export function useRecoveryReadiness(): AxisReadiness[] {
     }
   }
 
-  // Compute soreness from calisthenics
-  let muscleSoreness = computeMuscleSorenessDecay(decayInputs, nowMs)
+  // Compute soreness from calisthenics (biometric modifiers slow/speed recovery)
+  let muscleSoreness = computeMuscleSorenessDecay(decayInputs, nowMs, biometricModifiers)
 
   // Add BJJ soreness contribution
   if (bjjLogs) {

@@ -12,9 +12,9 @@ import {
   Timestamp,
 } from 'firebase/firestore'
 import { db as firestoreDb } from '../lib/firebase'
-import { db as dexieDb, type SessionType, type CalisthenicsExerciseId, type UserPreferences, type CustomExercise, customExerciseId } from '../db/db'
+import { db as dexieDb, type SessionType, type CalisthenicsExerciseId, type UserPreferences, type CustomExercise, customExerciseId, type BodySite } from '../db/db'
 import { sessionToWorkoutDoc } from '../lib/firebase-workout-sync'
-import type { WorkoutDoc, BjjClassLogDoc, CalisthenicsLogDoc, RunningLogDoc, PreferencesDoc, BjjSkillTagDoc, CustomExerciseDoc } from '../types/firebase'
+import type { WorkoutDoc, BjjClassLogDoc, CalisthenicsLogDoc, RunningLogDoc, PreferencesDoc, BjjSkillTagDoc, CustomExerciseDoc, HealthMetricsDoc, BodyMeasurementDoc } from '../types/firebase'
 
 function stripUndefined<T extends Record<string, any>>(obj: T): T {
   const result = {} as any
@@ -33,6 +33,8 @@ export interface UseSyncState {
   addBjjClassLogToFirestore: (log: Omit<BjjClassLogDoc, 'id'>) => Promise<string>
   addCalisthenicsLogToFirestore: (log: Omit<CalisthenicsLogDoc, 'id'>) => Promise<string>
   addRunningLogToFirestore: (log: Omit<RunningLogDoc, 'id'>) => Promise<string>
+  addHealthMetricsToFirestore: (doc: Omit<HealthMetricsDoc, 'id'>) => Promise<string>
+  addBodyMeasurementToFirestore: (doc: Omit<BodyMeasurementDoc, 'id'>) => Promise<string>
 }
 
 export function useFirebaseSync(user: User | null): UseSyncState {
@@ -188,7 +190,43 @@ export function useFirebaseSync(user: User | null): UseSyncState {
     )
     unsubsRef.current.push(unsubRunning)
 
-    // ── 8. Catch-up push: push local data that's missing from Firestore ──
+    // ── 8. healthMetrics listener ─────────────────────────────────────────
+    const healthRef = collection(firestoreDb, `users/${user.uid}/healthMetrics`)
+    const unsubHealth = onSnapshot(
+      healthRef,
+      async (snapshot) => {
+        const docs = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as HealthMetricsDoc[]
+        try {
+          await syncHealthMetricsToLocal(docs)
+        } catch (err) {
+          console.error('[useFirebaseSync] Failed to sync healthMetrics to local DB:', err)
+        }
+      },
+      (error) => {
+        console.error('[useFirebaseSync] healthMetrics snapshot error:', error)
+      }
+    )
+    unsubsRef.current.push(unsubHealth)
+
+    // ── 9. bodyMeasurements listener ────────────────────────────────────────
+    const bodyRef = collection(firestoreDb, `users/${user.uid}/bodyMeasurements`)
+    const unsubBody = onSnapshot(
+      bodyRef,
+      async (snapshot) => {
+        const docs = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as BodyMeasurementDoc[]
+        try {
+          await syncBodyMeasurementsToLocal(docs)
+        } catch (err) {
+          console.error('[useFirebaseSync] Failed to sync bodyMeasurements to local DB:', err)
+        }
+      },
+      (error) => {
+        console.error('[useFirebaseSync] bodyMeasurements snapshot error:', error)
+      }
+    )
+    unsubsRef.current.push(unsubBody)
+
+    // ── 10. Catch-up push: push local data that's missing from Firestore ──
     catchUpSync(user.uid).catch((err) =>
       console.error('[useFirebaseSync] Catch-up sync failed:', err)
     )
@@ -243,6 +281,24 @@ export function useFirebaseSync(user: User | null): UseSyncState {
     return docRef.id
   }
 
+  const addHealthMetricsToFirestore = async (
+    entry: Omit<HealthMetricsDoc, 'id'>
+  ): Promise<string> => {
+    if (!user) throw new Error('User must be logged in')
+    const fsRef = collection(firestoreDb, `users/${user.uid}/healthMetrics`)
+    const docRef = await addDoc(fsRef, stripUndefined(entry))
+    return docRef.id
+  }
+
+  const addBodyMeasurementToFirestore = async (
+    entry: Omit<BodyMeasurementDoc, 'id'>
+  ): Promise<string> => {
+    if (!user) throw new Error('User must be logged in')
+    const fsRef = collection(firestoreDb, `users/${user.uid}/bodyMeasurements`)
+    const docRef = await addDoc(fsRef, stripUndefined(entry))
+    return docRef.id
+  }
+
   return {
     allWorkouts,
     conflictDays,
@@ -252,6 +308,8 @@ export function useFirebaseSync(user: User | null): UseSyncState {
     addBjjClassLogToFirestore,
     addCalisthenicsLogToFirestore,
     addRunningLogToFirestore,
+    addHealthMetricsToFirestore,
+    addBodyMeasurementToFirestore,
   }
 }
 
@@ -387,6 +445,66 @@ async function syncRunningLogsToLocal(logs: RunningLogDoc[]): Promise<void> {
       }
     } catch (err) {
       console.error('[syncRunningLogsToLocal] Failed to sync individual log:', log.date, err)
+    }
+  }
+}
+
+async function syncHealthMetricsToLocal(docs: HealthMetricsDoc[]): Promise<void> {
+  for (const entry of docs) {
+    try {
+      if (!entry.date) continue
+      const createdAt = normalizeCreatedAt(entry.createdAt, entry.date)
+
+      const existing = await dexieDb.healthMetrics
+        .where('date')
+        .equals(entry.date)
+        .filter((l) => l.createdAt === createdAt)
+        .first()
+
+      if (!existing) {
+        await dexieDb.healthMetrics.add({
+          date: entry.date,
+          sleepScore: entry.sleepScore,
+          sleepHours: entry.sleepHours,
+          hrv: entry.hrv,
+          restingHr: entry.restingHr,
+          trainingReadiness: entry.trainingReadiness,
+          energy: entry.energy,
+          mood: entry.mood,
+          vo2max: entry.vo2max,
+          notes: entry.notes,
+          source: entry.source as any,
+          createdAt,
+        })
+      }
+    } catch (err) {
+      console.error('[syncHealthMetricsToLocal] Failed to sync entry:', entry.date, err)
+    }
+  }
+}
+
+async function syncBodyMeasurementsToLocal(docs: BodyMeasurementDoc[]): Promise<void> {
+  for (const entry of docs) {
+    try {
+      if (!entry.date || !entry.site || entry.valueCm == null) continue
+      const createdAt = normalizeCreatedAt(entry.createdAt, entry.date)
+
+      const existing = await dexieDb.bodyMeasurementLogs
+        .where('date')
+        .equals(entry.date)
+        .filter((l) => l.site === entry.site && l.createdAt === createdAt)
+        .first()
+
+      if (!existing) {
+        await dexieDb.bodyMeasurementLogs.add({
+          date: entry.date,
+          site: entry.site as BodySite,
+          valueCm: entry.valueCm,
+          createdAt,
+        })
+      }
+    } catch (err) {
+      console.error('[syncBodyMeasurementsToLocal] Failed to sync entry:', entry.date, entry.site, err)
     }
   }
 }
@@ -645,10 +763,69 @@ async function catchUpSync(uid: string): Promise<void> {
     }
   }
 
-  const total = pushedSessions + pushedBjj + pushedCal + pushedTags + pushedCustom
+  // Push missing health metrics
+  const healthRef = collection(firestoreDb, `users/${uid}/healthMetrics`)
+  const remoteHealth = await getDocs(healthRef)
+  const remoteHealthKeys = new Set(
+    remoteHealth.docs.map((d) => (d.data() as HealthMetricsDoc).createdAt)
+  )
+  const localHealth = await dexieDb.healthMetrics.toArray()
+  let pushedHealth = 0
+  for (const entry of localHealth) {
+    try {
+      const createdAt = entry.createdAt || `${entry.date}T00:00:00.000Z`
+      if (!remoteHealthKeys.has(createdAt)) {
+        const hDoc: Record<string, any> = { date: entry.date, createdAt }
+        if (entry.sleepScore != null) hDoc.sleepScore = entry.sleepScore
+        if (entry.sleepHours != null) hDoc.sleepHours = entry.sleepHours
+        if (entry.hrv != null) hDoc.hrv = entry.hrv
+        if (entry.restingHr != null) hDoc.restingHr = entry.restingHr
+        if (entry.trainingReadiness != null) hDoc.trainingReadiness = entry.trainingReadiness
+        if (entry.energy != null) hDoc.energy = entry.energy
+        if (entry.mood != null) hDoc.mood = entry.mood
+        if (entry.vo2max != null) hDoc.vo2max = entry.vo2max
+        if (entry.notes != null) hDoc.notes = entry.notes
+        if (entry.source != null) hDoc.source = entry.source
+        await addDoc(healthRef, hDoc)
+        pushedHealth++
+      }
+    } catch (err) {
+      console.error('[catchUpSync] Failed to push health metrics:', entry.date, err)
+    }
+  }
+
+  // Push missing body measurements
+  const bodyRef = collection(firestoreDb, `users/${uid}/bodyMeasurements`)
+  const remoteBody = await getDocs(bodyRef)
+  const remoteBodyKeys = new Set(
+    remoteBody.docs.map((d) => {
+      const data = d.data() as BodyMeasurementDoc
+      return `${data.date}|${data.site}|${data.createdAt}`
+    })
+  )
+  const localBody = await dexieDb.bodyMeasurementLogs.toArray()
+  let pushedBody = 0
+  for (const entry of localBody) {
+    try {
+      const key = `${entry.date}|${entry.site}|${entry.createdAt}`
+      if (!remoteBodyKeys.has(key)) {
+        await addDoc(bodyRef, {
+          date: entry.date,
+          site: entry.site,
+          valueCm: entry.valueCm,
+          createdAt: entry.createdAt,
+        })
+        pushedBody++
+      }
+    } catch (err) {
+      console.error('[catchUpSync] Failed to push body measurement:', entry.date, entry.site, err)
+    }
+  }
+
+  const total = pushedSessions + pushedBjj + pushedCal + pushedTags + pushedCustom + pushedHealth + pushedBody
   if (total > 0) {
     console.info(
-      `[catchUpSync] Pushed ${pushedSessions} sessions, ${pushedBjj} BJJ logs, ${pushedCal} cal logs, ${pushedTags} tags, ${pushedCustom} custom exercises`
+      `[catchUpSync] Pushed ${pushedSessions} sessions, ${pushedBjj} BJJ logs, ${pushedCal} cal logs, ${pushedTags} tags, ${pushedCustom} custom exercises, ${pushedHealth} health metrics, ${pushedBody} body measurements`
     )
   }
 }
