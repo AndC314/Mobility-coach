@@ -1,5 +1,4 @@
 import { EXERCISE_MUSCLES, MUSCLE_CATEGORY, CATEGORY_MUSCLES, type MuscleGroup } from '../data/muscleMap'
-import type { CalisthenicsExerciseId } from '../db/db'
 
 export type MovementCategory = 'push' | 'pull' | 'legs'
 
@@ -31,7 +30,7 @@ const MUSCLE_TO_GROUP: Record<MuscleGroup, MovementCategory | 'core'> = {
 /**
  * Get all muscles trained by an exercise
  */
-export function getExerciseMuscles(exerciseId: CalisthenicsExerciseId): MuscleGroup[] {
+export function getExerciseMuscles(exerciseId: string): MuscleGroup[] {
   const activations = EXERCISE_MUSCLES[exerciseId] ?? []
   return activations.map((a) => a.muscle)
 }

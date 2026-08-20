@@ -1,6 +1,9 @@
 import type { CalisthenicsExerciseId } from '../db/db'
 import { getExerciseDef } from './calisthenics'
 
+// Re-export CalisthenicsExerciseId for consumers that used to rely on it here
+export type { CalisthenicsExerciseId } from '../db/db'
+
 // ─────────────────────────────────────────────────────────────────────────
 // MUSCLE GROUPS
 // Named regions that correspond to colored areas on the body map SVG.
@@ -94,7 +97,7 @@ export interface MuscleActivation {
 // EXERCISE → MUSCLE MAPPING
 // ─────────────────────────────────────────────────────────────────────────
 
-export const EXERCISE_MUSCLES: Partial<Record<CalisthenicsExerciseId, MuscleActivation[]>> = {
+export const EXERCISE_MUSCLES: Record<string, MuscleActivation[]> = {
   archer_pushups: [
     { muscle: 'chest', level: 'primary' },
     { muscle: 'triceps', level: 'primary' },
@@ -430,6 +433,23 @@ export const BJJ_MUSCLE_ACTIVATIONS: MuscleActivation[] = [
 ]
 
 // ─────────────────────────────────────────────────────────────────────────
+// RUNNING SESSION MUSCLE ACTIVATION
+// Running is predominantly lower-body: repetitive quad/hamstring/calf
+// contractions plus glute drive and hip flexor cycling. Core stabilizers
+// are engaged throughout but at lower intensity.
+// ─────────────────────────────────────────────────────────────────────────
+
+export const RUNNING_MUSCLE_ACTIVATIONS: MuscleActivation[] = [
+  { muscle: 'quads', level: 'primary' },
+  { muscle: 'hamstrings', level: 'primary' },
+  { muscle: 'calves', level: 'primary' },
+  { muscle: 'glutes', level: 'primary' },
+  { muscle: 'hip_flexors', level: 'primary' },
+  { muscle: 'abs', level: 'secondary' },
+  { muscle: 'lower_back', level: 'secondary' },
+]
+
+// ─────────────────────────────────────────────────────────────────────────
 // MUSCLE → SUGGESTED EXERCISES (reverse mapping)
 // For each muscle group, what exercises target it as a primary mover.
 // Used by the "Suggested next" card to recommend specific movements.
@@ -742,7 +762,7 @@ export function computeEffectiveLambda(
 }
 
 export interface DecayInput {
-  exerciseId: CalisthenicsExerciseId
+  exerciseId: string
   value: number // reps or hold seconds
   loggedAt: number // timestamp in ms (Date.now() when workout was logged)
 }
@@ -818,4 +838,48 @@ export function computeCategorySoreness(
       isRecovering: avgSoreness > 30
     }
   })
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// PER-EXERCISE READINESS HELPER
+// Returns 0-100 readiness (100 = fully recovered) for a specific exercise
+// based on how sore its primary muscles currently are.
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface ExerciseReadiness {
+  readiness: number // 0-100 (100 = fresh)
+  hoursToFull: number // hours until primary muscles ≤ 1% soreness
+}
+
+export function getExerciseReadiness(
+  exerciseId: string,
+  muscleSoreness: MuscleSoreness[]
+): ExerciseReadiness {
+  const activations = EXERCISE_MUSCLES[exerciseId]
+  if (!activations || activations.length === 0) {
+    return { readiness: 100, hoursToFull: 0 }
+  }
+
+  const primaryMuscles = activations
+    .filter((a) => a.level === 'primary')
+    .map((a) => a.muscle)
+
+  if (primaryMuscles.length === 0) {
+    return { readiness: 100, hoursToFull: 0 }
+  }
+
+  let maxSoreness = 0
+  let maxHours = 0
+  for (const muscle of primaryMuscles) {
+    const entry = muscleSoreness.find((m) => m.muscle === muscle)
+    if (entry) {
+      if (entry.soreness > maxSoreness) maxSoreness = entry.soreness
+      if (entry.hoursToRecovery > maxHours) maxHours = entry.hoursToRecovery
+    }
+  }
+
+  return {
+    readiness: Math.max(0, 100 - maxSoreness),
+    hoursToFull: maxHours,
+  }
 }

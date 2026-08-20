@@ -90,7 +90,7 @@ function getMusclesForExercise(exerciseId: string): MuscleGroup[] {
   // Iterate through EXERCISE_MUSCLES to find which muscles this exercise targets
   const muscles: MuscleGroup[] = []
 
-  for (const activation of EXERCISE_MUSCLES[exerciseId as keyof typeof EXERCISE_MUSCLES] ?? []) {
+  for (const activation of EXERCISE_MUSCLES[exerciseId] ?? []) {
     muscles.push(activation.muscle)
   }
 

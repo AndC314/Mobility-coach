@@ -8,6 +8,7 @@ import {
   CATEGORY_MUSCLES,
   DEFAULT_LAMBDA,
   BJJ_MUSCLE_ACTIVATIONS,
+  RUNNING_MUSCLE_ACTIVATIONS,
   type DecayInput,
   type MuscleSoreness,
 } from '../data/muscleMap'
@@ -38,6 +39,12 @@ export function useRecoveryReadiness(): AxisReadiness[] {
 
   const bjjLogs = useLiveQuery(
     () => db.bjjClassLogs.where('date').between(sevenDaysAgo, today, true, true).toArray(),
+    [sevenDaysAgo, today],
+    []
+  )
+
+  const runningLogs = useLiveQuery(
+    () => db.runningLogs.where('date').between(sevenDaysAgo, today, true, true).toArray(),
     [sevenDaysAgo, today],
     []
   )
@@ -79,6 +86,24 @@ export function useRecoveryReadiness(): AxisReadiness[] {
         const muscleEntry = muscleSoreness.find((m) => m.muscle === activation.muscle)
         if (muscleEntry) {
           muscleEntry.soreness = Math.min(100, Math.round(muscleEntry.soreness + bjjSoreness))
+        }
+      }
+    }
+  }
+
+  // Add running soreness contribution (duration-proportional peak load)
+  if (runningLogs) {
+    for (const log of runningLogs) {
+      const date = new Date(log.date)
+      const elapsedHours = Math.max(0, (nowMs - date.getTime()) / 3600000)
+      const basePeak = Math.min(100, (log.durationSec / 1800) * 60)
+
+      for (const activation of RUNNING_MUSCLE_ACTIVATIONS) {
+        const peakLoad = activation.level === 'primary' ? basePeak : basePeak * 0.5
+        const runningSoreness = peakLoad * Math.exp(-DEFAULT_LAMBDA * elapsedHours)
+        const muscleEntry = muscleSoreness.find((m) => m.muscle === activation.muscle)
+        if (muscleEntry) {
+          muscleEntry.soreness = Math.min(100, Math.round(muscleEntry.soreness + runningSoreness))
         }
       }
     }

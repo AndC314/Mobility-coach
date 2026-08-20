@@ -1,11 +1,13 @@
 import { Card } from './Card'
 import { useWeakLink, type CategoryScore } from '../hooks/useWeakLink'
 import { usePlateauExercises } from '../hooks/usePlateauExercises'
+import { useRecoveryReadiness } from '../hooks/useRecoveryReadiness'
 import { LEVEL_COLORS } from '../data/progressionChains'
 
 export default function WeakLinkCard() {
   const analysis = useWeakLink()
   const plateaus = usePlateauExercises()
+  const recoveryAxes = useRecoveryReadiness()
 
   if (!analysis) return null
 
@@ -33,6 +35,27 @@ export default function WeakLinkCard() {
         </div>
 
         <p className="text-xs text-muted leading-relaxed">{recommendation}</p>
+
+        {(() => {
+          const weakAxis = recoveryAxes.find((a) => a.axis.toLowerCase() === weakest.category)
+          const strongAxis = recoveryAxes.find((a) => a.axis.toLowerCase() === strongest.category)
+          if (!weakAxis) return null
+          if (weakAxis.readinessPercent >= 70) {
+            return (
+              <p className="text-[11px] text-teal font-medium">
+                Your {weakest.label} muscles are recovered — good day to focus here
+              </p>
+            )
+          }
+          if (weakAxis.readinessPercent < 40 && strongAxis && strongAxis.readinessPercent >= 70) {
+            return (
+              <p className="text-[11px] text-orange-500 font-medium">
+                {weakest.label} still recovering — consider {strongest.label} today
+              </p>
+            )
+          }
+          return null
+        })()}
 
         {weakest.bottleneck && imbalanceRatio >= 15 && (
           <div className="rounded-lg bg-card2 border border-border p-2.5">

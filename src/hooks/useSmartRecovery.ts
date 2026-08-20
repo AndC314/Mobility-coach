@@ -4,6 +4,7 @@ import { todayIso } from '../lib/date'
 import {
   computeMuscleSorenessDecay,
   BJJ_MUSCLE_ACTIVATIONS,
+  RUNNING_MUSCLE_ACTIVATIONS,
   MUSCLE_LABELS,
   DEFAULT_LAMBDA,
   type DecayInput,
@@ -54,11 +55,18 @@ export function useSmartRecovery(): SmartRecovery {
     null
   )
 
-  if (calisthenicsLogs === null || bjjLogs === null) return LOADING
+  const runningLogs = useLiveQuery(
+    () => db.runningLogs.where('date').between(cutoff48h, today, true, true).toArray(),
+    [cutoff48h, today],
+    null
+  )
+
+  if (calisthenicsLogs === null || bjjLogs === null || runningLogs === null) return LOADING
 
   const nowMs = now.getTime()
   const hasCalisthenics = calisthenicsLogs.length > 0
   const hasAttendedBjj = bjjLogs.length > 0
+  const hasRunning = runningLogs.length > 0
 
   // Build decay inputs from calisthenics logs
   const decayInputs: DecayInput[] = calisthenicsLogs.map((log) => ({
@@ -77,6 +85,22 @@ export function useSmartRecovery(): SmartRecovery {
     const elapsedHours = Math.max(0, (nowMs - bjjMs) / 3600000)
     for (const activation of BJJ_MUSCLE_ACTIVATIONS) {
       const peakLoad = activation.level === 'primary' ? 80 : 40
+      const contribution = peakLoad * Math.exp(-DEFAULT_LAMBDA * elapsedHours)
+      const entry = muscleSoreness.find((m) => m.muscle === activation.muscle)
+      if (entry) {
+        entry.soreness = Math.min(100, Math.round(entry.soreness + contribution))
+      }
+    }
+  }
+
+  // Add running contribution
+  if (hasRunning) {
+    const latestRun = runningLogs.sort((a, b) => b.date.localeCompare(a.date))[0]
+    const runMs = new Date(latestRun.date + 'T12:00:00').getTime()
+    const elapsedHours = Math.max(0, (nowMs - runMs) / 3600000)
+    const basePeak = Math.min(100, (latestRun.durationSec / 1800) * 60)
+    for (const activation of RUNNING_MUSCLE_ACTIVATIONS) {
+      const peakLoad = activation.level === 'primary' ? basePeak : basePeak * 0.5
       const contribution = peakLoad * Math.exp(-DEFAULT_LAMBDA * elapsedHours)
       const entry = muscleSoreness.find((m) => m.muscle === activation.muscle)
       if (entry) {
@@ -111,17 +135,18 @@ export function useSmartRecovery(): SmartRecovery {
 
   const muscleChips = soreMuscles.slice(0, 3).map((m) => MUSCLE_LABELS[m])
 
+  const sourceCount = [hasAttendedBjj, hasCalisthenics, hasRunning].filter(Boolean).length
   const source: SmartRecovery['source'] =
-    hasAttendedBjj && hasCalisthenics ? 'mixed' :
+    sourceCount >= 2 ? 'mixed' :
     hasAttendedBjj ? 'bjj' :
     hasCalisthenics ? 'calisthenics' :
     'none'
-
 
   const label =
     source === 'bjj'          ? 'Post-BJJ recovery' :
     source === 'calisthenics' ? 'Post-training recovery' :
     source === 'mixed'        ? 'Mixed recovery' :
+    hasRunning                ? 'Post-run recovery' :
     'General recovery'
 
   return { exercises, label, muscleChips, source }

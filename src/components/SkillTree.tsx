@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { Card, Tag } from './Card'
 import { useSkillTree } from '../hooks/useSkillTree'
 import { useProgressionState, useCurrentLevel, type ResolvedChain, type ResolvedNode, type NodeUnlockStatus } from '../hooks/useProgressionState'
+import { useAllExerciseReadiness } from '../hooks/useExerciseReadiness'
 import { LEVEL_COLORS, LEVEL_LABELS } from '../data/progressionChains'
 import { getExerciseDef } from '../data/calisthenics'
 import ExerciseIcon from './ExerciseIcon'
 import LevelAssessment from './LevelAssessment'
 import TrendIndicator from './TrendIndicator'
+import type { ExerciseReadiness } from '../data/muscleMap'
 import type { SkillBranch, SkillNode, NodeStatus } from '../lib/skillTree'
 
 type BranchId = 'push' | 'pull' | 'legs' | 'core' | 'mobility' | 'bjj'
@@ -103,6 +105,8 @@ export default function SkillTree() {
 }
 
 function ProgressionView({ chains }: { chains: ResolvedChain[] }) {
+  const readinessMap = useAllExerciseReadiness()
+
   if (chains.length === 0) {
     return (
       <Card>
@@ -146,6 +150,7 @@ function ProgressionView({ chains }: { chains: ResolvedChain[] }) {
                 key={node.exerciseId}
                 node={node}
                 isLast={i === chain.nodes.length - 1}
+                readiness={readinessMap.get(node.exerciseId)}
               />
             ))}
           </div>
@@ -155,7 +160,12 @@ function ProgressionView({ chains }: { chains: ResolvedChain[] }) {
   )
 }
 
-function ProgressionNodeRow({ node, isLast }: { node: ResolvedNode; isLast: boolean }) {
+function ReadinessDot({ readiness }: { readiness: ExerciseReadiness }) {
+  const color = readiness.readiness >= 80 ? '#2ec4b6' : readiness.readiness >= 40 ? '#f5c842' : '#e8622a'
+  return <span className="inline-block h-2 w-2 rounded-full flex-shrink-0" style={{ background: color }} />
+}
+
+function ProgressionNodeRow({ node, isLast, readiness }: { node: ResolvedNode; isLast: boolean; readiness?: ExerciseReadiness }) {
   const [open, setOpen] = useState(false)
   const style = STATUS_STYLE[node.status]
   const levelColor = LEVEL_COLORS[node.level] ?? '#7a7d96'
@@ -226,6 +236,9 @@ function ProgressionNodeRow({ node, isLast }: { node: ResolvedNode; isLast: bool
             </div>
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
+            {readiness && (node.status === 'unlocked' || node.status === 'in_progress') && (
+              <ReadinessDot readiness={readiness} />
+            )}
             <span
               className="h-2 w-2 rounded-full"
               style={{ background: levelColor }}
@@ -235,7 +248,7 @@ function ProgressionNodeRow({ node, isLast }: { node: ResolvedNode; isLast: bool
         </button>
 
         {open && node.status !== 'locked' && (
-          <ExerciseDetails node={node} style={style} />
+          <ExerciseDetails node={node} style={style} readiness={readiness} />
         )}
 
         {open && node.status === 'locked' && (
@@ -260,6 +273,21 @@ function ProgressionNodeRow({ node, isLast }: { node: ResolvedNode; isLast: bool
                 </div>
               </div>
             ))}
+            {readiness && node.unlockRequirements.every((r) => r.current / r.threshold >= 0.8) && (
+              <div className="border-t border-border pt-2 flex items-center gap-1.5 text-[11px]">
+                {readiness.readiness >= 70 ? (
+                  <>
+                    <span className="text-teal">✓</span>
+                    <span className="text-teal font-semibold">Muscles recovered — ready for max effort</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-orange-500">⏳</span>
+                    <span className="text-muted">Muscles recovering — wait ~{readiness.hoursToFull}h for best attempt</span>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -267,11 +295,21 @@ function ProgressionNodeRow({ node, isLast }: { node: ResolvedNode; isLast: bool
   )
 }
 
-function ExerciseDetails({ node, style }: { node: ResolvedNode; style: { ring: string } }) {
+function ExerciseDetails({ node, style, readiness }: { node: ResolvedNode; style: { ring: string }; readiness?: ExerciseReadiness }) {
   const def = getExerciseDef(node.exerciseId)
 
   return (
     <div className="mt-2 rounded-lg bg-card2 p-3 space-y-2">
+      {readiness && (
+        <div className="flex items-center gap-2 text-[11px]">
+          <ReadinessDot readiness={readiness} />
+          <span className="text-ink font-semibold">Muscles: {readiness.readiness}% ready</span>
+          {readiness.hoursToFull > 0 && (
+            <span className="text-muted">~{readiness.hoursToFull}h to full recovery</span>
+          )}
+        </div>
+      )}
+
       {node.nextUnlockThreshold != null && node.unlocksExercise && (
         <div>
           <div className="mb-1 flex items-center justify-between text-[11px]">
