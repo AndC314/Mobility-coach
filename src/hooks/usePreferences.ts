@@ -30,6 +30,8 @@ export function usePreferences(): {
         weeklyGoalDays: merged.weeklyGoalDays,
         soundEnabled: merged.soundEnabled,
         avatarVariant: merged.avatarVariant,
+        activeSports: merged.activeSports,
+        weightKg: merged.weightKg ?? null,
         updatedAt: Timestamp.now().toMillis(),
       }, { merge: true }).catch((err) =>
         console.error('[usePreferences] Failed to sync to Firestore:', err)

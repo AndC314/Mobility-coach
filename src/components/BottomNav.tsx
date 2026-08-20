@@ -1,16 +1,31 @@
 import { NavLink } from 'react-router-dom'
+import { usePreferences } from '../hooks/usePreferences'
 
-const TABS = [
+interface TabDef {
+  to: string
+  label: string
+  icon: string
+  sport?: string
+}
+
+const TABS: TabDef[] = [
   { to: '/', label: 'Today', icon: '☀️' },
-  { to: '/mobility', label: 'Mobility', icon: '🧘' },
-  { to: '/bjj', label: 'BJJ', icon: '🥋' },
-  { to: '/calisthenics', label: 'Calisthenics', icon: '💪' },
+  { to: '/mobility', label: 'Mobility', icon: '🧘', sport: 'mobility' },
+  { to: '/bjj', label: 'BJJ', icon: '🥋', sport: 'bjj' },
+  { to: '/calisthenics', label: 'Calisthenics', icon: '💪', sport: 'calisthenics' },
+  { to: '/running', label: 'Running', icon: '🏃', sport: 'running' },
+  { to: '/hiit', label: 'Challenges', icon: '🔥', sport: 'elite_forces' },
   { to: '/recovery', label: 'Recovery', icon: '🪻' },
   { to: '/progress', label: 'Progress', icon: '📈' },
-  { to: '/profile', label: 'Profile', icon: '⚙️' }
+  { to: '/profile', label: 'Profile', icon: '⚙️' },
 ]
 
 export default function BottomNav() {
+  const { preferences } = usePreferences()
+  const activeSports = preferences.activeSports ?? ['mobility', 'bjj', 'calisthenics', 'running', 'elite_forces']
+
+  const visibleTabs = TABS.filter(tab => !tab.sport || activeSports.includes(tab.sport))
+
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-surface/95 backdrop-blur-md"
@@ -18,7 +33,7 @@ export default function BottomNav() {
     >
       <div className="flex w-full overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <div className="flex gap-1 px-2 py-2 mx-auto">
-          {TABS.map((tab) => (
+          {visibleTabs.map((tab) => (
             <NavLink
               key={tab.to}
               to={tab.to}

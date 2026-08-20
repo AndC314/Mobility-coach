@@ -13,6 +13,7 @@ interface DojoState {
   mobilityHours: number
   calisthenicsHours: number
   bjjHours: number
+  runningHours: number
   calisthenicsUnlocks: string[]
 }
 
@@ -103,6 +104,9 @@ function useDojoState(): DojoState | null {
     const calSessions = sessions.filter((s) => s.type === 'calisthenics')
     const calisthenicsHours = Math.round(calSessions.reduce((s, sess) => s + sess.durationMin, 0) / 60 * 10) / 10
 
+    const runningSessions = sessions.filter((s) => s.type === 'running')
+    const runningHours = Math.round(runningSessions.reduce((s, sess) => s + sess.durationMin, 0) / 60 * 10) / 10
+
     const bjjHours = Math.round(bjjSec / 3600 * 10) / 10
 
     const calLogMap = new Map<string, number>()
@@ -124,7 +128,7 @@ function useDojoState(): DojoState | null {
       if (hasLevel2) unlockedChains.push(chain.id)
     }
 
-    return { belt, bjjClasses, totalHours, todayXP: todayMins, mobilityHours, calisthenicsHours, bjjHours, calisthenicsUnlocks: unlockedChains }
+    return { belt, bjjClasses, totalHours, todayXP: todayMins, mobilityHours, calisthenicsHours, bjjHours, runningHours, calisthenicsUnlocks: unlockedChains }
   }, [], null)
 }
 
@@ -135,7 +139,7 @@ export default function DojoScene() {
     return <div className="h-56 flex items-center justify-center text-muted text-sm">Loading...</div>
   }
 
-  const { belt, bjjClasses, totalHours, todayXP, mobilityHours, calisthenicsHours, bjjHours } = state
+  const { belt, bjjClasses, totalHours, todayXP, mobilityHours, calisthenicsHours, bjjHours, runningHours } = state
   const aura = getAura(mobilityHours)
   const nextThreshold = getNextBeltThreshold(belt)
   const dojo = getDojo(totalHours)
@@ -242,6 +246,14 @@ export default function DojoScene() {
           hours={mobilityHours}
           color="#a78bfa"
         />
+        {runningHours > 0 && (
+          <LevelBar
+            emoji="🏃"
+            label="Running"
+            hours={runningHours}
+            color="#06b6d4"
+          />
+        )}
       </div>
     </div>
   )

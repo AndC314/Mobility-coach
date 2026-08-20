@@ -26,6 +26,7 @@ export type SessionType =
   | 'recovery'
   | 'calisthenics'
   | 'custom'
+  | 'running'
 
 // ─────────────────────────────────────────────────────────────────────────
 // BRANDED TYPES
@@ -269,6 +270,8 @@ export interface UserPreferences {
   soundEnabled: boolean // midpoint/end timer dings
   avatarVariant: AvatarVariant // character body type
   availableEquipment: string[] // e.g. ['pull_up_bar', 'parallel_bars', 'parallettes']
+  activeSports: string[] // which sports appear in nav: mobility, bjj, calisthenics, running, elite_forces
+  weightKg: number | null // current bodyweight for mechanical work calculations
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -292,6 +295,30 @@ export interface HealthMetrics {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// RUNNING
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface RunningLog {
+  id?: number
+  date: string // YYYY-MM-DD
+  distanceKm: number
+  durationSec: number
+  notes?: string
+  createdAt: string
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// WEIGHT TRACKING
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface WeightLog {
+  id?: number
+  date: string // YYYY-MM-DD
+  weightKg: number
+  createdAt: string
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // DB
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -308,6 +335,8 @@ export class MobilityDB extends Dexie {
   holdLogs!: Table<HoldLog, number>
   calisthenicsLogs!: Table<CalisthenicsLog, number>
   customExercises!: Table<CustomExercise, string>
+  runningLogs!: Table<RunningLog, number>
+  weightLogs!: Table<WeightLog, number>
 
   constructor() {
     super('mobilityCoachDB')
@@ -370,6 +399,21 @@ export class MobilityDB extends Dexie {
     this.version(5).stores({
       customExercises: '++id, userId, isGlobal, exerciseType'
     })
+    this.version(6)
+      .stores({
+        runningLogs: '++id, date',
+        weightLogs: '++id, date'
+      })
+      .upgrade(async (tx) => {
+        await tx.table('preferences').toCollection().modify((p: any) => {
+          if (p.activeSports === undefined) {
+            p.activeSports = ['mobility', 'bjj', 'calisthenics', 'running', 'elite_forces']
+          }
+          if (p.weightKg === undefined) {
+            p.weightKg = null
+          }
+        })
+      })
   }
 }
 
@@ -388,7 +432,9 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   weeklyGoalDays: 4,
   soundEnabled: true,
   avatarVariant: 'balanced',
-  availableEquipment: ['pull_up_bar', 'parallel_bars', 'parallettes']
+  availableEquipment: ['pull_up_bar', 'parallel_bars', 'parallettes'],
+  activeSports: ['mobility', 'bjj', 'calisthenics', 'running', 'elite_forces'],
+  weightKg: null,
 }
 
 export const DEFAULT_PHASE_PROGRESS: Omit<PhaseProgress, 'id'>[] = [

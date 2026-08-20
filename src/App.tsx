@@ -11,6 +11,7 @@ import Progress from './pages/Progress'
 import Profile from './pages/Profile'
 import Calendar from './pages/Calendar'
 import HiitPage from './pages/HiitPage'
+import RunningPage from './pages/RunningPage'
 import { usePreferences } from './hooks/usePreferences'
 import { useAuth } from './hooks/useAuth'
 import { useFirebaseSync } from './hooks/useFirebaseSync'
@@ -20,6 +21,7 @@ import {
   setFirebaseSyncCallback,
   setBjjClassLogSyncCallback,
   setCalisthenicsLogSyncCallback,
+  setRunningLogSyncCallback,
 } from './lib/firebase-workout-sync'
 
 function AppContent() {
@@ -31,6 +33,7 @@ function AppContent() {
     addWorkoutToFirestore,
     addBjjClassLogToFirestore,
     addCalisthenicsLogToFirestore,
+    addRunningLogToFirestore,
   } = useFirebaseSync(user)
 
   // Wire Firebase sync callbacks for all logging functions
@@ -39,12 +42,14 @@ function AppContent() {
       setFirebaseSyncCallback(addWorkoutToFirestore)
       setBjjClassLogSyncCallback(addBjjClassLogToFirestore)
       setCalisthenicsLogSyncCallback(addCalisthenicsLogToFirestore)
+      setRunningLogSyncCallback(addRunningLogToFirestore)
     } else {
       setFirebaseSyncCallback(null)
       setBjjClassLogSyncCallback(null)
       setCalisthenicsLogSyncCallback(null)
+      setRunningLogSyncCallback(null)
     }
-  }, [user, addWorkoutToFirestore, addBjjClassLogToFirestore, addCalisthenicsLogToFirestore])
+  }, [user, addWorkoutToFirestore, addBjjClassLogToFirestore, addCalisthenicsLogToFirestore, addRunningLogToFirestore])
 
   useEffect(() => {
     const root = document.documentElement
@@ -78,6 +83,7 @@ function AppContent() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/hiit" element={<HiitPage />} />
+            <Route path="/running" element={<RunningPage />} />
           </Routes>
         </div>
         <BottomNav />

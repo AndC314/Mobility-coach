@@ -35,6 +35,8 @@ export default function Profile() {
   const [diagLoading, setDiagLoading] = useState(false)
   const [pushResult, setPushResult] = useState<{ pushed: number; errors: string[] } | null>(null)
   const [pushing, setPushing] = useState(false)
+  const [weightStr, setWeightStr] = useState('')
+  const [weightSaved, setWeightSaved] = useState(false)
 
   async function handleForcePush() {
     if (!user) return
@@ -361,6 +363,77 @@ export default function Profile() {
           >
             {'🔔'} Test sound
           </button>
+        )}
+      </Card>
+
+      <Card>
+        <h2 className="mb-3 text-base font-bold">Active sports</h2>
+        <p className="mb-3 text-xs text-muted">Toggle which sports appear in your navigation. At least one must stay active.</p>
+        <div className="flex flex-wrap gap-2">
+          {([
+            { id: 'mobility', label: 'Mobility', icon: '🧘' },
+            { id: 'bjj', label: 'BJJ', icon: '🥋' },
+            { id: 'calisthenics', label: 'Calisthenics', icon: '💪' },
+            { id: 'running', label: 'Running', icon: '🏃' },
+            { id: 'elite_forces', label: 'Challenges', icon: '🔥' },
+          ] as const).map((sport) => {
+            const activeSports = preferences.activeSports ?? ['mobility', 'bjj', 'calisthenics', 'running', 'elite_forces']
+            const isActive = activeSports.includes(sport.id)
+            const isLast = isActive && activeSports.length <= 1
+            return (
+              <button
+                key={sport.id}
+                disabled={isLast}
+                onClick={() => {
+                  const next = isActive
+                    ? activeSports.filter((s) => s !== sport.id)
+                    : [...activeSports, sport.id]
+                  update({ activeSports: next })
+                }}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  isActive
+                    ? 'bg-teal/20 text-teal border border-teal/40'
+                    : 'bg-card2 text-muted border border-border opacity-60'
+                } ${isLast ? 'cursor-not-allowed' : ''}`}
+              >
+                {sport.icon} {sport.label}
+              </button>
+            )
+          })}
+        </div>
+      </Card>
+
+      <Card>
+        <h2 className="mb-3 text-base font-bold">Body weight</h2>
+        <p className="mb-3 text-xs text-muted">Used for future mechanical work calculations and progress tracking.</p>
+        <div className="flex gap-2 items-center">
+          <input
+            type="number"
+            step="0.1"
+            min="30"
+            max="250"
+            value={weightStr || (preferences.weightKg ?? '')}
+            onChange={(e) => setWeightStr(e.target.value)}
+            placeholder="kg"
+            className="flex-1 rounded-lg border border-border bg-card2 px-3 py-2 text-sm text-ink"
+          />
+          <span className="text-xs text-muted">kg</span>
+          <button
+            onClick={async () => {
+              const kg = parseFloat(weightStr || String(preferences.weightKg ?? ''))
+              if (!kg || kg < 30 || kg > 250) return
+              await update({ weightKg: kg })
+              await db.weightLogs.add({ date: new Date().toISOString().split('T')[0], weightKg: kg, createdAt: new Date().toISOString() })
+              setWeightSaved(true)
+              setTimeout(() => setWeightSaved(false), 2000)
+            }}
+            className="rounded-lg bg-teal/20 px-4 py-2 text-xs font-bold text-teal border border-teal/40"
+          >
+            {weightSaved ? '✓' : 'Save'}
+          </button>
+        </div>
+        {preferences.weightKg != null && (
+          <p className="mt-2 text-[11px] text-muted">Current: {preferences.weightKg} kg</p>
         )}
       </Card>
 

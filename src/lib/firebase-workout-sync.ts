@@ -4,8 +4,8 @@
  * and provides sync callbacks for logging functions
  */
 
-import type { WorkoutDoc, BjjClassLogDoc, CalisthenicsLogDoc } from '../types/firebase'
-import type { CompletedSession, BjjClassLog, CalisthenicsLog } from '../db/db'
+import type { WorkoutDoc, BjjClassLogDoc, CalisthenicsLogDoc, RunningLogDoc } from '../types/firebase'
+import type { CompletedSession, BjjClassLog, CalisthenicsLog, RunningLog } from '../db/db'
 
 /**
  * Converts a CompletedSession (Dexie) to a WorkoutDoc (Firestore)
@@ -40,10 +40,12 @@ function mapSessionTypeToWorkoutType(sessionType: string): 'calisthenics' | 'bjj
 type AddWorkoutFn = (workout: Omit<WorkoutDoc, 'id'>) => Promise<string>
 type AddBjjClassLogFn = (log: Omit<BjjClassLogDoc, 'id'>) => Promise<string>
 type AddCalisthenicsLogFn = (log: Omit<CalisthenicsLogDoc, 'id'>) => Promise<string>
+type AddRunningLogFn = (log: Omit<RunningLogDoc, 'id'>) => Promise<string>
 
 let globalAddWorkoutToFirestore: AddWorkoutFn | null = null
 let globalAddBjjClassLog: AddBjjClassLogFn | null = null
 let globalAddCalisthenicsLog: AddCalisthenicsLogFn | null = null
+let globalAddRunningLog: AddRunningLogFn | null = null
 
 export function setFirebaseSyncCallback(callback: AddWorkoutFn | null) {
   globalAddWorkoutToFirestore = callback
@@ -55,6 +57,10 @@ export function setBjjClassLogSyncCallback(callback: AddBjjClassLogFn | null) {
 
 export function setCalisthenicsLogSyncCallback(callback: AddCalisthenicsLogFn | null) {
   globalAddCalisthenicsLog = callback
+}
+
+export function setRunningLogSyncCallback(callback: AddRunningLogFn | null) {
+  globalAddRunningLog = callback
 }
 
 export function getFirebaseSyncCallback() {
@@ -112,5 +118,20 @@ export async function syncCalisthenicsLogToFirebase(log: CalisthenicsLog) {
     })
   } catch (err) {
     console.error('[Firebase Sync] Failed to sync calisthenics log:', err)
+  }
+}
+
+export async function syncRunningLogToFirebase(log: RunningLog) {
+  if (!globalAddRunningLog) return
+  try {
+    await globalAddRunningLog({
+      date: log.date,
+      distanceKm: log.distanceKm,
+      durationSec: log.durationSec,
+      notes: log.notes,
+      createdAt: log.createdAt
+    })
+  } catch (err) {
+    console.error('[Firebase Sync] Failed to sync running log:', err)
   }
 }

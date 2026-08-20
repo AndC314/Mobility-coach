@@ -25,7 +25,7 @@ export interface ChallengeDef {
   description: string
   icon: string
   /** Category for filtering */
-  category: 'push' | 'pull' | 'legs' | 'core' | 'full_body'
+  category: 'push' | 'pull' | 'legs' | 'core' | 'full_body' | 'military'
   /** For circuit_amrap: exercises per round */
   circuitExercises?: CircuitExercise[]
   /** Notable benchmark to display */
@@ -186,5 +186,98 @@ export const CHALLENGES: ChallengeDef[] = [
       { exerciseId: 'pushups', reps: 10, label: 'Push-ups' },
       { exerciseId: 'squats', reps: 15, label: 'Air Squats' },
     ],
+  },
+
+  // ─── MILITARY PFT ───────────────────────────────────────────────────────
+  {
+    id: 'army_pft_pushups',
+    name: 'US Army PFT Push-ups',
+    exerciseId: 'pushups',
+    type: 'max_reps',
+    timeLimitSec: 120,
+    description: 'Maximum push-ups in 2 minutes. US Army Physical Fitness Test. Arms fully extended at top, chest near floor at bottom.',
+    icon: '🎖️',
+    category: 'military',
+    benchmark: 'Max score (17-21): 71+ reps',
+  },
+  {
+    id: 'army_pft_situps',
+    name: 'US Army PFT Sit-ups',
+    exerciseId: 'sit_ups',
+    type: 'max_reps',
+    timeLimitSec: 120,
+    description: 'Maximum sit-ups in 2 minutes. Feet anchored, fingers interlocked behind head, shoulder blades must touch ground.',
+    icon: '🎖️',
+    category: 'military',
+    benchmark: 'Max score (17-21): 78+ reps',
+  },
+  {
+    id: 'navy_seals_pushups',
+    name: 'Navy SEALs PST Push-ups',
+    exerciseId: 'pushups',
+    type: 'max_reps',
+    timeLimitSec: 120,
+    description: 'Maximum push-ups in 2 minutes. BUD/S minimum: 42. Arms fully extended at top, chest near floor at bottom. No resting on the ground.',
+    icon: '⚓',
+    category: 'military',
+    benchmark: 'Competitive: 100+ reps',
+  },
+  {
+    id: 'navy_seals_situps',
+    name: 'Navy SEALs PST Sit-ups',
+    exerciseId: 'sit_ups',
+    type: 'max_reps',
+    timeLimitSec: 120,
+    description: 'Maximum sit-ups in 2 minutes. BUD/S minimum: 50. Arms crossed on chest, shoulder blades must touch ground each rep.',
+    icon: '⚓',
+    category: 'military',
+    benchmark: 'Competitive: 100+ reps',
+  },
+  {
+    id: 'navy_seals_pullups',
+    name: 'Navy SEALs PST Pull-ups',
+    exerciseId: 'pullups',
+    type: 'max_reps',
+    timeLimitSec: 300,
+    description: 'Maximum dead-hang pull-ups. No time limit (5 min cap). BUD/S minimum: 6. No kipping, chin must clear bar, full extension at bottom.',
+    icon: '⚓',
+    category: 'military',
+    benchmark: 'Competitive: 20+ reps',
+  },
+  {
+    id: 'comsubin_pushups',
+    name: 'Comsubin Push-ups',
+    exerciseId: 'pushups',
+    type: 'target_reps',
+    targetReps: 40,
+    timeLimitSec: 120,
+    description: 'Italian Navy Raiders (Comsubin) entry test: 40 push-ups in 2 minutes. Chest must touch the ground each rep.',
+    icon: '🇮🇹',
+    category: 'military',
+    benchmark: 'Minimum pass: 40 reps / 2 min',
+  },
+  {
+    id: 'comsubin_situps',
+    name: 'Comsubin Sit-ups',
+    exerciseId: 'sit_ups',
+    type: 'target_reps',
+    targetReps: 40,
+    timeLimitSec: 120,
+    description: 'Italian Navy Raiders (Comsubin) entry test: 40 sit-ups in 2 minutes. Hands behind head, knees bent.',
+    icon: '🇮🇹',
+    category: 'military',
+    benchmark: 'Minimum pass: 40 reps / 2 min',
+  },
+  {
+    id: 'comsubin_pullups',
+    name: 'Comsubin Pull-ups',
+    exerciseId: 'pullups',
+    type: 'target_reps',
+    targetReps: 10,
+    timeLimitSec: 300,
+    description: 'Italian Navy Raiders (Comsubin) entry test: 10 dead-hang pull-ups. No kipping, full extension at bottom, chin over bar.',
+    icon: '🇮🇹',
+    category: 'military',
+    benchmark: 'Minimum pass: 10 reps',
   },
 ]

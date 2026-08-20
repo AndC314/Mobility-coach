@@ -256,13 +256,14 @@ function ChallengesView({
   lastDone: Map<string, string>
   onSelect: (c: ChallengeDef) => void
 }) {
-  const categories = ['push', 'pull', 'legs', 'core', 'full_body'] as const
+  const categories = ['push', 'pull', 'legs', 'core', 'full_body', 'military'] as const
   const categoryLabels: Record<string, string> = {
     push: '💪 Push',
     pull: '🧗 Pull',
     legs: '🦵 Legs',
     core: '🛡️ Core',
     full_body: '🔥 Full Body',
+    military: '🎖️ Military PFT',
   }
 
   return (

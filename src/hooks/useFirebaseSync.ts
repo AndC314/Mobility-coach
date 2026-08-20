@@ -14,7 +14,7 @@ import {
 import { db as firestoreDb } from '../lib/firebase'
 import { db as dexieDb, type SessionType, type CalisthenicsExerciseId, type UserPreferences, type CustomExercise, customExerciseId } from '../db/db'
 import { sessionToWorkoutDoc } from '../lib/firebase-workout-sync'
-import type { WorkoutDoc, BjjClassLogDoc, CalisthenicsLogDoc, PreferencesDoc, BjjSkillTagDoc, CustomExerciseDoc } from '../types/firebase'
+import type { WorkoutDoc, BjjClassLogDoc, CalisthenicsLogDoc, RunningLogDoc, PreferencesDoc, BjjSkillTagDoc, CustomExerciseDoc } from '../types/firebase'
 
 function stripUndefined<T extends Record<string, any>>(obj: T): T {
   const result = {} as any
@@ -32,6 +32,7 @@ export interface UseSyncState {
   addWorkoutToFirestore: (workout: Omit<WorkoutDoc, 'id'>) => Promise<string>
   addBjjClassLogToFirestore: (log: Omit<BjjClassLogDoc, 'id'>) => Promise<string>
   addCalisthenicsLogToFirestore: (log: Omit<CalisthenicsLogDoc, 'id'>) => Promise<string>
+  addRunningLogToFirestore: (log: Omit<RunningLogDoc, 'id'>) => Promise<string>
 }
 
 export function useFirebaseSync(user: User | null): UseSyncState {
@@ -169,7 +170,25 @@ export function useFirebaseSync(user: User | null): UseSyncState {
     )
     unsubsRef.current.push(unsubCustom)
 
-    // ── 7. Catch-up push: push local data that's missing from Firestore ──
+    // ── 7. runningLogs listener ────────────────────────────────────────────
+    const runningRef = collection(firestoreDb, `users/${user.uid}/runningLogs`)
+    const unsubRunning = onSnapshot(
+      runningRef,
+      async (snapshot) => {
+        const logs = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as RunningLogDoc[]
+        try {
+          await syncRunningLogsToLocal(logs)
+        } catch (err) {
+          console.error('[useFirebaseSync] Failed to sync runningLogs to local DB:', err)
+        }
+      },
+      (error) => {
+        console.error('[useFirebaseSync] runningLogs snapshot error:', error)
+      }
+    )
+    unsubsRef.current.push(unsubRunning)
+
+    // ── 8. Catch-up push: push local data that's missing from Firestore ──
     catchUpSync(user.uid).catch((err) =>
       console.error('[useFirebaseSync] Catch-up sync failed:', err)
     )
@@ -215,6 +234,15 @@ export function useFirebaseSync(user: User | null): UseSyncState {
     return docRef.id
   }
 
+  const addRunningLogToFirestore = async (
+    log: Omit<RunningLogDoc, 'id'>
+  ): Promise<string> => {
+    if (!user) throw new Error('User must be logged in')
+    const fsRef = collection(firestoreDb, `users/${user.uid}/runningLogs`)
+    const docRef = await addDoc(fsRef, stripUndefined(log))
+    return docRef.id
+  }
+
   return {
     allWorkouts,
     conflictDays,
@@ -223,6 +251,7 @@ export function useFirebaseSync(user: User | null): UseSyncState {
     addWorkoutToFirestore,
     addBjjClassLogToFirestore,
     addCalisthenicsLogToFirestore,
+    addRunningLogToFirestore,
   }
 }
 
@@ -335,6 +364,33 @@ async function syncCalisthenicsLogsToLocal(logs: CalisthenicsLogDoc[]): Promise<
   }
 }
 
+async function syncRunningLogsToLocal(logs: RunningLogDoc[]): Promise<void> {
+  for (const log of logs) {
+    try {
+      if (!log.date || log.distanceKm == null || log.durationSec == null) continue
+      const createdAt = normalizeCreatedAt(log.createdAt, log.date)
+
+      const existing = await dexieDb.runningLogs
+        .where('date')
+        .equals(log.date)
+        .filter((l) => l.createdAt === createdAt)
+        .first()
+
+      if (!existing) {
+        await dexieDb.runningLogs.add({
+          date: log.date,
+          distanceKm: log.distanceKm,
+          durationSec: log.durationSec,
+          notes: log.notes,
+          createdAt,
+        })
+      }
+    } catch (err) {
+      console.error('[syncRunningLogsToLocal] Failed to sync individual log:', log.date, err)
+    }
+  }
+}
+
 function normalizeCreatedAt(createdAt: any, fallbackDate: string): string {
   if (typeof createdAt === 'string' && createdAt.length > 0) return createdAt
   if (createdAt && typeof createdAt.toDate === 'function') return createdAt.toDate().toISOString()
@@ -356,6 +412,8 @@ async function syncPreferencesToLocal(remote: PreferencesDoc): Promise<void> {
       soundEnabled: remote.soundEnabled,
       avatarVariant: remote.avatarVariant as any,
       availableEquipment: remote.availableEquipment ?? ['pull_up_bar', 'parallel_bars', 'parallettes'],
+      activeSports: remote.activeSports ?? ['mobility', 'bjj', 'calisthenics', 'running', 'elite_forces'],
+      weightKg: remote.weightKg ?? null,
     })
   }
 }
@@ -498,6 +556,33 @@ async function catchUpSync(uid: string): Promise<void> {
     }
   }
 
+  // Push missing running logs
+  const runningRef = collection(firestoreDb, `users/${uid}/runningLogs`)
+  const remoteRunning = await getDocs(runningRef)
+  const remoteRunningKeys = new Set(
+    remoteRunning.docs.map((d) => (d.data() as RunningLogDoc).createdAt)
+  )
+  const localRunning = await dexieDb.runningLogs.toArray()
+  let pushedRunning = 0
+  for (const log of localRunning) {
+    try {
+      const createdAt = log.createdAt || `${log.date}T00:00:00.000Z`
+      if (!remoteRunningKeys.has(createdAt)) {
+        const runDoc: Record<string, any> = {
+          date: log.date,
+          distanceKm: log.distanceKm,
+          durationSec: log.durationSec,
+          createdAt,
+        }
+        if (log.notes != null) runDoc.notes = log.notes
+        await addDoc(runningRef, runDoc)
+        pushedRunning++
+      }
+    } catch (err) {
+      console.error('[catchUpSync] Failed to push running log:', log.date, err)
+    }
+  }
+
   // Push preferences (singleton — always overwrite if local exists)
   const localPrefs = await dexieDb.preferences.get(1)
   if (localPrefs) {
@@ -510,6 +595,8 @@ async function catchUpSync(uid: string): Promise<void> {
       weeklyGoalDays: localPrefs.weeklyGoalDays,
       soundEnabled: localPrefs.soundEnabled,
       avatarVariant: localPrefs.avatarVariant,
+      activeSports: localPrefs.activeSports,
+      weightKg: localPrefs.weightKg ?? null,
       updatedAt: Timestamp.now().toMillis(),
     } satisfies PreferencesDoc, { merge: true })
   }

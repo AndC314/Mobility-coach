@@ -1,7 +1,7 @@
 import { db, type CompletedSession } from '../db/db'
 import { todayIso } from './date'
 
-export type TrainingCategory = 'bjj' | 'calisthenics' | 'mobility'
+export type TrainingCategory = 'bjj' | 'calisthenics' | 'mobility' | 'running'
 
 export interface TrainingHours {
   category: TrainingCategory
@@ -17,6 +17,7 @@ export interface TrainingHours {
 function getCategory(sessionType: string): TrainingCategory | null {
   if (sessionType === 'bjj') return 'bjj'
   if (sessionType === 'calisthenics') return 'calisthenics'
+  if (sessionType === 'running') return 'running'
   if (['morning', 'bjj_release', 'recovery', 'hip_mobility', 'pancake', 'pike', 'ninety_ninety', 'custom'].includes(sessionType)) {
     return 'mobility'
   }
@@ -110,12 +111,13 @@ export async function computeTrainingHours(category: TrainingCategory): Promise<
  * Get all three training categories with their hours
  */
 export async function computeAllTrainingHours(): Promise<TrainingHours[]> {
-  const [bjj, calisthenics, mobility] = await Promise.all([
+  const [bjj, calisthenics, mobility, running] = await Promise.all([
     computeTrainingHours('bjj'),
     computeTrainingHours('calisthenics'),
-    computeTrainingHours('mobility')
+    computeTrainingHours('mobility'),
+    computeTrainingHours('running')
   ])
-  return [bjj, calisthenics, mobility]
+  return [bjj, calisthenics, mobility, running]
 }
 
 /**
@@ -127,7 +129,8 @@ export function getNudgeMessage(training: TrainingHours): string {
   const categoryName = {
     bjj: 'BJJ',
     calisthenics: 'Calisthenics',
-    mobility: 'Mobility'
+    mobility: 'Mobility',
+    running: 'Running'
   }[training.category]
 
   // Handle never-trained case (very high days since Unix epoch)

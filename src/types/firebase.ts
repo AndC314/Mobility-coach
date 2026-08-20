@@ -69,6 +69,15 @@ export interface CalisthenicsLogDoc {
   createdAt: string  // ISO string — used as dedup key on sync
 }
 
+export interface RunningLogDoc {
+  id?: string
+  date: string       // YYYY-MM-DD
+  distanceKm: number
+  durationSec: number
+  notes?: string
+  createdAt: string  // ISO string — used as dedup key on sync
+}
+
 export interface UserMetadata {
   lastSync: number
   version: number
@@ -83,6 +92,8 @@ export interface PreferencesDoc {
   soundEnabled: boolean
   avatarVariant: string
   availableEquipment?: string[]
+  activeSports?: string[]
+  weightKg?: number | null
   updatedAt: number
 }
 
