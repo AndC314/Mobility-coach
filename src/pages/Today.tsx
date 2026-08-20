@@ -58,8 +58,8 @@ export default function Today() {
           <h2 className="mb-4 text-base font-bold">Training consistency</h2>
           <div className="space-y-4">
             {trainingHours.map((training) => {
-              const categoryEmoji = { bjj: '🥋', calisthenics: '💪', mobility: '🧘' }[training.category]
-              const categoryName = { bjj: 'BJJ', calisthenics: 'Calisthenics', mobility: 'Mobility' }[training.category]
+              const categoryEmoji = { bjj: '🥋', calisthenics: '💪', mobility: '🧘', running: '🏃' }[training.category]
+              const categoryName = { bjj: 'BJJ', calisthenics: 'Calisthenics', mobility: 'Mobility', running: 'Running' }[training.category]
               const decayRate = 0.05
               const weeksInactive = training.lastActivityDaysAgo / 7
               const totalLoggedHours = Math.round(training.totalHours / (1 - decayRate * weeksInactive) * 100) / 100
