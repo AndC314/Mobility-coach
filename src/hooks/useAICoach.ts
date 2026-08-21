@@ -38,10 +38,19 @@ export function useAICoach(): AICoachState {
       }
     }
 
+    // Clear stale text so the loading skeleton shows
+    setCoaching(null)
+    setSessionPlan(null)
+    setGeneratedAt(null)
     setLoading(true)
     setError(null)
 
     try {
+      // Delete stale cache entry so a page reload during fetch won't show old data
+      if (bypassCache) {
+        await db.aiCoachingLogs.where('date').equals(today).delete()
+      }
+
       const context = await buildCoachingContext()
       const token = await auth.currentUser?.getIdToken()
       if (!token) throw new Error('Not authenticated')
