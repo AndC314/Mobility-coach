@@ -112,6 +112,15 @@ Design my session for today. Use ONLY exercises from my availableExercises list 
     })
   } catch (err: any) {
     console.error('Gemini error:', err)
-    return res.status(500).json({ error: err?.message || 'Failed to generate coaching' })
+    const msg = err?.message || ''
+    if (msg.includes('429') || msg.includes('quota') || msg.includes('Too Many Requests')) {
+      return res.status(200).json({
+        coaching: "**Our bots are working hard on themselves today.** They're fixing bugs, upgrading circuits, and will be back tomorrow fully recharged to coach you. In the meantime, use the rule-based session below!",
+        sessionPlan: null,
+        generatedAt: new Date().toISOString(),
+        rateLimited: true,
+      })
+    }
+    return res.status(500).json({ error: msg || 'Failed to generate coaching' })
   }
 }

@@ -115,6 +115,15 @@ Design my mobility session for today. Use ONLY exercises from my availableExerci
     })
   } catch (err: any) {
     console.error('Gemini mobility error:', err)
-    return res.status(500).json({ error: err?.message || 'Failed to generate mobility coaching' })
+    const msg = err?.message || ''
+    if (msg.includes('429') || msg.includes('quota') || msg.includes('Too Many Requests')) {
+      return res.status(200).json({
+        coaching: "**Our bots are working hard on themselves today.** They're fixing bugs, upgrading circuits, and will be back tomorrow fully recharged to coach your mobility. In the meantime, pick your own stretches below!",
+        sessionPlan: null,
+        generatedAt: new Date().toISOString(),
+        rateLimited: true,
+      })
+    }
+    return res.status(500).json({ error: msg || 'Failed to generate mobility coaching' })
   }
 }
