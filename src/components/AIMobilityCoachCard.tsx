@@ -2,6 +2,7 @@ import { Card } from './Card'
 import { useAIMobilityCoach } from '../hooks/useAIMobilityCoach'
 import { useAuth } from '../hooks/useAuth'
 import type { MobilityPlanItem } from '../db/db'
+import { MOBILITY_EXERCISES } from '../data/mobilityExercises'
 
 function parseSimpleMarkdown(text: string): JSX.Element[] {
   return text.split('\n').map((line, i) => {
@@ -57,7 +58,7 @@ interface Props {
 
 export default function AIMobilityCoachCard({ onStartSession }: Props) {
   const { user } = useAuth()
-  const { coaching, sessionPlan, loading, error, generatedAt, refresh } = useAIMobilityCoach()
+  const { coaching, sessionPlan, loading, error, generatedAt, limitReached, refresh } = useAIMobilityCoach()
 
   if (!user) {
     return (
@@ -125,14 +126,16 @@ export default function AIMobilityCoachCard({ onStartSession }: Props) {
           <span className="text-lg">🧘</span>
           <span className="text-sm font-bold text-ink">AI Mobility Coach</span>
         </div>
-        <button
-          onClick={refresh}
-          disabled={loading}
-          className="text-xs text-muted hover:text-teal transition-colors disabled:opacity-50"
-          title="Refresh mobility coaching"
-        >
-          {loading ? '...' : '↻'}
-        </button>
+        {!limitReached && (
+          <button
+            onClick={refresh}
+            disabled={loading}
+            className="text-xs text-muted hover:text-teal transition-colors disabled:opacity-50"
+            title="Refresh mobility coaching"
+          >
+            {loading ? '...' : '↻'}
+          </button>
+        )}
       </div>
 
       <div className="space-y-1 mb-3">{parseSimpleMarkdown(coaching)}</div>
@@ -150,6 +153,12 @@ export default function AIMobilityCoachCard({ onStartSession }: Props) {
               />
               <div className="flex-1 min-w-0">
                 <div className="text-xs font-semibold text-ink truncate">{item.name}</div>
+                {(() => {
+                  const ex = MOBILITY_EXERCISES.find((e) => e.id === item.exerciseId)
+                  return ex?.description ? (
+                    <div className="text-[10px] text-muted/70 truncate">{ex.description}</div>
+                  ) : null
+                })()}
                 {item.notes && (
                   <div className="text-[10px] text-muted truncate">{item.notes}</div>
                 )}

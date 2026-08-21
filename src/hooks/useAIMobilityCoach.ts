@@ -4,6 +4,8 @@ import { todayIso } from '../lib/date'
 import { buildMobilityCoachingContext } from '../lib/mobilityCoachingContext'
 import { useAuth } from './useAuth'
 import { auth } from '../lib/firebase'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { db as firestoreDb } from '../lib/firebase'
 
 export interface AIMobilityCoachState {
   coaching: string | null
@@ -11,6 +13,7 @@ export interface AIMobilityCoachState {
   loading: boolean
   error: string | null
   generatedAt: string | null
+  limitReached: boolean
   refresh: () => void
 }
 
@@ -21,21 +24,49 @@ export function useAIMobilityCoach(): AIMobilityCoachState {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [generatedAt, setGeneratedAt] = useState<string | null>(null)
+  const [limitReached, setLimitReached] = useState(false)
 
   const fetchCoaching = useCallback(async (bypassCache = false) => {
     if (!user) return
 
     const today = todayIso()
 
+    // Check Firestore first for cross-device consistency
     if (!bypassCache) {
+      try {
+        const fsDoc = await getDoc(doc(firestoreDb, `users/${user.uid}/aiCoaching/mobility_${today}`))
+        if (fsDoc.exists()) {
+          const data = fsDoc.data()
+          setCoaching(data.coaching)
+          setSessionPlan(data.sessionPlan ?? null)
+          setGeneratedAt(data.generatedAt)
+          setLimitReached(true)
+          const existing = await db.aiMobilityCoachingLogs.where('date').equals(today).first()
+          if (!existing) {
+            await db.aiMobilityCoachingLogs.add({
+              date: today,
+              coaching: data.coaching,
+              sessionPlan: data.sessionPlan ?? null,
+              generatedAt: data.generatedAt,
+            })
+          }
+          return
+        }
+      } catch {
+        // Firestore unavailable — fall through to local cache
+      }
+
       const cached = await db.aiMobilityCoachingLogs.where('date').equals(today).first()
       if (cached) {
         setCoaching(cached.coaching)
         setSessionPlan(cached.sessionPlan ?? null)
         setGeneratedAt(cached.generatedAt)
+        setLimitReached(true)
         return
       }
     }
+
+    if (bypassCache && limitReached) return
 
     setCoaching(null)
     setSessionPlan(null)
@@ -44,10 +75,6 @@ export function useAIMobilityCoach(): AIMobilityCoachState {
     setError(null)
 
     try {
-      if (bypassCache) {
-        await db.aiMobilityCoachingLogs.where('date').equals(today).delete()
-      }
-
       const context = await buildMobilityCoachingContext()
       const token = await auth.currentUser?.getIdToken()
       if (!token) throw new Error('Not authenticated')
@@ -70,7 +97,20 @@ export function useAIMobilityCoach(): AIMobilityCoachState {
       setCoaching(data.coaching)
       setSessionPlan(data.sessionPlan ?? null)
       setGeneratedAt(data.generatedAt)
+      setLimitReached(true)
 
+      // Save to Firestore for cross-device sync
+      try {
+        await setDoc(doc(firestoreDb, `users/${user.uid}/aiCoaching/mobility_${today}`), {
+          coaching: data.coaching,
+          sessionPlan: data.sessionPlan ?? null,
+          generatedAt: data.generatedAt,
+        })
+      } catch {
+        // Non-critical
+      }
+
+      // Cache in Dexie
       const existing = await db.aiMobilityCoachingLogs.where('date').equals(today).first()
       if (existing) {
         await db.aiMobilityCoachingLogs.update(existing.id!, {
@@ -91,15 +131,16 @@ export function useAIMobilityCoach(): AIMobilityCoachState {
     } finally {
       setLoading(false)
     }
-  }, [user])
+  }, [user, limitReached])
 
   useEffect(() => {
     fetchCoaching()
   }, [fetchCoaching])
 
   const refresh = useCallback(() => {
+    if (limitReached) return
     fetchCoaching(true)
-  }, [fetchCoaching])
+  }, [fetchCoaching, limitReached])
 
-  return { coaching, sessionPlan, loading, error, generatedAt, refresh }
+  return { coaching, sessionPlan, loading, error, generatedAt, limitReached, refresh }
 }

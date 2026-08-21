@@ -4,6 +4,8 @@ import { todayIso } from '../lib/date'
 import { buildCoachingContext } from '../lib/coachingContext'
 import { useAuth } from './useAuth'
 import { auth } from '../lib/firebase'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { db as firestoreDb } from '../lib/firebase'
 
 export interface AICoachState {
   coaching: string | null
@@ -11,6 +13,7 @@ export interface AICoachState {
   loading: boolean
   error: string | null
   generatedAt: string | null
+  limitReached: boolean
   refresh: () => void
 }
 
@@ -21,24 +24,53 @@ export function useAICoach(): AICoachState {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [generatedAt, setGeneratedAt] = useState<string | null>(null)
+  const [limitReached, setLimitReached] = useState(false)
 
   const fetchCoaching = useCallback(async (bypassCache = false) => {
     if (!user) return
 
     const today = todayIso()
 
-    // Check Dexie cache first
+    // Check Firestore first for cross-device consistency
     if (!bypassCache) {
+      try {
+        const fsDoc = await getDoc(doc(firestoreDb, `users/${user.uid}/aiCoaching/calisthenics_${today}`))
+        if (fsDoc.exists()) {
+          const data = fsDoc.data()
+          setCoaching(data.coaching)
+          setSessionPlan(data.sessionPlan ?? null)
+          setGeneratedAt(data.generatedAt)
+          setLimitReached(true)
+          // Also cache locally
+          const existing = await db.aiCoachingLogs.where('date').equals(today).first()
+          if (!existing) {
+            await db.aiCoachingLogs.add({
+              date: today,
+              coaching: data.coaching,
+              sessionPlan: data.sessionPlan ?? null,
+              generatedAt: data.generatedAt,
+            })
+          }
+          return
+        }
+      } catch {
+        // Firestore unavailable — fall through to local cache
+      }
+
+      // Fallback to local Dexie cache
       const cached = await db.aiCoachingLogs.where('date').equals(today).first()
       if (cached) {
         setCoaching(cached.coaching)
         setSessionPlan(cached.sessionPlan ?? null)
         setGeneratedAt(cached.generatedAt)
+        setLimitReached(true)
         return
       }
     }
 
-    // Clear stale text so the loading skeleton shows
+    // If bypassCache but limit already reached, block the refresh
+    if (bypassCache && limitReached) return
+
     setCoaching(null)
     setSessionPlan(null)
     setGeneratedAt(null)
@@ -46,11 +78,6 @@ export function useAICoach(): AICoachState {
     setError(null)
 
     try {
-      // Delete stale cache entry so a page reload during fetch won't show old data
-      if (bypassCache) {
-        await db.aiCoachingLogs.where('date').equals(today).delete()
-      }
-
       const context = await buildCoachingContext()
       const token = await auth.currentUser?.getIdToken()
       if (!token) throw new Error('Not authenticated')
@@ -73,6 +100,18 @@ export function useAICoach(): AICoachState {
       setCoaching(data.coaching)
       setSessionPlan(data.sessionPlan ?? null)
       setGeneratedAt(data.generatedAt)
+      setLimitReached(true)
+
+      // Save to Firestore for cross-device sync
+      try {
+        await setDoc(doc(firestoreDb, `users/${user.uid}/aiCoaching/calisthenics_${today}`), {
+          coaching: data.coaching,
+          sessionPlan: data.sessionPlan ?? null,
+          generatedAt: data.generatedAt,
+        })
+      } catch {
+        // Non-critical — local cache still works
+      }
 
       // Cache in Dexie
       const existing = await db.aiCoachingLogs.where('date').equals(today).first()
@@ -95,15 +134,16 @@ export function useAICoach(): AICoachState {
     } finally {
       setLoading(false)
     }
-  }, [user])
+  }, [user, limitReached])
 
   useEffect(() => {
     fetchCoaching()
   }, [fetchCoaching])
 
   const refresh = useCallback(() => {
+    if (limitReached) return
     fetchCoaching(true)
-  }, [fetchCoaching])
+  }, [fetchCoaching, limitReached])
 
-  return { coaching, sessionPlan, loading, error, generatedAt, refresh }
+  return { coaching, sessionPlan, loading, error, generatedAt, limitReached, refresh }
 }

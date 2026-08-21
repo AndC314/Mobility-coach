@@ -81,7 +81,7 @@ Design my mobility session for today. Use ONLY exercises from my availableExerci
   try {
     const genAI = new GoogleGenerativeAI(apiKey)
     const model = genAI.getGenerativeModel({
-      model: 'gemini-3.6-flash',
+      model: 'gemini-3.5-flash-lite',
       systemInstruction: SYSTEM_PROMPT,
       generationConfig: {
         maxOutputTokens: 2048,

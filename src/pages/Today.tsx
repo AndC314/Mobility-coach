@@ -5,10 +5,8 @@ import AICoachCard from '../components/AICoachCard'
 import AISessionCard from '../components/AISessionCard'
 import TrainingCalendar from '../components/TrainingCalendar'
 import { Card, Tag } from '../components/Card'
-import SkillRadar from '../components/SkillRadar'
 import { useTodayPlan } from '../hooks/useTodayPlan'
 import { useAICoach } from '../hooks/useAICoach'
-import { useAvatarStats } from '../hooks/useAvatarStats'
 import { useTrainingHours } from '../hooks/useTrainingHours'
 import { usePreferences } from '../hooks/usePreferences'
 import { getNudgeMessage } from '../lib/trainingHourCalculator'
@@ -18,7 +16,6 @@ export default function Today() {
   const [recommendedOpen, setRecommendedOpen] = useState(false)
   const plan = useTodayPlan()
   const aiCoach = useAICoach()
-  const avatarStats = useAvatarStats()
   const trainingHours = useTrainingHours()
   const { preferences } = usePreferences()
   const activeSports = preferences.activeSports ?? ['mobility', 'bjj', 'calisthenics', 'running', 'elite_forces']
@@ -165,19 +162,6 @@ export default function Today() {
 
       <TrainingCalendar />
 
-      {avatarStats?.recoveryReadiness && (
-        <Card>
-          <h2 className="mb-3 text-base font-bold">Training readiness</h2>
-          <SkillRadar recoveryReadiness={{
-            Push: avatarStats.recoveryReadiness.Push || 50,
-            Pull: avatarStats.recoveryReadiness.Pull || 50,
-            Legs: avatarStats.recoveryReadiness.Legs || 50,
-            Core: avatarStats.recoveryReadiness.Core || 50,
-            Mobility: avatarStats.recoveryReadiness.Mobility || 50
-          }} />
-          <p className="mt-2 text-xs text-muted">Inner ring: skill levels - Outer ring: training readiness</p>
-        </Card>
-      )}
     </div>
   )
 }

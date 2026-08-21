@@ -88,6 +88,7 @@ export default function TodayStrengthCard({ onStartSession }: Props) {
               <ExerciseIcon exerciseId={ex.exerciseId} fallbackEmoji={getExerciseDef(ex.exerciseId as any)?.icon ?? '🏋️'} size="md" />
               <div className="flex-1 min-w-0">
                 <div className="text-xs font-semibold text-ink truncate">{ex.name}</div>
+                <div className="text-[10px] text-muted/70 truncate">{getExerciseDef(ex.exerciseId as any)?.description}</div>
                 <div className="text-[10px] text-muted">{ex.reason}</div>
               </div>
               <div className="flex-shrink-0 text-right ml-2">

@@ -57,7 +57,7 @@ function renderInline(text: string): (string | JSX.Element)[] {
 
 export default function AICoachCard() {
   const { user } = useAuth()
-  const { coaching, loading, error, generatedAt, refresh } = useAICoach()
+  const { coaching, loading, error, generatedAt, limitReached, refresh } = useAICoach()
 
   if (!user) {
     return (
@@ -123,14 +123,16 @@ export default function AICoachCard() {
           <span className="text-lg">🤖</span>
           <span className="text-sm font-bold text-ink">AI Coach</span>
         </div>
-        <button
-          onClick={refresh}
-          disabled={loading}
-          className="text-xs text-muted hover:text-accent transition-colors disabled:opacity-50"
-          title="Refresh coaching"
-        >
-          {loading ? '...' : '↻'}
-        </button>
+        {!limitReached && (
+          <button
+            onClick={refresh}
+            disabled={loading}
+            className="text-xs text-muted hover:text-accent transition-colors disabled:opacity-50"
+            title="Refresh coaching"
+          >
+            {loading ? '...' : '↻'}
+          </button>
+        )}
       </div>
 
       <div className="space-y-1">{parseSimpleMarkdown(cleanCoaching(coaching))}</div>

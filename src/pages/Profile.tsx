@@ -16,6 +16,124 @@ const GOALS: { id: MobilityGoal; label: string; icon: string }[] = [
   { id: 'general', label: 'General health', icon: '❤️' }
 ]
 
+function CollapsibleSection({ title, children }: { title: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="border-b border-border last:border-b-0">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center justify-between py-2.5 text-left"
+      >
+        <span className="text-xs font-semibold text-ink">{title}</span>
+        <span className="text-muted text-xs">{open ? '−' : '+'}</span>
+      </button>
+      {open && <div className="pb-3 space-y-1.5">{children}</div>}
+    </div>
+  )
+}
+
+function Formula({ label, formula }: { label: string; formula: string }) {
+  return (
+    <div className="rounded bg-card2 px-2.5 py-1.5">
+      {label && <p className="text-[10px] text-muted mb-0.5">{label}</p>}
+      <p className="text-[11px] font-mono text-ink/90">{formula}</p>
+    </div>
+  )
+}
+
+function MathRulesCard() {
+  return (
+    <Card>
+      <h2 className="mb-1 text-base font-bold">Mathematical Rules</h2>
+      <p className="text-[10px] text-muted mb-2">Formulas driving session recommendations and progress tracking</p>
+
+      <CollapsibleSection title="Supercompensation (Banister Two-Factor)">
+        <p className="text-[10px] text-muted leading-relaxed">
+          Fitness and fatigue are modelled as two opposing exponential processes. After training,
+          fatigue dominates briefly (dip), then fitness emerges above baseline (supercompensation).
+        </p>
+        <Formula label="Performance at time t" formula="P(t) = P0 + SUM[ k1*w_i*exp(-(t-t_i)/tau1) ] - SUM[ k2*w_i*exp(-(t-t_i)/tau2) ]" />
+        <div className="grid grid-cols-3 gap-1.5 mt-2">
+          <div className="rounded bg-card2 px-2 py-1.5 text-center">
+            <p className="text-[9px] text-muted">Strength</p>
+            <p className="text-[10px] font-mono text-ink">tau1=21, tau2=3</p>
+            <p className="text-[10px] font-mono text-ink">k1=1, k2=2.2</p>
+          </div>
+          <div className="rounded bg-card2 px-2 py-1.5 text-center">
+            <p className="text-[9px] text-muted">Grappling</p>
+            <p className="text-[10px] font-mono text-ink">tau1=25, tau2=4</p>
+            <p className="text-[10px] font-mono text-ink">k1=1, k2=2</p>
+          </div>
+          <div className="rounded bg-card2 px-2 py-1.5 text-center">
+            <p className="text-[9px] text-muted">Mobility</p>
+            <p className="text-[10px] font-mono text-ink">tau1=30, tau2=1.5</p>
+            <p className="text-[10px] font-mono text-ink">k1=1, k2=1.8</p>
+          </div>
+        </div>
+        <p className="text-[10px] text-muted mt-2">
+          tau1 = fitness decay (days), tau2 = fatigue decay (days), k1/k2 = gain multipliers, w_i = training impulse
+        </p>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Training Impulse">
+        <p className="text-[10px] text-muted leading-relaxed">
+          Each session generates an impulse that feeds into the supercompensation model.
+          Impulse scales with intensity (volume relative to running best) and session density.
+        </p>
+        <Formula label="Impulse" formula="impulse = BASE_IMPULSE * intensity * density_factor" />
+        <Formula label="Intensity" formula="intensity = session_volume / running_best_volume" />
+        <Formula label="Density factor" formula="density = 1 + (exercises_count - 1) * 0.1" />
+        <div className="rounded bg-card2 px-2.5 py-1.5 mt-1.5">
+          <p className="text-[10px] text-muted">BASE_IMPULSE = 8</p>
+          <p className="text-[10px] text-muted">Hard session threshold: intensity >= 0.7</p>
+        </div>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Atrophy Model">
+        <p className="text-[10px] text-muted leading-relaxed">
+          When no training occurs for a category, performance decays exponentially below baseline.
+        </p>
+        <Formula label="Decay after inactivity" formula="P(t) = baseline * exp(-ATROPHY_RATE * (days_inactive - THRESHOLD))" />
+        <div className="rounded bg-card2 px-2.5 py-1.5 mt-1.5">
+          <p className="text-[10px] text-muted">ATROPHY_THRESHOLD = 10 days (no decay before this)</p>
+          <p className="text-[10px] text-muted">ATROPHY_RATE = 0.4</p>
+          <p className="text-[10px] text-muted">ATROPHY_FLOOR = 70 (minimum score)</p>
+          <p className="text-[10px] text-muted">Baseline = 100</p>
+        </div>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Training Hours Consistency">
+        <p className="text-[10px] text-muted leading-relaxed">
+          Active training hours decay over time to reflect detraining. Only recent, consistently
+          maintained hours count at full value.
+        </p>
+        <Formula label="Weekly decay" formula="active_hours = total_hours * (1 - 0.05 * weeks_inactive)" />
+        <div className="rounded bg-card2 px-2.5 py-1.5 mt-1.5">
+          <p className="text-[10px] text-muted">Decay rate: 5% per week of inactivity</p>
+          <p className="text-[10px] text-muted">Floor: 0 hours (fully decayed)</p>
+        </div>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Session Recommendation Logic">
+        <p className="text-[10px] text-muted leading-relaxed">
+          The rule-based engine picks exercises by combining supercompensation state, recency,
+          and progression readiness.
+        </p>
+        <div className="space-y-1.5">
+          <Formula label="Priority score" formula="priority = (100 - supercomp_score) + recency_bonus + plateau_penalty" />
+          <Formula label="Recency bonus" formula="recency = min(days_since_last * 3, 30)" />
+          <Formula label="Micro-progression" formula="upgrade 1 set at a time; max +10% weekly volume" />
+        </div>
+        <div className="rounded bg-card2 px-2.5 py-1.5 mt-1.5">
+          <p className="text-[10px] text-muted">Deload: every 4th week (reduce volume 40-50%)</p>
+          <p className="text-[10px] text-muted">Holds: progress by adding sets, not duration</p>
+          <p className="text-[10px] text-muted">Pull-ups: cluster sets; Push-ups: EMOM density</p>
+        </div>
+      </CollapsibleSection>
+    </Card>
+  )
+}
+
 export default function Profile() {
   const { preferences, update } = usePreferences()
   const { user, logout } = useAuth()
@@ -671,6 +789,8 @@ export default function Profile() {
         </p>
       </Card>
 
+      <MathRulesCard />
+
       {user && (
         <Card>
           <div className="flex items-center justify-between">
@@ -688,7 +808,7 @@ export default function Profile() {
         </Card>
       )}
 
-      <p className="pt-2 text-center text-xs text-muted">Mobility Coach · v1.0 · All data stored locally on this device</p>
+      <p className="pt-2 text-center text-xs text-muted">Mobility Coach · v1.2a · All data stored locally on this device</p>
     </div>
   )
 }
