@@ -2,10 +2,12 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import DojoScene from '../components/DojoScene'
 import AICoachCard from '../components/AICoachCard'
+import AISessionCard from '../components/AISessionCard'
 import TrainingCalendar from '../components/TrainingCalendar'
 import { Card, Tag } from '../components/Card'
 import SkillRadar from '../components/SkillRadar'
 import { useTodayPlan } from '../hooks/useTodayPlan'
+import { useAICoach } from '../hooks/useAICoach'
 import { useAvatarStats } from '../hooks/useAvatarStats'
 import { useTrainingHours } from '../hooks/useTrainingHours'
 import { usePreferences } from '../hooks/usePreferences'
@@ -15,6 +17,7 @@ import type { PlanItem } from '../lib/recommendation'
 export default function Today() {
   const [recommendedOpen, setRecommendedOpen] = useState(false)
   const plan = useTodayPlan()
+  const aiCoach = useAICoach()
   const avatarStats = useAvatarStats()
   const trainingHours = useTrainingHours()
   const { preferences } = usePreferences()
@@ -101,60 +104,64 @@ export default function Today() {
         </Card>
       )}
 
-      <div>
-        <button
-          onClick={() => setRecommendedOpen((o) => !o)}
-          className="mb-2 flex w-full items-center justify-between"
-        >
-          <div className="flex items-center gap-2">
-            <h2 className="text-base font-bold">Recommended</h2>
-            <svg
-              width="12" height="12" viewBox="0 0 12 12"
-              className={`text-muted transition-transform ${recommendedOpen ? 'rotate-180' : ''}`}
-            >
-              <path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
-          <span className="text-sm font-semibold text-muted">{remainingMin} min left</span>
-        </button>
-
-        {recommendedOpen && (
-          <div className="space-y-2">
-            {plan.items.map((item) => (
-              <Card key={item.id} className="flex items-center gap-3 p-3">
-                <MiniProgress percent={item.percent} done={item.done} />
-                <div className="flex-1">
-                  <div className={`text-sm font-semibold ${item.done ? 'text-muted' : 'text-ink'}`}>
-                    {item.label}
-                  </div>
-                  {item.percent > 0 && !item.done && (
-                    <div className="text-xs text-muted">{item.percent}% done</div>
-                  )}
-                </div>
-                <Tag color="#7a7d96">{item.durationMin} min</Tag>
-                <button
-                  onClick={() => handleItemTap(item)}
-                  className={`flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${
-                    item.done
-                      ? 'bg-teal/15 text-teal border border-teal/30'
-                      : 'bg-accent/15 text-accent border border-accent/30'
-                  }`}
-                >
-                  {item.done ? 'Review' : item.percent > 0 ? 'Continue' : 'Start'}
-                </button>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <Card className="flex items-center justify-between">
+      {aiCoach.sessionPlan && aiCoach.sessionPlan.length > 0 ? (
+        <AISessionCard plan={aiCoach.sessionPlan} />
+      ) : (
         <div>
-          <div className="text-sm font-bold text-ink">Total session</div>
-          <div className="text-xs text-muted">Estimated duration</div>
+          <button
+            onClick={() => setRecommendedOpen((o) => !o)}
+            className="mb-2 flex w-full items-center justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-bold">Recommended</h2>
+              <svg
+                width="12" height="12" viewBox="0 0 12 12"
+                className={`text-muted transition-transform ${recommendedOpen ? 'rotate-180' : ''}`}
+              >
+                <path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+            <span className="text-sm font-semibold text-muted">{remainingMin} min left</span>
+          </button>
+
+          {recommendedOpen && (
+            <div className="space-y-2">
+              {plan.items.map((item) => (
+                <Card key={item.id} className="flex items-center gap-3 p-3">
+                  <MiniProgress percent={item.percent} done={item.done} />
+                  <div className="flex-1">
+                    <div className={`text-sm font-semibold ${item.done ? 'text-muted' : 'text-ink'}`}>
+                      {item.label}
+                    </div>
+                    {item.percent > 0 && !item.done && (
+                      <div className="text-xs text-muted">{item.percent}% done</div>
+                    )}
+                  </div>
+                  <Tag color="#7a7d96">{item.durationMin} min</Tag>
+                  <button
+                    onClick={() => handleItemTap(item)}
+                    className={`flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${
+                      item.done
+                        ? 'bg-teal/15 text-teal border border-teal/30'
+                        : 'bg-accent/15 text-accent border border-accent/30'
+                    }`}
+                  >
+                    {item.done ? 'Review' : item.percent > 0 ? 'Continue' : 'Start'}
+                  </button>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          <Card className="mt-4 flex items-center justify-between">
+            <div>
+              <div className="text-sm font-bold text-ink">Total session</div>
+              <div className="text-xs text-muted">Estimated duration</div>
+            </div>
+            <div className="text-2xl font-extrabold text-accent">{plan.totalMin} min</div>
+          </Card>
         </div>
-        <div className="text-2xl font-extrabold text-accent">{plan.totalMin} min</div>
-      </Card>
+      )}
 
       <TrainingCalendar />
 

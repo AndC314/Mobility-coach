@@ -343,10 +343,21 @@ export interface WeightLog {
 // AI COACHING
 // ─────────────────────────────────────────────────────────────────────────
 
+export interface SessionPlanItem {
+  exerciseId: string
+  name: string
+  sets: number
+  reps: string
+  restSec: number
+  notes?: string | null
+  category: string
+}
+
 export interface AICoachingLog {
   id?: number
   date: string // YYYY-MM-DD
   coaching: string // LLM response (markdown)
+  sessionPlan?: SessionPlanItem[] | null // structured workout plan
   generatedAt: string // ISO timestamp
 }
 

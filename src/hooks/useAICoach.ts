@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
-import { db } from '../db/db'
+import { db, type SessionPlanItem } from '../db/db'
 import { todayIso } from '../lib/date'
 import { buildCoachingContext } from '../lib/coachingContext'
 import { useAuth } from './useAuth'
 import { auth } from '../lib/firebase'
 
-interface AICoachState {
+export interface AICoachState {
   coaching: string | null
+  sessionPlan: SessionPlanItem[] | null
   loading: boolean
   error: string | null
   generatedAt: string | null
@@ -16,6 +17,7 @@ interface AICoachState {
 export function useAICoach(): AICoachState {
   const { user } = useAuth()
   const [coaching, setCoaching] = useState<string | null>(null)
+  const [sessionPlan, setSessionPlan] = useState<SessionPlanItem[] | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [generatedAt, setGeneratedAt] = useState<string | null>(null)
@@ -30,6 +32,7 @@ export function useAICoach(): AICoachState {
       const cached = await db.aiCoachingLogs.where('date').equals(today).first()
       if (cached) {
         setCoaching(cached.coaching)
+        setSessionPlan(cached.sessionPlan ?? null)
         setGeneratedAt(cached.generatedAt)
         return
       }
@@ -59,6 +62,7 @@ export function useAICoach(): AICoachState {
 
       const data = await response.json()
       setCoaching(data.coaching)
+      setSessionPlan(data.sessionPlan ?? null)
       setGeneratedAt(data.generatedAt)
 
       // Cache in Dexie
@@ -66,12 +70,14 @@ export function useAICoach(): AICoachState {
       if (existing) {
         await db.aiCoachingLogs.update(existing.id!, {
           coaching: data.coaching,
+          sessionPlan: data.sessionPlan ?? null,
           generatedAt: data.generatedAt,
         })
       } else {
         await db.aiCoachingLogs.add({
           date: today,
           coaching: data.coaching,
+          sessionPlan: data.sessionPlan ?? null,
           generatedAt: data.generatedAt,
         })
       }
@@ -90,5 +96,5 @@ export function useAICoach(): AICoachState {
     fetchCoaching(true)
   }, [fetchCoaching])
 
-  return { coaching, loading, error, generatedAt, refresh }
+  return { coaching, sessionPlan, loading, error, generatedAt, refresh }
 }
