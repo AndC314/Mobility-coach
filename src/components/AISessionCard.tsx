@@ -1,6 +1,6 @@
 import { Card, Tag } from './Card'
 import type { SessionPlanItem } from '../db/db'
-import { EXERCISES } from '../data/calisthenics'
+import { CALISTHENICS_EXERCISES } from '../data/calisthenics'
 
 const CATEGORY_COLORS: Record<string, string> = {
   push: '#3b82f6',
@@ -41,7 +41,7 @@ export default function AISessionCard({ plan }: AISessionCardProps) {
                   <Tag color={CATEGORY_COLORS[item.category] ?? '#6b7280'}>{item.category}</Tag>
                 </div>
                 {(() => {
-                  const ex = EXERCISES.find((e) => e.id === item.exerciseId)
+                  const ex = CALISTHENICS_EXERCISES.find((e: any) => e.id === item.exerciseId)
                   return ex?.description ? (
                     <div className="mt-0.5 text-[11px] text-muted/70">{ex.description}</div>
                   ) : null
