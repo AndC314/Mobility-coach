@@ -94,7 +94,7 @@ export interface PreferencesDoc {
   availableEquipment?: string[]
   activeSports?: string[]
   weightKg?: number | null
-  sportDurations?: Record<string, { defaultMin: number; warmupMin: number }>
+  sportDurations?: Record<string, number>
   updatedAt: number
 }
 
