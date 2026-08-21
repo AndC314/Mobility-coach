@@ -13,6 +13,7 @@ export interface DayPoint {
   mob_hips: number
   mob_hamstrings: number
   mob_lats: number
+  isForecast?: boolean
 }
 
 // Banister Two-Factor Model: P(t) = P₀ + Σ[k₁·wᵢ·e^(-(t-tᵢ)/τ₁)] - Σ[k₂·wᵢ·e^(-(t-tᵢ)/τ₂)]
@@ -104,7 +105,8 @@ export function computeSupercompensation(
   calLogs: CalisthenicsLog[],
   bjjLogs: BjjClassLog[],
   days: number = 90,
-  sessions: CompletedSession[] = []
+  sessions: CompletedSession[] = [],
+  forecastDays: number = 0
 ): DayPoint[] {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -206,13 +208,15 @@ export function computeSupercompensation(
 
   // Compute chart points using Banister summation
   const result: DayPoint[] = []
-  const totalDays = lookbackDays + days
+  const totalDays = lookbackDays + days + forecastDays
+  const todayIndex = lookbackDays + days - 1
 
   for (let d = chartStartIndex; d < totalDays; d++) {
     const point: Partial<DayPoint> = {}
     const cursor = new Date(fullStartDate)
     cursor.setDate(cursor.getDate() + d)
     point.date = cursor.toISOString().slice(0, 10)
+    if (d > todayIndex) point.isForecast = true
 
     for (const cat of categories) {
       const params = CATEGORY_PARAMS[cat]
@@ -246,4 +250,59 @@ export function computeSupercompensation(
   }
 
   return result
+}
+
+export interface ForecastInsight {
+  category: FitnessCategory
+  peakDay: number // days from today
+  peakValue: number
+  declineStartDay: number // days from today where decline begins
+}
+
+export function computeForecastInsights(data: DayPoint[]): ForecastInsight[] {
+  const forecastPoints = data.filter((d) => d.isForecast)
+  const todayPoint = data.find((d) => !d.isForecast && data.indexOf(d) === data.filter(p => !p.isForecast).length - 1)
+    || data[data.length - forecastPoints.length - 1]
+  if (!todayPoint || forecastPoints.length < 2) return []
+
+  const categories: FitnessCategory[] = ['push', 'pull', 'legs', 'core', 'grappling', 'mob_hips', 'mob_hamstrings', 'mob_lats']
+  const insights: ForecastInsight[] = []
+
+  for (const cat of categories) {
+    const currentVal = (todayPoint as any)[cat] as number
+    if (currentVal === 100) continue
+
+    let peakVal = currentVal
+    let peakIdx = 0
+    let declineStart = forecastPoints.length
+
+    for (let i = 0; i < forecastPoints.length; i++) {
+      const val = (forecastPoints[i] as any)[cat] as number
+      if (val > peakVal) {
+        peakVal = val
+        peakIdx = i
+      }
+    }
+
+    // Find where decline begins (first point after peak where value drops)
+    for (let i = peakIdx + 1; i < forecastPoints.length; i++) {
+      const val = (forecastPoints[i] as any)[cat] as number
+      const prev = (forecastPoints[i - 1] as any)[cat] as number
+      if (val < prev - 0.3) {
+        declineStart = i
+        break
+      }
+    }
+
+    if (peakVal > 103) {
+      insights.push({
+        category: cat,
+        peakDay: peakIdx + 1,
+        peakValue: peakVal,
+        declineStartDay: declineStart + 1,
+      })
+    }
+  }
+
+  return insights.sort((a, b) => a.peakDay - b.peakDay)
 }

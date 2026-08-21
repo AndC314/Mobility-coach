@@ -1,4 +1,4 @@
-import { db, type SorenessArea, type ProgressionKey } from '../db/db'
+import { db, type SorenessArea, type ProgressionKey, type SportDurations, DEFAULT_SPORT_DURATIONS } from '../db/db'
 import { PROGRESSIONS } from '../data/exercises'
 import { todayIso, isoDate, addDays, dayName } from './date'
 import {
@@ -63,6 +63,7 @@ export async function generateTodayPlan(
 
   const prefs = await db.preferences.get(1)
   const bjjDays = prefs?.bjjDays ?? ['Mon', 'Wed']
+  const sportDurations: SportDurations = prefs?.sportDurations ?? DEFAULT_SPORT_DURATIONS
 
   const bjjLogYesterday = await db.bjjClassLogs.where('date').equals(yesterdayStr).first()
   const bjjYesterday = bjjLogYesterday != null
@@ -246,8 +247,9 @@ export async function generateTodayPlan(
   // Add calisthenics session if user has training history and categories are available
   const calLogsCount = await db.calisthenicsLogs.count()
   if (calLogsCount > 0 && suppressedCategories.length < 4) {
+    const calTarget = sportDurations.calisthenics ?? 20
     const availableCats = 4 - suppressedCategories.length
-    const estMin = availableCats >= 3 ? 18 : 12
+    const estMin = Math.min(calTarget, availableCats >= 3 ? calTarget : Math.round(calTarget * 0.6))
     items.push({
       id: 'calisthenics_session',
       label: 'Strength session',
@@ -256,6 +258,19 @@ export async function generateTodayPlan(
       done: false,
       percent: 0
     })
+  }
+
+  // Scale mobility items to fit the mobility duration preference
+  const mobilityTarget = sportDurations.mobility ?? 10
+  const mobilityItems = items.filter(i =>
+    i.target.tab !== 'calisthenics' && i.target.tab !== 'recovery'
+  )
+  const mobilityTotal = mobilityItems.reduce((s, i) => s + i.durationMin, 0)
+  if (mobilityTotal > 0 && mobilityTotal > mobilityTarget * 1.5) {
+    const scale = mobilityTarget / mobilityTotal
+    for (const item of mobilityItems) {
+      item.durationMin = Math.max(3, Math.round(item.durationMin * scale))
+    }
   }
 
   // Reflect real progress from today's sessions

@@ -25,6 +25,7 @@ export function usePreferences(): {
       setDoc(prefsDocRef, {
         bjjDays: merged.bjjDays,
         sessionDuration: merged.sessionDuration,
+        sportDurations: merged.sportDurations,
         goal: merged.goal,
         darkMode: merged.darkMode,
         weeklyGoalDays: merged.weeklyGoalDays,

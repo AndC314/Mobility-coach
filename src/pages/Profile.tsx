@@ -5,11 +5,10 @@ import { useAuth } from '../hooks/useAuth'
 import { downloadExport, importData, readFileAsJson, type ImportMode } from '../lib/dataTransfer'
 import { runFullRepair, purgeGhostMobilitySessions } from '../lib/dataRepair'
 import { primeAudio, playCompleteDing } from '../lib/sound'
-import { db, type MobilityGoal, type SessionDuration } from '../db/db'
+import { db, type MobilityGoal, type SessionDuration, type SportDurationKey, type SportDurations, DEFAULT_SPORT_DURATIONS } from '../db/db'
 import { collection, getDocs, addDoc, deleteDoc, doc } from 'firebase/firestore'
 import { db as firestoreDb } from '../lib/firebase'
 
-const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const DURATIONS: SessionDuration[] = [10, 20, 30]
 const GOALS: { id: MobilityGoal; label: string; icon: string }[] = [
   { id: 'bjj', label: 'BJJ', icon: '🥋' },
@@ -35,8 +34,6 @@ export default function Profile() {
   const [diagLoading, setDiagLoading] = useState(false)
   const [pushResult, setPushResult] = useState<{ pushed: number; errors: string[] } | null>(null)
   const [pushing, setPushing] = useState(false)
-  const [weightStr, setWeightStr] = useState('')
-  const [weightSaved, setWeightSaved] = useState(false)
 
   async function handleForcePush() {
     if (!user) return
@@ -205,11 +202,6 @@ export default function Profile() {
     }
   }
 
-  function toggleDay(day: string) {
-    const has = preferences.bjjDays.includes(day)
-    const next = has ? preferences.bjjDays.filter((d) => d !== day) : [...preferences.bjjDays, day]
-    update({ bjjDays: next })
-  }
 
   async function handleExport() {
     setExporting(true)
@@ -258,43 +250,45 @@ export default function Profile() {
         <h1 className="text-2xl font-extrabold">Profile</h1>
       </div>
 
-      <Card>
-        <h2 className="mb-3 text-base font-bold">BJJ days</h2>
-        <div className="flex flex-wrap gap-2">
-          {DAYS.map((day) => {
-            const active = preferences.bjjDays.includes(day)
-            return (
-              <button
-                key={day}
-                onClick={() => toggleDay(day)}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
-                  active ? 'bg-accent/20 text-accent border border-accent/40' : 'bg-card2 text-muted border border-border'
-                }`}
-              >
-                {day}
-              </button>
-            )
-          })}
-        </div>
-        <p className="mt-2 text-xs text-muted">Used to detect post-BJJ recovery days even without manual logging.</p>
-      </Card>
 
       <Card>
-        <h2 className="mb-3 text-base font-bold">Session duration preference</h2>
-        <div className="flex gap-2">
-          {DURATIONS.map((d) => (
-            <button
-              key={d}
-              onClick={() => update({ sessionDuration: d })}
-              className={`flex-1 rounded-xl py-3 text-sm font-bold transition-colors ${
-                preferences.sessionDuration === d
-                  ? 'bg-teal/20 text-teal border border-teal/40'
-                  : 'bg-card2 text-muted border border-border'
-              }`}
-            >
-              {d} min
-            </button>
-          ))}
+        <h2 className="mb-3 text-base font-bold">Session duration per sport</h2>
+        <p className="mb-3 text-xs text-muted">Target duration for each activity — affects how long recommended sessions are.</p>
+        <div className="space-y-3">
+          {([
+            { key: 'mobility' as SportDurationKey, label: 'Mobility', icon: '🧘' },
+            { key: 'calisthenics' as SportDurationKey, label: 'Calisthenics', icon: '💪' },
+            { key: 'running' as SportDurationKey, label: 'Running', icon: '🏃' },
+            { key: 'bjj' as SportDurationKey, label: 'BJJ', icon: '🥋' },
+            { key: 'elite_forces' as SportDurationKey, label: 'Challenges', icon: '🔥' },
+          ] as const).map((sport) => {
+            const sportDurations = preferences.sportDurations ?? DEFAULT_SPORT_DURATIONS
+            const current = sportDurations[sport.key] ?? 20
+            return (
+              <div key={sport.key} className="flex items-center gap-3">
+                <span className="text-lg w-7">{sport.icon}</span>
+                <span className="text-sm font-semibold flex-1">{sport.label}</span>
+                <div className="flex gap-1">
+                  {DURATIONS.map((d) => (
+                    <button
+                      key={d}
+                      onClick={() => {
+                        const next: SportDurations = { ...sportDurations, [sport.key]: d }
+                        update({ sportDurations: next })
+                      }}
+                      className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
+                        current === d
+                          ? 'bg-teal/20 text-teal border border-teal/40'
+                          : 'bg-card2 text-muted border border-border'
+                      }`}
+                    >
+                      {d}m
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
         </div>
       </Card>
 
@@ -403,39 +397,6 @@ export default function Profile() {
         </div>
       </Card>
 
-      <Card>
-        <h2 className="mb-3 text-base font-bold">Body weight</h2>
-        <p className="mb-3 text-xs text-muted">Used for future mechanical work calculations and progress tracking.</p>
-        <div className="flex gap-2 items-center">
-          <input
-            type="number"
-            step="0.1"
-            min="30"
-            max="250"
-            value={weightStr || (preferences.weightKg ?? '')}
-            onChange={(e) => setWeightStr(e.target.value)}
-            placeholder="kg"
-            className="flex-1 rounded-lg border border-border bg-card2 px-3 py-2 text-sm text-ink"
-          />
-          <span className="text-xs text-muted">kg</span>
-          <button
-            onClick={async () => {
-              const kg = parseFloat(weightStr || String(preferences.weightKg ?? ''))
-              if (!kg || kg < 30 || kg > 250) return
-              await update({ weightKg: kg })
-              await db.weightLogs.add({ date: new Date().toISOString().split('T')[0], weightKg: kg, createdAt: new Date().toISOString() })
-              setWeightSaved(true)
-              setTimeout(() => setWeightSaved(false), 2000)
-            }}
-            className="rounded-lg bg-teal/20 px-4 py-2 text-xs font-bold text-teal border border-teal/40"
-          >
-            {weightSaved ? '✓' : 'Save'}
-          </button>
-        </div>
-        {preferences.weightKg != null && (
-          <p className="mt-2 text-[11px] text-muted">Current: {preferences.weightKg} kg</p>
-        )}
-      </Card>
 
       <Card>
         <h2 className="mb-1 text-base font-bold">Your data</h2>

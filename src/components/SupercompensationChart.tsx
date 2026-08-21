@@ -1,11 +1,11 @@
 import { useMemo, useState, useRef, useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import {
-  LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, ReferenceLine
+  LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, ReferenceLine, ReferenceArea
 } from 'recharts'
 import { Card } from './Card'
 import { db } from '../db/db'
-import { computeSupercompensation, type FitnessCategory } from '../lib/supercompensation'
+import { computeSupercompensation, computeForecastInsights, type FitnessCategory } from '../lib/supercompensation'
 
 const CATEGORY_CONFIG: Record<FitnessCategory, { label: string; color: string; group: 'strength' | 'mobility' }> = {
   push: { label: 'Push', color: '#e8622a', group: 'strength' },
@@ -47,15 +47,25 @@ export default function SupercompensationChart() {
   const bjjLogs = useLiveQuery(() => db.bjjClassLogs.toArray(), [], [])
   const sessions = useLiveQuery(() => db.sessions.toArray(), [], [])
 
+  const FORECAST_DAYS = 10
+
   const fullData = useMemo(
-    () => computeSupercompensation(calLogs ?? [], bjjLogs ?? [], 90, sessions ?? []),
+    () => computeSupercompensation(calLogs ?? [], bjjLogs ?? [], 90, sessions ?? [], FORECAST_DAYS),
     [calLogs, bjjLogs, sessions]
   )
 
   const data = useMemo(() => {
     if (timeRange === 90) return fullData
-    return fullData.slice(-timeRange)
+    // slice to show timeRange history + forecast
+    const historyCount = fullData.filter(d => !d.isForecast).length
+    const startIdx = Math.max(0, historyCount - timeRange)
+    return fullData.slice(startIdx)
   }, [fullData, timeRange])
+
+  const forecastInsights = useMemo(
+    () => computeForecastInsights(fullData),
+    [fullData]
+  )
 
   useEffect(() => {
     if (scrollRef.current && timeRange > 30) {
@@ -207,6 +217,19 @@ export default function SupercompensationChart() {
                 width={32}
               />
               <ReferenceLine y={100} stroke="#3a3d52" strokeDasharray="3 3" label={{ value: 'baseline', position: 'left', fill: '#3a3d52', fontSize: 8 }} />
+              {(() => {
+                const todayDate = data.find((d, i) => !d.isForecast && (i + 1 >= data.length || data[i + 1]?.isForecast))?.date
+                const forecastStart = data.find(d => d.isForecast)?.date
+                const forecastEnd = data[data.length - 1]?.date
+                return (
+                  <>
+                    {todayDate && <ReferenceLine x={todayDate} stroke="#a78bfa" strokeDasharray="4 2" strokeWidth={1.5} />}
+                    {forecastStart && forecastEnd && (
+                      <ReferenceArea x1={forecastStart} x2={forecastEnd} fill="#a78bfa" fillOpacity={0.04} />
+                    )}
+                  </>
+                )
+              })()}
               <Tooltip
                 contentStyle={{
                   background: '#22263a',
@@ -260,6 +283,47 @@ export default function SupercompensationChart() {
               )
             })}
           </div>
+        </div>
+      )}
+
+      {/* Forecast training suggestions */}
+      {forecastInsights.length > 0 && (
+        <div className="mt-3 pt-3 border-t border-border space-y-2">
+          <h3 className="text-[11px] font-bold text-muted uppercase tracking-wide">Upcoming peaks</h3>
+          {forecastInsights.map(({ category, peakDay, peakValue, declineStartDay }) => {
+            const cfg = CATEGORY_CONFIG[category]
+            return (
+              <div
+                key={category}
+                className="flex items-center gap-2 rounded-lg bg-emerald-500/8 px-3 py-2"
+              >
+                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: cfg.color }} />
+                <div className="flex-1 min-w-0">
+                  <span className="text-[11px] font-semibold text-ink">{cfg.label}</span>
+                  <span className="text-[11px] text-emerald-400 ml-1.5">
+                    peak in {peakDay === 1 ? 'tomorrow' : `${peakDay} days`}
+                  </span>
+                  <span className="text-[10px] text-muted ml-1">({peakValue.toFixed(0)})</span>
+                </div>
+                <div className="text-[9px] text-orange-400 shrink-0">
+                  decline day {declineStartDay}
+                </div>
+              </div>
+            )
+          })}
+          {(() => {
+            const peakCats = forecastInsights.filter(i => i.peakDay <= 3)
+            if (peakCats.length === 0) return null
+            const labels = peakCats.map(i => CATEGORY_CONFIG[i.category].label)
+            const dayLabel = Math.min(...peakCats.map(i => i.peakDay))
+            return (
+              <div className="rounded-lg bg-accent/10 border border-accent/20 px-3 py-2">
+                <span className="text-[11px] text-accent font-semibold">
+                  {dayLabel === 1 ? 'Tomorrow' : `In ${dayLabel} days`}: train {labels.join(', ')}
+                </span>
+              </div>
+            )
+          })()}
         </div>
       )}
     </Card>

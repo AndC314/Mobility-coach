@@ -8,9 +8,10 @@ import SupercompensationChart from '../components/SupercompensationChart'
 import WeakLinkCard from '../components/WeakLinkCard'
 import { Card } from '../components/Card'
 import { useActivityTimeseries } from '../hooks/useActivityTimeseries'
+import HealthPage from './HealthPage'
 
 export default function Progress() {
-  const [view, setView] = useState<'tree' | 'trends' | 'activity'>('tree')
+  const [view, setView] = useState<'tree' | 'trends' | 'activity' | 'health'>('tree')
   const timeseries = useActivityTimeseries(12)
 
   return (
@@ -25,6 +26,7 @@ export default function Progress() {
           [
             { id: 'tree', label: 'Skill Tree' },
             { id: 'trends', label: 'Profile' },
+            { id: 'health', label: 'Health' },
             { id: 'activity', label: 'Activity' },
           ] as const
         ).map((t) => (
@@ -53,6 +55,8 @@ export default function Progress() {
           <SupercompensationChart />
         </div>
       )}
+
+      {view === 'health' && <HealthPage />}
 
       {view === 'activity' && (
         <div className="space-y-4">

@@ -260,10 +260,14 @@ export type MobilityGoal = 'bjj' | 'calisthenics' | 'general'
 export type SessionDuration = 10 | 20 | 30
 export type AvatarVariant = 'lean' | 'muscular' | 'balanced'
 
+export type SportDurationKey = 'mobility' | 'calisthenics' | 'running' | 'bjj' | 'elite_forces'
+export type SportDurations = Record<SportDurationKey, SessionDuration>
+
 export interface UserPreferences {
   id?: number // singleton row, id = 1
   bjjDays: string[] // e.g. ['Mon', 'Wed', 'Fri']
-  sessionDuration: SessionDuration
+  sessionDuration: SessionDuration // legacy global fallback
+  sportDurations: SportDurations // per-sport target duration in minutes
   goal: MobilityGoal
   darkMode: boolean
   weeklyGoalDays: number // target number of days/week with a logged session
@@ -443,10 +447,19 @@ export const db = new MobilityDB()
 // SEED / DEFAULTS
 // ─────────────────────────────────────────────────────────────────────────
 
+export const DEFAULT_SPORT_DURATIONS: SportDurations = {
+  mobility: 10,
+  calisthenics: 20,
+  running: 30,
+  bjj: 20,
+  elite_forces: 20,
+}
+
 export const DEFAULT_PREFERENCES: UserPreferences = {
   id: 1,
   bjjDays: ['Mon', 'Wed'],
   sessionDuration: 20,
+  sportDurations: DEFAULT_SPORT_DURATIONS,
   goal: 'bjj',
   darkMode: false,
   weeklyGoalDays: 4,

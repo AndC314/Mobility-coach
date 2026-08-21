@@ -15,10 +15,9 @@ const TABS: TabDef[] = [
   { to: '/calisthenics', label: 'Calisthenics', icon: '💪', sport: 'calisthenics' },
   { to: '/running', label: 'Running', icon: '🏃', sport: 'running' },
   { to: '/hiit', label: 'Challenges', icon: '🔥', sport: 'elite_forces' },
-  { to: '/health', label: 'Health', icon: '❤️' },
   { to: '/recovery', label: 'Recovery', icon: '🪻' },
   { to: '/progress', label: 'Progress', icon: '📈' },
-  { to: '/profile', label: 'Profile', icon: '⚙️' },
+  { to: '/profile', label: 'Settings', icon: '⚙️' },
 ]
 
 export default function BottomNav() {

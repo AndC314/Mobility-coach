@@ -524,6 +524,7 @@ async function syncPreferencesToLocal(remote: PreferencesDoc): Promise<void> {
       id: 1,
       bjjDays: remote.bjjDays,
       sessionDuration: remote.sessionDuration as any,
+      sportDurations: remote.sportDurations ?? { mobility: 10, calisthenics: 20, running: 30, bjj: 20, elite_forces: 20 },
       goal: remote.goal as any,
       darkMode: remote.darkMode,
       weeklyGoalDays: remote.weeklyGoalDays,
@@ -708,6 +709,7 @@ async function catchUpSync(uid: string): Promise<void> {
     await setDoc(prefsDocRef, {
       bjjDays: localPrefs.bjjDays,
       sessionDuration: localPrefs.sessionDuration,
+      sportDurations: localPrefs.sportDurations,
       goal: localPrefs.goal,
       darkMode: localPrefs.darkMode,
       weeklyGoalDays: localPrefs.weeklyGoalDays,
