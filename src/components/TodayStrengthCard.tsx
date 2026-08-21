@@ -8,8 +8,14 @@ import { getExerciseDef } from '../data/calisthenics'
 import { computeMuscleScores, computeAdaptiveCaps, computeSessionLoadForecast } from '../data/muscleMap'
 import type { SessionLoadForecast } from '../data/muscleMap'
 import { todayIso } from '../lib/date'
-import type { SessionExercise } from '../lib/calisthenicsSession'
+import type { SessionExercise, Intensity } from '../lib/calisthenicsSession'
 import type { Equipment } from '../data/calisthenics'
+
+const INTENSITY_OPTIONS: { id: Intensity; label: string; icon: string }[] = [
+  { id: 'light', label: 'Light', icon: '~' },
+  { id: 'moderate', label: 'Moderate', icon: '↑' },
+  { id: 'push_it', label: 'Push it', icon: '⚡' },
+]
 
 const EQUIPMENT_OPTIONS: { id: Equipment; label: string; icon: string }[] = [
   { id: 'pull_up_bar', label: 'Pull-up bar', icon: '🏋️' },
@@ -24,12 +30,13 @@ interface Props {
 export default function TodayStrengthCard({ onStartSession }: Props) {
   const prefs = useLiveQuery(() => db.preferences.get(1))
   const [equipment, setEquipment] = useState<string[]>(DEFAULT_PREFERENCES.availableEquipment)
+  const [intensity, setIntensity] = useState<Intensity>('moderate')
 
   useEffect(() => {
     if (prefs?.availableEquipment) setEquipment(prefs.availableEquipment)
   }, [prefs])
 
-  const { session, regenerate, isLoading } = useCalisthenicsSession(equipment)
+  const { session, regenerate, isLoading } = useCalisthenicsSession(equipment, intensity)
 
   const today = todayIso()
   const loadForecast = useLiveQuery(async () => {
@@ -77,6 +84,25 @@ export default function TodayStrengthCard({ onStartSession }: Props) {
           >
             Shuffle
           </button>
+        </div>
+
+        <div className="flex gap-1.5 flex-wrap">
+          {INTENSITY_OPTIONS.map((opt) => {
+            const active = intensity === opt.id
+            return (
+              <button
+                key={opt.id}
+                onClick={() => setIntensity(opt.id)}
+                className={`rounded-full px-2.5 py-1 text-[10px] font-semibold border transition-colors ${
+                  active
+                    ? 'bg-purple-500/10 text-purple-400 border-purple-500/30'
+                    : 'bg-card2 text-muted border-border opacity-50'
+                }`}
+              >
+                {opt.icon} {opt.label}
+              </button>
+            )
+          })}
         </div>
 
         <div className="flex gap-1.5 flex-wrap">

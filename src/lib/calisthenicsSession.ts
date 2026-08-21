@@ -12,6 +12,8 @@ import {
   type CategorySoreness,
 } from '../data/muscleMap'
 
+export type Intensity = 'light' | 'moderate' | 'push_it'
+
 export interface SessionExercise {
   exerciseId: CalisthenicsExerciseId
   name: string
@@ -25,6 +27,7 @@ export interface GeneratedSession {
   exercises: SessionExercise[]
   totalDurationMin: number
   focus: string
+  intensity: Intensity
 }
 
 export interface SessionGeneratorInput {
@@ -33,10 +36,25 @@ export interface SessionGeneratorInput {
   categoryScores: { category: ProgressionCategory; score: number }[]
   availableEquipment?: string[]
   seed?: number
+  intensity?: Intensity
 }
 
+const ANTAGONIST_PAIRS: Record<ProgressionCategory, ProgressionCategory> = {
+  push: 'pull',
+  pull: 'push',
+  legs: 'core',
+  core: 'legs',
+}
+
+const INTENSITY_CONFIG = {
+  light:    { maxExercises: 4, maxPerCat: 1, baseSets: 3, volumeBoost: false },
+  moderate: { maxExercises: 6, maxPerCat: 2, baseSets: 3, volumeBoost: false },
+  push_it:  { maxExercises: 8, maxPerCat: 3, baseSets: 4, volumeBoost: true },
+} as const
+
 export function generateCalisthenicsSession(input: SessionGeneratorInput): GeneratedSession {
-  const { logs, bestMap, categoryScores, availableEquipment, seed } = input
+  const { logs, bestMap, categoryScores, availableEquipment, seed, intensity = 'moderate' } = input
+  const config = INTENSITY_CONFIG[intensity]
   const now = Date.now()
 
   // Build soreness from recent logs (last 48h)
@@ -54,14 +72,14 @@ export function generateCalisthenicsSession(input: SessionGeneratorInput): Gener
   const muscleSoreness = computeMuscleSorenessDecay(decayInputs, now)
   const catSoreness = computeCategorySoreness(muscleSoreness)
 
-  // Filter out categories with high soreness
+  // Filter out categories with high soreness (skip for push_it — user chose to push through)
   const availableCategories = (['push', 'pull', 'legs', 'core'] as ProgressionCategory[])
     .filter((cat) => {
+      if (intensity === 'push_it') return true
       const s = catSoreness.find((cs) => cs.category === cat)
       return !s || !s.isRecovering
     })
 
-  // If all categories are recovering, allow all (fallback)
   const categories = availableCategories.length >= 2 ? availableCategories : (['push', 'pull', 'legs', 'core'] as ProgressionCategory[])
 
   // Rank categories: weakest first, then least recently trained
@@ -69,35 +87,58 @@ export function generateCalisthenicsSession(input: SessionGeneratorInput): Gener
   const ranked = [...categories].sort((a, b) => {
     const scoreA = categoryScores.find((s) => s.category === a)?.score ?? 50
     const scoreB = categoryScores.find((s) => s.category === b)?.score ?? 50
-    if (scoreA !== scoreB) return scoreA - scoreB // weakest first
-
+    if (scoreA !== scoreB) return scoreA - scoreB
     const lastA = lastTrainedMap.get(a) ?? 0
     const lastB = lastTrainedMap.get(b) ?? 0
-    return lastA - lastB // least recently trained first
+    return lastA - lastB
   })
 
-  // Select exercises: 4-6 total, max 2 per category
   const selected: SessionExercise[] = []
   const usedCategories = new Map<ProgressionCategory, number>()
 
-  // First pass: one exercise per category (prioritize bottlenecks)
+  // First pass: one exercise per category, with antagonist pairing
   for (const cat of ranked) {
-    if (selected.length >= 6) break
-    const exercise = pickExerciseForCategory(cat, bestMap, selected, availableEquipment, seed)
+    if (selected.length >= config.maxExercises) break
+    const exercise = pickExerciseForCategory(cat, bestMap, selected, availableEquipment, seed, config.baseSets)
+    if (exercise) {
+      selected.push(exercise)
+      usedCategories.set(cat, (usedCategories.get(cat) ?? 0) + 1)
+
+      // Antagonist pairing: immediately pick from the opposing category
+      if (intensity !== 'light') {
+        const antagonist = ANTAGONIST_PAIRS[cat]
+        if (selected.length < config.maxExercises && (usedCategories.get(antagonist) ?? 0) < 1 && categories.includes(antagonist)) {
+          const antEx = pickExerciseForCategory(antagonist, bestMap, selected, availableEquipment, seed, config.baseSets)
+          if (antEx) {
+            selected.push(antEx)
+            usedCategories.set(antagonist, (usedCategories.get(antagonist) ?? 0) + 1)
+          }
+        }
+      }
+    }
+  }
+
+  // Second pass: fill remaining slots with deeper category coverage
+  for (const cat of ranked) {
+    if (selected.length >= config.maxExercises) break
+    if ((usedCategories.get(cat) ?? 0) >= config.maxPerCat) continue
+    const exercise = pickExerciseForCategory(cat, bestMap, selected, availableEquipment, seed ? seed + 1 : undefined, config.baseSets)
     if (exercise) {
       selected.push(exercise)
       usedCategories.set(cat, (usedCategories.get(cat) ?? 0) + 1)
     }
   }
 
-  // Second pass: fill to 5-6 with second exercises in weakest categories
-  for (const cat of ranked) {
-    if (selected.length >= 6) break
-    if ((usedCategories.get(cat) ?? 0) >= 2) continue
-    const exercise = pickExerciseForCategory(cat, bestMap, selected, availableEquipment, seed ? seed + 1 : undefined)
-    if (exercise) {
-      selected.push(exercise)
-      usedCategories.set(cat, (usedCategories.get(cat) ?? 0) + 1)
+  // Third pass (push_it only): fill to max with antagonist-paired extras
+  if (config.volumeBoost) {
+    for (const cat of ranked) {
+      if (selected.length >= config.maxExercises) break
+      if ((usedCategories.get(cat) ?? 0) >= config.maxPerCat) continue
+      const exercise = pickExerciseForCategory(cat, bestMap, selected, availableEquipment, seed ? seed + 2 : undefined, config.baseSets)
+      if (exercise) {
+        selected.push(exercise)
+        usedCategories.set(cat, (usedCategories.get(cat) ?? 0) + 1)
+      }
     }
   }
 
@@ -119,7 +160,7 @@ export function generateCalisthenicsSession(input: SessionGeneratorInput): Gener
     .map(([cat]) => cat.charAt(0).toUpperCase() + cat.slice(1))
   const focus = topCats.join(' + ') + ' focus'
 
-  return { exercises: selected, totalDurationMin, focus }
+  return { exercises: selected, totalDurationMin, focus, intensity }
 }
 
 function pickExerciseForCategory(
@@ -127,7 +168,8 @@ function pickExerciseForCategory(
   bestMap: Map<CalisthenicsExerciseId, number>,
   alreadySelected: SessionExercise[],
   availableEquipment?: string[],
-  seed?: number
+  seed?: number,
+  baseSets: number = 3
 ): SessionExercise | null {
   const chains = PROGRESSION_CHAINS.filter((c) => c.category === category)
   const alreadyIds = new Set(alreadySelected.map((e) => e.exerciseId))
@@ -202,7 +244,7 @@ function pickExerciseForCategory(
 
   const best = bestMap.get(chosen.node.exerciseId) ?? 0
   const targetValue = computeOverloadTarget(chosen.node.exerciseId, best, bestMap, def.type === 'hold')
-  const targetSets = 3
+  const targetSets = baseSets
 
   return {
     exerciseId: chosen.node.exerciseId,

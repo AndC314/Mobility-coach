@@ -1,11 +1,11 @@
 import { useState, useCallback } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type CalisthenicsExerciseId, DEFAULT_PREFERENCES } from '../db/db'
-import { generateCalisthenicsSession, type GeneratedSession } from '../lib/calisthenicsSession'
+import { generateCalisthenicsSession, type GeneratedSession, type Intensity } from '../lib/calisthenicsSession'
 import { useWeakLink } from './useWeakLink'
 import type { ProgressionCategory } from '../data/progressionChains'
 
-export function useCalisthenicsSession(equipmentOverride?: string[]) {
+export function useCalisthenicsSession(equipmentOverride?: string[], intensity?: Intensity) {
   const [seed, setSeed] = useState(0)
   const analysis = useWeakLink()
 
@@ -39,8 +39,9 @@ export function useCalisthenicsSession(equipmentOverride?: string[]) {
       categoryScores,
       availableEquipment,
       seed: seed || undefined,
+      intensity,
     })
-  }, [seed, analysis, prefs, equipmentOverride])
+  }, [seed, analysis, prefs, equipmentOverride, intensity])
 
   const regenerate = useCallback(() => {
     setSeed((s) => s + 1)
