@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import DojoScene from '../components/DojoScene'
+import AICoachCard from '../components/AICoachCard'
 import TrainingCalendar from '../components/TrainingCalendar'
 import { Card, Tag } from '../components/Card'
 import SkillRadar from '../components/SkillRadar'
@@ -55,6 +56,8 @@ export default function Today() {
       </div>
 
       <DojoScene />
+
+      <AICoachCard />
 
       {trainingHours && trainingHours.length > 0 && (
         <Card>

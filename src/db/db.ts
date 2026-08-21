@@ -276,6 +276,7 @@ export interface UserPreferences {
   availableEquipment: string[] // e.g. ['pull_up_bar', 'parallel_bars', 'parallettes']
   activeSports: string[] // which sports appear in nav: mobility, bjj, calisthenics, running, elite_forces
   weightKg: number | null // current bodyweight for mechanical work calculations
+  preferredSessionMin?: number // 15-90, default 45 — for AI coaching recommendations
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -339,6 +340,17 @@ export interface WeightLog {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// AI COACHING
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface AICoachingLog {
+  id?: number
+  date: string // YYYY-MM-DD
+  coaching: string // LLM response (markdown)
+  generatedAt: string // ISO timestamp
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // DB
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -358,6 +370,7 @@ export class MobilityDB extends Dexie {
   runningLogs!: Table<RunningLog, number>
   weightLogs!: Table<WeightLog, number>
   bodyMeasurementLogs!: Table<BodyMeasurementLog, number>
+  aiCoachingLogs!: Table<AICoachingLog, number>
 
   constructor() {
     super('mobilityCoachDB')
@@ -437,6 +450,9 @@ export class MobilityDB extends Dexie {
       })
     this.version(7).stores({
       bodyMeasurementLogs: '++id, date, site'
+    })
+    this.version(8).stores({
+      aiCoachingLogs: '++id, &date'
     })
   }
 }

@@ -293,6 +293,64 @@ export default function Profile() {
       </Card>
 
       <Card>
+        <h2 className="mb-3 text-base font-bold">AI Coach preferences</h2>
+        <p className="mb-3 text-xs text-muted">Configure how the daily AI coaching adapts to your availability.</p>
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm font-semibold text-ink">Preferred session time</label>
+            <div className="mt-2 flex gap-1.5">
+              {([15, 30, 45, 60, 90] as const).map((min) => (
+                <button
+                  key={min}
+                  onClick={() => update({ preferredSessionMin: min })}
+                  className={`flex-1 rounded-lg py-2 text-xs font-bold transition-colors ${
+                    (preferences.preferredSessionMin ?? 45) === min
+                      ? 'bg-accent/20 text-accent border border-accent/40'
+                      : 'bg-card2 text-muted border border-border'
+                  }`}
+                >
+                  {min}m
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-sm font-semibold text-ink">Available equipment</label>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {[
+                { id: 'pull_up_bar', label: 'Pull-up bar' },
+                { id: 'parallel_bars', label: 'Parallel bars' },
+                { id: 'parallettes', label: 'Parallettes' },
+                { id: 'rings', label: 'Rings' },
+                { id: 'resistance_bands', label: 'Bands' },
+              ].map((eq) => {
+                const active = (preferences.availableEquipment ?? []).includes(eq.id)
+                return (
+                  <button
+                    key={eq.id}
+                    onClick={() => {
+                      const current = preferences.availableEquipment ?? []
+                      const next = active
+                        ? current.filter((e) => e !== eq.id)
+                        : [...current, eq.id]
+                      update({ availableEquipment: next })
+                    }}
+                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+                      active
+                        ? 'bg-teal/20 text-teal border border-teal/40'
+                        : 'bg-card2 text-muted border border-border'
+                    }`}
+                  >
+                    {eq.label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      <Card>
         <h2 className="mb-3 text-base font-bold">Mobility goal</h2>
         <div className="space-y-2">
           {GOALS.map((g) => (
