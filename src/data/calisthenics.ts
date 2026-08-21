@@ -1182,8 +1182,6 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     cue: 'Stand on a step. Tuck chin, then round down one vertebra at a time, reaching past your feet. Reverse the sequence coming up. Extremely slow and controlled.',
     feelIt: 'Hamstrings stretching under load, every segment of the spine articulating. Start with bodyweight only — this exercise demands respect.',
   },
-]
-
   {
     id: 'band_assisted_pullups',
     name: 'Band Assisted Pull-ups',
