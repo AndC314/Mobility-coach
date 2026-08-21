@@ -85,7 +85,7 @@ function MathRulesCard() {
         <Formula label="Density factor" formula="density = 1 + (exercises_count - 1) * 0.1" />
         <div className="rounded bg-card2 px-2.5 py-1.5 mt-1.5">
           <p className="text-[10px] text-muted">BASE_IMPULSE = 8</p>
-          <p className="text-[10px] text-muted">Hard session threshold: intensity >= 0.7</p>
+          <p className="text-[10px] text-muted">Hard session threshold: intensity {'>='} 0.7</p>
         </div>
       </CollapsibleSection>
 

@@ -71,6 +71,13 @@ export function useAICoach(): AICoachState {
     // If bypassCache but limit already reached, block the refresh
     if (bypassCache && limitReached) return
 
+    // Only call AI if there's been training in the last 48h
+    const twoDaysAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString().slice(0, 10)
+    const recentCal = await db.calisthenicsLogs.where('date').aboveOrEqual(twoDaysAgo).count()
+    const recentBjj = await db.bjjClassLogs.where('date').aboveOrEqual(twoDaysAgo).count()
+    const recentSessions = await db.sessions.where('date').aboveOrEqual(twoDaysAgo).count()
+    if (recentCal + recentBjj + recentSessions === 0) return
+
     setCoaching(null)
     setSessionPlan(null)
     setGeneratedAt(null)

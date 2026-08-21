@@ -270,7 +270,7 @@ export async function buildCoachingContext(): Promise<TrainingContext> {
     progressionChains,
     availableExercises,
     weekNumber: getWeekNumber(),
-    preferredSessionMin: prefs?.preferredSessionMin ?? 45,
+    preferredSessionMin: prefs?.sportDurations?.calisthenics ?? prefs?.preferredSessionMin ?? 20,
     availableEquipment: userEquipment,
     activeSports: prefs?.activeSports ?? ['mobility', 'bjj', 'calisthenics'],
   }

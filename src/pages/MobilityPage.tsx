@@ -189,22 +189,29 @@ export default function MobilityPage() {
                     {exercises.map((ex) => {
                       const isSelected = selected.some((s) => s.id === ex.id)
                       return (
-                        <button
-                          key={ex.id}
-                          onClick={() => toggleExercise(ex.id)}
-                          className={`flex flex-col items-center gap-1.5 rounded-xl p-2 transition-colors ${
-                            isSelected
-                              ? 'bg-teal/20 border border-teal/50'
-                              : 'bg-card2 border border-border hover:bg-card2/80'
-                          }`}
-                        >
-                          <ExerciseThumb id={ex.id} icon={ex.icon} className="h-14 w-full rounded-lg overflow-hidden" />
-                          <span className={`text-[10px] font-semibold text-center leading-tight ${
-                            isSelected ? 'text-teal' : 'text-muted'
-                          }`}>
-                            {ex.name}
-                          </span>
-                        </button>
+                        <div key={ex.id}>
+                          <button
+                            onClick={() => toggleExercise(ex.id)}
+                            className={`w-full flex flex-col items-center gap-1.5 rounded-xl p-2 transition-colors ${
+                              isSelected
+                                ? 'bg-teal/20 border border-teal/50'
+                                : 'bg-card2 border border-border hover:bg-card2/80'
+                            }`}
+                          >
+                            <ExerciseThumb id={ex.id} icon={ex.icon} className="h-14 w-full rounded-lg overflow-hidden" />
+                            <span className={`text-[10px] font-semibold text-center leading-tight ${
+                              isSelected ? 'text-teal' : 'text-muted'
+                            }`}>
+                              {ex.name}
+                            </span>
+                          </button>
+                          {isSelected && (
+                            <div className="mt-1 px-1">
+                              <p className="text-[9px] text-muted/80 text-center leading-snug">{ex.setup}</p>
+                              {ex.cue && <p className="text-[9px] text-teal/70 text-center leading-snug mt-0.5">{ex.cue}</p>}
+                            </div>
+                          )}
+                        </div>
                       )
                     })}
                   </div>
