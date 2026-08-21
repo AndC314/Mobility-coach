@@ -1,4 +1,4 @@
-import { db as dexieDb, type SessionType, type CalisthenicsExerciseId, type BodySite, type SessionDuration, type SportDurations, type MobilityGoal, type AvatarVariant } from '../../db/db'
+import { db as dexieDb, type SessionType, type CalisthenicsExerciseId, type BodySite, type SessionDuration, type SportDurations, type MobilityGoal, type AvatarVariant, type ProfileAvatar } from '../../db/db'
 import { normalizeCreatedAt } from './helpers'
 import type {
   WorkoutDoc,
@@ -224,6 +224,7 @@ export async function syncPreferencesToLocal(remote: PreferencesDoc): Promise<vo
       availableEquipment: remote.availableEquipment ?? ['pull_up_bar', 'parallel_bars', 'parallettes'],
       activeSports: remote.activeSports ?? ['mobility', 'bjj', 'calisthenics', 'running', 'elite_forces'],
       weightKg: remote.weightKg ?? null,
+      profileAvatar: ((remote as any).profileAvatar as ProfileAvatar) ?? null,
     })
   }
 }
