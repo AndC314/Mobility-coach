@@ -71,13 +71,13 @@ Give me my daily coaching brief.`
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
-
-    const result = await model.generateContent({
-      contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-      systemInstruction: { role: 'model', parts: [{ text: SYSTEM_PROMPT }] },
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.0-flash',
+      systemInstruction: SYSTEM_PROMPT,
       generationConfig: { maxOutputTokens: 512, temperature: 0.7 },
     })
+
+    const result = await model.generateContent(userPrompt)
 
     const coaching = result.response.text()
     const generatedAt = new Date().toISOString()
@@ -85,6 +85,6 @@ Give me my daily coaching brief.`
     return res.status(200).json({ coaching, generatedAt })
   } catch (err: any) {
     console.error('Gemini error:', err)
-    return res.status(500).json({ error: 'Failed to generate coaching' })
+    return res.status(500).json({ error: err?.message || 'Failed to generate coaching' })
   }
 }
