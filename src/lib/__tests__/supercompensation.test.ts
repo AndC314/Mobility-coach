@@ -5,8 +5,6 @@ import type { CalisthenicsLog, BjjClassLog, CompletedSession } from '../../db/db
 function makeCalLog(overrides: Partial<CalisthenicsLog> & { exerciseId: string; date: string }): CalisthenicsLog {
   return {
     id: 1,
-    exerciseId: overrides.exerciseId,
-    date: overrides.date,
     metric: 'reps',
     value: 10,
     sets: 3,

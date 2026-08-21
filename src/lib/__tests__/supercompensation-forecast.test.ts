@@ -5,8 +5,6 @@ import type { CalisthenicsLog } from '../../db/db'
 function makeCalLog(overrides: Partial<CalisthenicsLog> & { exerciseId: string; date: string }): CalisthenicsLog {
   return {
     id: 1,
-    exerciseId: overrides.exerciseId,
-    date: overrides.date,
     metric: 'reps',
     value: 10,
     sets: 3,
@@ -30,8 +28,8 @@ describe('computeForecastInsights', () => {
 
   it('returns insight with peakDay > 0 for a rising category', () => {
     const logs = [
-      makeCalLog({ exerciseId: 'push_up', date: daysAgo(2), value: 25, sets: 5 }),
-      makeCalLog({ exerciseId: 'push_up', date: daysAgo(1), value: 25, sets: 5 }),
+      makeCalLog({ exerciseId: 'pushups', date: daysAgo(2), value: 25, sets: 5 }),
+      makeCalLog({ exerciseId: 'pushups', date: daysAgo(1), value: 25, sets: 5 }),
     ]
     const data = computeSupercompensation(logs, [], 30, [], 14)
     const insights = computeForecastInsights(data)
@@ -44,8 +42,8 @@ describe('computeForecastInsights', () => {
 
   it('results are sorted by peakDay ascending', () => {
     const logs = [
-      makeCalLog({ exerciseId: 'push_up', date: daysAgo(2), value: 25, sets: 5 }),
-      makeCalLog({ exerciseId: 'pull_up', date: daysAgo(3), value: 15, sets: 4 }),
+      makeCalLog({ exerciseId: 'pushups', date: daysAgo(2), value: 25, sets: 5 }),
+      makeCalLog({ exerciseId: 'pullups', date: daysAgo(3), value: 15, sets: 4 }),
     ]
     const data = computeSupercompensation(logs, [], 30, [], 14)
     const insights = computeForecastInsights(data)
@@ -55,7 +53,7 @@ describe('computeForecastInsights', () => {
   })
 
   it('only returns insights where peakValue > 103', () => {
-    const log = makeCalLog({ exerciseId: 'push_up', date: daysAgo(1), value: 25, sets: 5 })
+    const log = makeCalLog({ exerciseId: 'pushups', date: daysAgo(1), value: 25, sets: 5 })
     const data = computeSupercompensation([log], [], 30, [], 14)
     const insights = computeForecastInsights(data)
     for (const insight of insights) {
