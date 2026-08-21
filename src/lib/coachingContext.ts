@@ -33,8 +33,9 @@ export async function buildCoachingContext(): Promise<TrainingContext> {
   const calLogs = await db.calisthenicsLogs.toArray()
   const bjjLogs = await db.bjjClassLogs.toArray()
   const sessions = await db.sessions.toArray()
-  const data = computeSupercompensation(calLogs, bjjLogs, sessions)
-  const todayPoint = data.filter((d) => !d.isForecast).at(-1)
+  const data = computeSupercompensation(calLogs, bjjLogs, 90, sessions)
+  const historical = data.filter((d) => !d.isForecast)
+  const todayPoint = historical[historical.length - 1]
 
   const categories: FitnessCategory[] = ['push', 'pull', 'legs', 'core', 'grappling', 'mob_hips', 'mob_hamstrings', 'mob_lats']
   const supercompensation: Record<string, number> = {}
@@ -80,7 +81,7 @@ export async function buildCoachingContext(): Promise<TrainingContext> {
   const recoveryScore = plan.recoveryScore
   const categorySoreness = plan.categorySoreness.map((cs) => ({
     category: cs.category,
-    score: Math.round(cs.avgDecay * 100),
+    score: Math.round(cs.avgSoreness * 100),
   }))
 
   return {
