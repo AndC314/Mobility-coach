@@ -79,7 +79,7 @@ Design my session for today. Use ONLY exercises from my availableExercises list 
       model: 'gemini-3.6-flash',
       systemInstruction: SYSTEM_PROMPT,
       generationConfig: {
-        maxOutputTokens: 1024,
+        maxOutputTokens: 2048,
         temperature: 0.7,
         responseMimeType: 'application/json',
       },
@@ -93,9 +93,13 @@ Design my session for today. Use ONLY exercises from my availableExercises list 
     try {
       parsed = JSON.parse(text)
     } catch {
-      // Fallback: return raw text as coaching only
+      // Try to extract coaching field from malformed JSON
+      const coachMatch = text.match(/"coaching"\s*:\s*"((?:[^"\\]|\\.)*)"/s)
+      const fallbackCoaching = coachMatch
+        ? coachMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"')
+        : 'Session plan is ready — check below.'
       return res.status(200).json({
-        coaching: text,
+        coaching: fallbackCoaching,
         sessionPlan: null,
         generatedAt: new Date().toISOString(),
       })
