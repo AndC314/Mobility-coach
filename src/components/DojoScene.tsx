@@ -183,9 +183,23 @@ export default function DojoScene() {
           </div>
         )}
 
-        {/* BJJ character — cycles walk / jump / pushups */}
+        {/* Character — profile avatar with breathing animation, or default BJJ animator */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <BJJAvatarAnimator scale={2.5} />
+          {preferences.profileAvatar ? (
+            <img
+              src={`/icons/avatars/${preferences.profileAvatar}.png`}
+              alt=""
+              className="avatar-breathe"
+              style={{
+                width: 120,
+                height: 120,
+                imageRendering: 'pixelated',
+                filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.4))',
+              }}
+            />
+          ) : (
+            <BJJAvatarAnimator scale={2.5} />
+          )}
         </div>
 
         {/* Belt badge — bottom center overlay */}
