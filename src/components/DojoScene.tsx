@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import { PROGRESSION_CHAINS } from '../data/progressionChains'
 import { BJJAvatarAnimator } from './BJJAvatarAnimator'
+import { usePreferences } from '../hooks/usePreferences'
 
 type BjjBelt = 'white' | 'blue' | 'purple' | 'black'
 
@@ -134,6 +135,8 @@ function useDojoState(): DojoState | null {
 
 export default function DojoScene() {
   const state = useDojoState()
+  const { preferences } = usePreferences()
+  const activeSports = preferences.activeSports ?? ['mobility', 'bjj', 'calisthenics', 'running', 'elite_forces']
 
   if (!state) {
     return <div className="h-56 flex items-center justify-center text-muted text-sm">Loading...</div>
@@ -226,27 +229,33 @@ export default function DojoScene() {
 
       {/* Discipline level bars — 4 slots per level, each slot = 1h */}
       <div className="space-y-2">
-        <LevelBar
-          emoji="🥋"
-          label="BJJ"
-          hours={bjjHours}
-          detail={`${bjjClasses} classes`}
-          nextBeltInfo={nextThreshold ? `${nextThreshold - bjjClasses} to ${belt === 'white' ? 'blue' : belt === 'blue' ? 'purple' : 'black'}` : 'max'}
-          color="#2ec4b6"
-        />
-        <LevelBar
-          emoji="💪"
-          label="Calisthenics"
-          hours={calisthenicsHours}
-          color="#e8622a"
-        />
-        <LevelBar
-          emoji="🧘"
-          label="Mobility"
-          hours={mobilityHours}
-          color="#a78bfa"
-        />
-        {runningHours > 0 && (
+        {activeSports.includes('bjj') && (
+          <LevelBar
+            emoji="🥋"
+            label="BJJ"
+            hours={bjjHours}
+            detail={`${bjjClasses} classes`}
+            nextBeltInfo={nextThreshold ? `${nextThreshold - bjjClasses} to ${belt === 'white' ? 'blue' : belt === 'blue' ? 'purple' : 'black'}` : 'max'}
+            color="#2ec4b6"
+          />
+        )}
+        {activeSports.includes('calisthenics') && (
+          <LevelBar
+            emoji="💪"
+            label="Calisthenics"
+            hours={calisthenicsHours}
+            color="#e8622a"
+          />
+        )}
+        {activeSports.includes('mobility') && (
+          <LevelBar
+            emoji="🧘"
+            label="Mobility"
+            hours={mobilityHours}
+            color="#a78bfa"
+          />
+        )}
+        {activeSports.includes('running') && (
           <LevelBar
             emoji="🏃"
             label="Running"

@@ -7,6 +7,7 @@ import SkillRadar from '../components/SkillRadar'
 import { useTodayPlan } from '../hooks/useTodayPlan'
 import { useAvatarStats } from '../hooks/useAvatarStats'
 import { useTrainingHours } from '../hooks/useTrainingHours'
+import { usePreferences } from '../hooks/usePreferences'
 import { getNudgeMessage } from '../lib/trainingHourCalculator'
 import type { PlanItem } from '../lib/recommendation'
 
@@ -15,6 +16,8 @@ export default function Today() {
   const plan = useTodayPlan()
   const avatarStats = useAvatarStats()
   const trainingHours = useTrainingHours()
+  const { preferences } = usePreferences()
+  const activeSports = preferences.activeSports ?? ['mobility', 'bjj', 'calisthenics', 'running', 'elite_forces']
   const navigate = useNavigate()
 
   const today = new Date()
@@ -57,7 +60,7 @@ export default function Today() {
         <Card>
           <h2 className="mb-4 text-base font-bold">Training consistency</h2>
           <div className="space-y-4">
-            {trainingHours.map((training) => {
+            {trainingHours.filter((t) => activeSports.includes(t.category)).map((training) => {
               const categoryEmoji = { bjj: '🥋', calisthenics: '💪', mobility: '🧘', running: '🏃' }[training.category]
               const categoryName = { bjj: 'BJJ', calisthenics: 'Calisthenics', mobility: 'Mobility', running: 'Running' }[training.category]
               const decayRate = 0.05
