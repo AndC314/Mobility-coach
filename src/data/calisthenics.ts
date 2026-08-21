@@ -1,7 +1,7 @@
 import type { CalisthenicsExerciseId, CalisthenicsMetric } from '../db/db'
 
 export type ExerciseCategory = 'push' | 'pull' | 'legs' | 'core'
-export type Equipment = 'parallettes' | 'parallel_bars' | 'pull_up_bar'
+export type Equipment = 'parallettes' | 'parallel_bars' | 'pull_up_bar' | 'rings' | 'bands'
 
 export interface CalisthenicsExerciseDef {
   id: CalisthenicsExerciseId
