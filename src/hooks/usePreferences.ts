@@ -31,6 +31,7 @@ export function usePreferences(): {
         weeklyGoalDays: merged.weeklyGoalDays,
         soundEnabled: merged.soundEnabled,
         avatarVariant: merged.avatarVariant,
+        profileAvatar: merged.profileAvatar ?? null,
         activeSports: merged.activeSports,
         weightKg: merged.weightKg ?? null,
         updatedAt: Timestamp.now().toMillis(),

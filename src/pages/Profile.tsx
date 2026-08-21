@@ -5,7 +5,7 @@ import { useAuth } from '../hooks/useAuth'
 import { downloadExport, importData, readFileAsJson, type ImportMode } from '../lib/dataTransfer'
 import { runFullRepair, purgeGhostMobilitySessions } from '../lib/dataRepair'
 import { primeAudio, playCompleteDing } from '../lib/sound'
-import { db, type MobilityGoal, type SessionDuration, type SportDurationKey, type SportDurations, DEFAULT_SPORT_DURATIONS } from '../db/db'
+import { db, type MobilityGoal, type SessionDuration, type SportDurationKey, type SportDurations, type ProfileAvatar, DEFAULT_SPORT_DURATIONS } from '../db/db'
 import { collection, getDocs, addDoc, deleteDoc, doc } from 'firebase/firestore'
 import { db as firestoreDb } from '../lib/firebase'
 
@@ -14,6 +14,21 @@ const GOALS: { id: MobilityGoal; label: string; icon: string }[] = [
   { id: 'bjj', label: 'BJJ', icon: '🥋' },
   { id: 'calisthenics', label: 'Calisthenics', icon: '🤸' },
   { id: 'general', label: 'General health', icon: '❤️' }
+]
+
+const PROFILE_AVATARS: { id: ProfileAvatar; label: string; sport: 'calisthenics' | 'bjj' }[] = [
+  { id: 'calisthenics_front_lever', label: 'Front Lever', sport: 'calisthenics' },
+  { id: 'calisthenics_handstand', label: 'Handstand', sport: 'calisthenics' },
+  { id: 'calisthenics_muscle_up', label: 'Muscle-Up', sport: 'calisthenics' },
+  { id: 'calisthenics_planche', label: 'Planche', sport: 'calisthenics' },
+  { id: 'calisthenics_lsit', label: 'L-Sit', sport: 'calisthenics' },
+  { id: 'calisthenics_pistol_squat', label: 'Pistol Squat', sport: 'calisthenics' },
+  { id: 'calisthenics_back_lever', label: 'Back Lever', sport: 'calisthenics' },
+  { id: 'calisthenics_human_flag', label: 'Human Flag', sport: 'calisthenics' },
+  { id: 'bjj_fighter_stance', label: 'Fighter Stance', sport: 'bjj' },
+  { id: 'bjj_triangle_choke', label: 'Triangle Choke', sport: 'bjj' },
+  { id: 'bjj_bow', label: 'Bow', sport: 'bjj' },
+  { id: 'bjj_sparring', label: 'Sparring', sport: 'bjj' },
 ]
 
 function CollapsibleSection({ title, children }: { title: string; children: React.ReactNode }) {
@@ -152,6 +167,8 @@ export default function Profile() {
   const [diagLoading, setDiagLoading] = useState(false)
   const [pushResult, setPushResult] = useState<{ pushed: number; errors: string[] } | null>(null)
   const [pushing, setPushing] = useState(false)
+  const [clearingCache, setClearingCache] = useState(false)
+  const [cacheCleared, setCacheCleared] = useState(false)
 
   async function handleForcePush() {
     if (!user) return
@@ -309,6 +326,24 @@ export default function Profile() {
     }
   }
 
+  async function handleClearCache() {
+    setClearingCache(true)
+    try {
+      const registrations = await navigator.serviceWorker.getRegistrations()
+      for (const reg of registrations) {
+        await reg.unregister()
+      }
+      const cacheNames = await caches.keys()
+      for (const name of cacheNames) {
+        await caches.delete(name)
+      }
+      setCacheCleared(true)
+      setTimeout(() => window.location.reload(), 600)
+    } catch {
+      setClearingCache(false)
+    }
+  }
+
   async function handleRepair() {
     setRepairing(true)
     setRepairResult(null)
@@ -368,6 +403,61 @@ export default function Profile() {
         <h1 className="text-2xl font-extrabold">Profile</h1>
       </div>
 
+
+      <Card>
+        <h2 className="mb-3 text-base font-bold">Profile avatar</h2>
+        <p className="mb-3 text-xs text-muted">Choose your avatar — shown in the app header and coaching cards.</p>
+        <div className="space-y-3">
+          <div>
+            <p className="text-xs font-semibold text-muted mb-2">Calisthenics</p>
+            <div className="grid grid-cols-4 gap-2">
+              {PROFILE_AVATARS.filter((a) => a.sport === 'calisthenics').map((avatar) => (
+                <button
+                  key={avatar.id}
+                  onClick={() => update({ profileAvatar: avatar.id })}
+                  className={`flex flex-col items-center gap-1 rounded-xl p-2 transition-all ${
+                    preferences.profileAvatar === avatar.id
+                      ? 'bg-teal/20 border-2 border-teal ring-2 ring-teal/20'
+                      : 'bg-card2 border border-border hover:border-muted'
+                  }`}
+                >
+                  <img
+                    src={`/icons/avatars/${avatar.id}.png`}
+                    alt={avatar.label}
+                    className="w-12 h-12"
+                    style={{ imageRendering: 'pixelated' }}
+                  />
+                  <span className="text-[9px] font-semibold text-muted leading-tight text-center">{avatar.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-muted mb-2">BJJ</p>
+            <div className="grid grid-cols-4 gap-2">
+              {PROFILE_AVATARS.filter((a) => a.sport === 'bjj').map((avatar) => (
+                <button
+                  key={avatar.id}
+                  onClick={() => update({ profileAvatar: avatar.id })}
+                  className={`flex flex-col items-center gap-1 rounded-xl p-2 transition-all ${
+                    preferences.profileAvatar === avatar.id
+                      ? 'bg-teal/20 border-2 border-teal ring-2 ring-teal/20'
+                      : 'bg-card2 border border-border hover:border-muted'
+                  }`}
+                >
+                  <img
+                    src={`/icons/avatars/${avatar.id}.png`}
+                    alt={avatar.label}
+                    className="w-12 h-12"
+                    style={{ imageRendering: 'pixelated' }}
+                  />
+                  <span className="text-[9px] font-semibold text-muted leading-tight text-center">{avatar.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </Card>
 
       <Card>
         <h2 className="mb-3 text-base font-bold">Session duration per sport</h2>
@@ -787,6 +877,20 @@ export default function Profile() {
           Apple Health, Garmin, sleep, HRV, resting HR and training readiness sync are planned for a future
           companion app. The data model is already in place — no setup needed here yet.
         </p>
+      </Card>
+
+      <Card>
+        <h2 className="mb-1 text-base font-bold">App update</h2>
+        <p className="mb-3 text-xs text-muted">
+          Force-clear the service worker cache and reload. Use this when you know a new version is deployed but your phone is still showing the old UI.
+        </p>
+        <button
+          onClick={handleClearCache}
+          disabled={clearingCache}
+          className="w-full rounded-xl bg-card2 py-3 text-sm font-bold text-ink/90 border border-border disabled:opacity-50"
+        >
+          {cacheCleared ? 'Cache cleared — reloading…' : clearingCache ? 'Clearing…' : 'Clear cache & reload'}
+        </button>
       </Card>
 
       <MathRulesCard />

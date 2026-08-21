@@ -404,6 +404,237 @@ export const EXERCISE_MUSCLES: Record<string, MuscleActivation[]> = {
     { muscle: 'biceps', level: 'secondary' },
     { muscle: 'abs', level: 'secondary' },
     { muscle: 'front_delt', level: 'secondary' }
+  ],
+  passive_hang: [
+    { muscle: 'forearms', level: 'primary' },
+    { muscle: 'lats', level: 'secondary' },
+    { muscle: 'front_delt', level: 'secondary' }
+  ],
+  reverse_plank: [
+    { muscle: 'glutes', level: 'primary' },
+    { muscle: 'lower_back', level: 'primary' },
+    { muscle: 'rear_delt', level: 'secondary' },
+    { muscle: 'triceps', level: 'secondary' }
+  ],
+  wall_walks: [
+    { muscle: 'front_delt', level: 'primary' },
+    { muscle: 'triceps', level: 'primary' },
+    { muscle: 'abs', level: 'secondary' },
+    { muscle: 'traps', level: 'secondary' }
+  ],
+  tripod_headstand: [
+    { muscle: 'front_delt', level: 'primary' },
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'triceps', level: 'secondary' },
+    { muscle: 'traps', level: 'secondary' }
+  ],
+  chest_to_wall_handstand: [
+    { muscle: 'front_delt', level: 'primary' },
+    { muscle: 'triceps', level: 'primary' },
+    { muscle: 'traps', level: 'primary' },
+    { muscle: 'abs', level: 'secondary' }
+  ],
+  freestanding_handstand: [
+    { muscle: 'front_delt', level: 'primary' },
+    { muscle: 'triceps', level: 'primary' },
+    { muscle: 'traps', level: 'primary' },
+    { muscle: 'forearms', level: 'secondary' },
+    { muscle: 'abs', level: 'secondary' }
+  ],
+  wall_hspu: [
+    { muscle: 'front_delt', level: 'primary' },
+    { muscle: 'triceps', level: 'primary' },
+    { muscle: 'traps', level: 'primary' },
+    { muscle: 'chest', level: 'secondary' }
+  ],
+  back_lever_adv_tuck: [
+    { muscle: 'lats', level: 'primary' },
+    { muscle: 'rear_delt', level: 'primary' },
+    { muscle: 'biceps', level: 'primary' },
+    { muscle: 'abs', level: 'secondary' }
+  ],
+  back_lever_straddle: [
+    { muscle: 'lats', level: 'primary' },
+    { muscle: 'rear_delt', level: 'primary' },
+    { muscle: 'biceps', level: 'primary' },
+    { muscle: 'abs', level: 'secondary' },
+    { muscle: 'inner_thigh', level: 'secondary' }
+  ],
+  dragon_flag_negatives: [
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'hip_flexors', level: 'primary' },
+    { muscle: 'lower_back', level: 'secondary' }
+  ],
+  dragon_flag_press_hold: [
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'hip_flexors', level: 'primary' },
+    { muscle: 'lower_back', level: 'secondary' }
+  ],
+  human_flag_drills: [
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'lats', level: 'primary' },
+    { muscle: 'front_delt', level: 'primary' },
+    { muscle: 'triceps', level: 'secondary' }
+  ],
+  hollow_body_rocks: [
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'hip_flexors', level: 'secondary' }
+  ],
+  v_ups_libretto: [
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'hip_flexors', level: 'primary' }
+  ],
+  high_pull_ups_c2b: [
+    { muscle: 'lats', level: 'primary' },
+    { muscle: 'biceps', level: 'primary' },
+    { muscle: 'rear_delt', level: 'secondary' },
+    { muscle: 'rhomboids', level: 'secondary' }
+  ],
+  pull_up_slides: [
+    { muscle: 'lats', level: 'primary' },
+    { muscle: 'biceps', level: 'primary' },
+    { muscle: 'forearms', level: 'secondary' }
+  ],
+  pseudo_planche_push_up: [
+    { muscle: 'chest', level: 'primary' },
+    { muscle: 'front_delt', level: 'primary' },
+    { muscle: 'triceps', level: 'primary' },
+    { muscle: 'biceps', level: 'secondary' }
+  ],
+  triceps_bw_extension: [
+    { muscle: 'triceps', level: 'primary' },
+    { muscle: 'abs', level: 'secondary' }
+  ],
+  false_grip_hang: [
+    { muscle: 'forearms', level: 'primary' },
+    { muscle: 'biceps', level: 'secondary' }
+  ],
+  fingertip_push_ups: [
+    { muscle: 'chest', level: 'primary' },
+    { muscle: 'triceps', level: 'primary' },
+    { muscle: 'forearms', level: 'primary' },
+    { muscle: 'front_delt', level: 'secondary' }
+  ],
+  pistol_squat_box: [
+    { muscle: 'quads', level: 'primary' },
+    { muscle: 'glutes', level: 'primary' },
+    { muscle: 'abs', level: 'secondary' }
+  ],
+  pistol_squat_eccentric: [
+    { muscle: 'quads', level: 'primary' },
+    { muscle: 'glutes', level: 'primary' },
+    { muscle: 'abs', level: 'secondary' }
+  ],
+  narrow_stance_squat: [
+    { muscle: 'quads', level: 'primary' },
+    { muscle: 'glutes', level: 'secondary' }
+  ],
+  deep_squat_atg: [
+    { muscle: 'quads', level: 'primary' },
+    { muscle: 'glutes', level: 'primary' },
+    { muscle: 'inner_thigh', level: 'secondary' }
+  ],
+  seated_good_mornings: [
+    { muscle: 'hamstrings', level: 'primary' },
+    { muscle: 'lower_back', level: 'primary' },
+    { muscle: 'glutes', level: 'secondary' }
+  ],
+  jefferson_curl: [
+    { muscle: 'hamstrings', level: 'primary' },
+    { muscle: 'lower_back', level: 'primary' },
+    { muscle: 'glutes', level: 'secondary' }
+  ],
+  bar_lean_overs: [
+    { muscle: 'lats', level: 'primary' },
+    { muscle: 'chest', level: 'primary' },
+    { muscle: 'abs', level: 'secondary' },
+    { muscle: 'triceps', level: 'secondary' },
+    { muscle: 'front_delt', level: 'secondary' }
+  ],
+  elbow_plank: [
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'front_delt', level: 'secondary' },
+    { muscle: 'glutes', level: 'secondary' }
+  ],
+  tuck_leg_raise: [
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'hip_flexors', level: 'primary' },
+    { muscle: 'forearms', level: 'secondary' }
+  ],
+  negative_pushups: [
+    { muscle: 'chest', level: 'primary' },
+    { muscle: 'triceps', level: 'primary' },
+    { muscle: 'front_delt', level: 'secondary' }
+  ],
+  scapula_pushups: [
+    { muscle: 'chest', level: 'secondary' },
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'front_delt', level: 'secondary' }
+  ],
+  explosive_pushups: [
+    { muscle: 'chest', level: 'primary' },
+    { muscle: 'triceps', level: 'primary' },
+    { muscle: 'front_delt', level: 'primary' }
+  ],
+  band_assisted_pullups: [
+    { muscle: 'lats', level: 'primary' },
+    { muscle: 'biceps', level: 'primary' },
+    { muscle: 'rear_delt', level: 'secondary' },
+    { muscle: 'forearms', level: 'secondary' }
+  ],
+  negative_pullups: [
+    { muscle: 'lats', level: 'primary' },
+    { muscle: 'biceps', level: 'primary' },
+    { muscle: 'rear_delt', level: 'secondary' },
+    { muscle: 'forearms', level: 'primary' }
+  ],
+  german_hang: [
+    { muscle: 'front_delt', level: 'primary' },
+    { muscle: 'biceps', level: 'primary' },
+    { muscle: 'chest', level: 'secondary' },
+    { muscle: 'lats', level: 'secondary' }
+  ],
+  one_leg_bent_lsit: [
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'hip_flexors', level: 'primary' },
+    { muscle: 'quads', level: 'secondary' },
+    { muscle: 'triceps', level: 'secondary' }
+  ],
+  straddle_lsit: [
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'hip_flexors', level: 'primary' },
+    { muscle: 'inner_thigh', level: 'primary' },
+    { muscle: 'triceps', level: 'secondary' }
+  ],
+  eccentric_rows: [
+    { muscle: 'lats', level: 'primary' },
+    { muscle: 'rhomboids', level: 'primary' },
+    { muscle: 'biceps', level: 'primary' },
+    { muscle: 'rear_delt', level: 'secondary' }
+  ],
+  wide_rows: [
+    { muscle: 'rear_delt', level: 'primary' },
+    { muscle: 'rhomboids', level: 'primary' },
+    { muscle: 'lats', level: 'secondary' },
+    { muscle: 'biceps', level: 'secondary' }
+  ],
+  archer_rows: [
+    { muscle: 'lats', level: 'primary' },
+    { muscle: 'biceps', level: 'primary' },
+    { muscle: 'abs', level: 'secondary' },
+    { muscle: 'rear_delt', level: 'secondary' }
+  ],
+  adv_tuck_front_lever: [
+    { muscle: 'lats', level: 'primary' },
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'rear_delt', level: 'primary' },
+    { muscle: 'lower_back', level: 'secondary' }
+  ],
+  straddle_front_lever: [
+    { muscle: 'lats', level: 'primary' },
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'rear_delt', level: 'primary' },
+    { muscle: 'inner_thigh', level: 'secondary' }
   ]
 }
 

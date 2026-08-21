@@ -9,6 +9,7 @@ import CalisthenicsPage from './pages/CalisthenicsPage'
 import Recovery from './pages/Recovery'
 import HiitPage from './pages/HiitPage'
 import RunningPage from './pages/RunningPage'
+import SkillsPage from './pages/SkillsPage'
 
 const Progress = lazy(() => import('./pages/Progress'))
 const Profile = lazy(() => import('./pages/Profile'))
@@ -102,6 +103,7 @@ function AppContent() {
               <Route path="/calendar" element={<Calendar />} />
               <Route path="/hiit" element={<HiitPage />} />
               <Route path="/running" element={<RunningPage />} />
+              <Route path="/skills" element={<SkillsPage />} />
             </Routes>
           </Suspense>
         </div>

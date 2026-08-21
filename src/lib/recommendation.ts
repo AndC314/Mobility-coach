@@ -10,6 +10,7 @@ import {
   type MovementCategory
 } from '../data/muscleMap'
 import { RECOVERY_SEQUENCES } from '../data/recovery'
+import { computeDeloadStatus, type DeloadStatus } from './supercompensation'
 
 /**
  * Pure recovery score formula — extracted for testability.
@@ -45,6 +46,7 @@ export interface TodayPlan {
   totalMin: number
   rationale: string
   categorySoreness: CategorySoreness[]
+  deloadCategories: string[]
   context: {
     bjjYesterday: boolean
     bjjToday: boolean
@@ -330,12 +332,21 @@ export async function generateTodayPlan(
     rationale += ` Extra focus added for: ${soreAreasToday.map((a) => a.replace('_', ' ')).join(', ')}.`
   }
 
+  // Deload trigger: 3+ consecutive weeks of ≥3 sessions/week per category
+  const calLogs = await db.calisthenicsLogs.toArray()
+  const deloadStatuses = computeDeloadStatus(calLogs)
+  const deloadCategories = deloadStatuses.filter((d) => d.shouldDeload).map((d) => d.category)
+  if (deloadCategories.length > 0) {
+    rationale += ` Deload recommended for: ${deloadCategories.join(', ')} (3+ weeks of high frequency).`
+  }
+
   return {
     recoveryScore: score,
     items,
     totalMin,
     rationale,
     categorySoreness,
+    deloadCategories,
     context: { bjjYesterday, bjjToday, restYesterday, soreAreasToday, suppressedCategories }
   }
 }

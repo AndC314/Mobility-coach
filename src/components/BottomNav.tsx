@@ -23,6 +23,7 @@ const TABS: TabDef[] = [
 export default function BottomNav() {
   const { preferences } = usePreferences()
   const activeSports = preferences.activeSports ?? ['mobility', 'bjj', 'calisthenics', 'running', 'elite_forces']
+  const profileAvatar = preferences.profileAvatar
 
   const visibleTabs = TABS.filter(tab => !tab.sport || activeSports.includes(tab.sport))
 
@@ -44,7 +45,16 @@ export default function BottomNav() {
                 }`
               }
             >
-              <span className="text-2xl leading-none">{tab.icon}</span>
+              {tab.to === '/profile' && profileAvatar ? (
+                <img
+                  src={`/icons/avatars/${profileAvatar}.png`}
+                  alt="Profile"
+                  className="w-7 h-7"
+                  style={{ imageRendering: 'pixelated' }}
+                />
+              ) : (
+                <span className="text-2xl leading-none">{tab.icon}</span>
+              )}
               <span className="text-[11px]">{tab.label}</span>
             </NavLink>
           ))}

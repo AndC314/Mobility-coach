@@ -9,8 +9,8 @@ import {
   computeMuscleSorenessDecay,
   computeCategorySoreness,
   type DecayInput,
-  type CategorySoreness,
 } from '../data/muscleMap'
+import { SKILL_TREE_DATA } from './skillRequirements'
 
 export type Intensity = 'light' | 'moderate' | 'push_it'
 
@@ -28,6 +28,8 @@ export interface GeneratedSession {
   totalDurationMin: number
   focus: string
   intensity: Intensity
+  skillExerciseIds?: CalisthenicsExerciseId[]
+  isDeload?: boolean
 }
 
 export interface SessionGeneratorInput {
@@ -37,6 +39,7 @@ export interface SessionGeneratorInput {
   availableEquipment?: string[]
   seed?: number
   intensity?: Intensity
+  deloadCategories?: string[]
 }
 
 const ANTAGONIST_PAIRS: Record<ProgressionCategory, ProgressionCategory> = {
@@ -53,7 +56,9 @@ const INTENSITY_CONFIG = {
 } as const
 
 export function generateCalisthenicsSession(input: SessionGeneratorInput): GeneratedSession {
-  const { logs, bestMap, categoryScores, availableEquipment, seed, intensity = 'moderate' } = input
+  const { logs, bestMap, categoryScores, availableEquipment, seed, deloadCategories = [] } = input
+  // Deload: force light intensity when any category needs deload
+  const intensity = deloadCategories.length > 0 ? 'light' : (input.intensity ?? 'moderate')
   const config = INTENSITY_CONFIG[intensity]
   const now = Date.now()
 
@@ -118,6 +123,43 @@ export function generateCalisthenicsSession(input: SessionGeneratorInput): Gener
     }
   }
 
+  // Skill block: inject unlocked skill tier exercises (max 2 per session)
+  let skillCount = 0
+  const skillExerciseIds: Set<CalisthenicsExerciseId> = new Set()
+  for (const skill of SKILL_TREE_DATA) {
+    if (skillCount >= 2) break
+    if (selected.length >= config.maxExercises) break
+    const isUnlocked = skill.prerequisites.every((p) => (bestMap.get(p.exerciseId as CalisthenicsExerciseId) ?? 0) >= p.threshold)
+    if (!isUnlocked) continue
+    const skillCat = skill.category === 'dynamic' ? 'pull' : skill.category as ProgressionCategory
+    if (!categories.includes(skillCat)) continue
+
+    let activeTier = skill.tiers[0]
+    for (const tier of skill.tiers) {
+      const best = bestMap.get(tier.exerciseId as CalisthenicsExerciseId) ?? 0
+      if (best > 0) activeTier = tier
+    }
+
+    const exerciseId = activeTier.exerciseId as CalisthenicsExerciseId
+    if (selected.some((e) => e.exerciseId === exerciseId)) continue
+    const def = CALISTHENICS_EXERCISES.find((e) => e.id === exerciseId)
+    if (!def) continue
+
+    const best = bestMap.get(exerciseId) ?? 0
+    const targetValue = computeOverloadTarget(exerciseId, best, bestMap, def.type === 'hold')
+    selected.push({
+      exerciseId,
+      name: def.name,
+      targetValue,
+      targetSets: config.baseSets,
+      unit: def.type === 'hold' ? 's' : 'reps',
+      reason: `Skill: ${skill.name} T${activeTier.tier}`,
+    })
+    skillExerciseIds.add(exerciseId)
+    usedCategories.set(skillCat, (usedCategories.get(skillCat) ?? 0) + 1)
+    skillCount++
+  }
+
   // Second pass: fill remaining slots with deeper category coverage
   for (const cat of ranked) {
     if (selected.length >= config.maxExercises) break
@@ -158,9 +200,28 @@ export function generateCalisthenicsSession(input: SessionGeneratorInput): Gener
     .sort((a, b) => b[1] - a[1])
     .slice(0, 2)
     .map(([cat]) => cat.charAt(0).toUpperCase() + cat.slice(1))
-  const focus = topCats.join(' + ') + ' focus'
+  const focus = deloadCategories.length > 0
+    ? 'Deload — ' + topCats.join(' + ')
+    : topCats.join(' + ') + ' focus'
 
-  return { exercises: selected, totalDurationMin, focus, intensity }
+  // During deload, cap all targets at 50% of personal best
+  if (deloadCategories.length > 0) {
+    for (const ex of selected) {
+      const best = bestMap.get(ex.exerciseId) ?? 0
+      if (best > 0) {
+        ex.targetValue = Math.max(1, Math.round(best * 0.5))
+      }
+    }
+  }
+
+  return {
+    exercises: selected,
+    totalDurationMin,
+    focus,
+    intensity,
+    skillExerciseIds: skillExerciseIds.size > 0 ? [...skillExerciseIds] : undefined,
+    isDeload: deloadCategories.length > 0 ? true : undefined,
+  }
 }
 
 function pickExerciseForCategory(

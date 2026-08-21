@@ -31,21 +31,21 @@ const PUSH_HORIZONTAL: ProgressionChain = {
   id: 'push_horizontal',
   category: 'push',
   label: 'Horizontal Push',
-  description: 'Push-up progressions toward one-arm and planche',
+  description: 'Push-up progressions: negatives → standard → explosive → one-arm',
   nodes: [
     {
-      exerciseId: 'wall_plank',
+      exerciseId: 'negative_pushups',
       unlockRequirements: [],
       level: 1,
     },
     {
-      exerciseId: 'pushups',
-      unlockRequirements: [{ exerciseId: 'wall_plank', threshold: 30, unit: 's' }],
+      exerciseId: 'scapula_pushups',
+      unlockRequirements: [{ exerciseId: 'negative_pushups', threshold: 8, unit: 'reps' }],
       level: 1,
     },
     {
-      exerciseId: 'wide_push_ups',
-      unlockRequirements: [{ exerciseId: 'pushups', threshold: 10, unit: 'reps' }],
+      exerciseId: 'pushups',
+      unlockRequirements: [{ exerciseId: 'negative_pushups', threshold: 10, unit: 'reps' }],
       level: 2,
     },
     {
@@ -54,9 +54,27 @@ const PUSH_HORIZONTAL: ProgressionChain = {
       level: 2,
     },
     {
-      exerciseId: 'archer_pushups',
+      exerciseId: 'wide_push_ups',
+      unlockRequirements: [{ exerciseId: 'pushups', threshold: 12, unit: 'reps' }],
+      level: 2,
+    },
+    {
+      exerciseId: 'triceps_bw_extension',
       unlockRequirements: [{ exerciseId: 'diamond_push_ups', threshold: 10, unit: 'reps' }],
       level: 3,
+    },
+    {
+      exerciseId: 'explosive_pushups',
+      unlockRequirements: [{ exerciseId: 'pushups', threshold: 20, unit: 'reps' }],
+      level: 3,
+    },
+    {
+      exerciseId: 'archer_pushups',
+      unlockRequirements: [
+        { exerciseId: 'diamond_push_ups', threshold: 12, unit: 'reps' },
+        { exerciseId: 'explosive_pushups', threshold: 8, unit: 'reps' },
+      ],
+      level: 4,
     },
     {
       exerciseId: 'hindu_pushups',
@@ -114,17 +132,40 @@ const PULL_VERTICAL: ProgressionChain = {
   id: 'pull_vertical',
   category: 'pull',
   label: 'Vertical Pull',
-  description: 'Scapular control to strict pull-ups and beyond',
+  description: 'Passive hang → scapular control → assisted → strict pull-ups → muscle-up',
   nodes: [
     {
-      exerciseId: 'scapular_pullups',
+      exerciseId: 'passive_hang',
       unlockRequirements: [],
       level: 1,
     },
     {
-      exerciseId: 'pullups',
-      unlockRequirements: [{ exerciseId: 'scapular_pullups', threshold: 10, unit: 'reps' }],
+      exerciseId: 'australian_pullups',
+      unlockRequirements: [{ exerciseId: 'passive_hang', threshold: 30, unit: 's' }],
+      level: 1,
+    },
+    {
+      exerciseId: 'scapular_pullups',
+      unlockRequirements: [{ exerciseId: 'passive_hang', threshold: 45, unit: 's' }],
+      level: 1,
+    },
+    {
+      exerciseId: 'band_assisted_pullups',
+      unlockRequirements: [
+        { exerciseId: 'australian_pullups', threshold: 12, unit: 'reps' },
+        { exerciseId: 'scapular_pullups', threshold: 12, unit: 'reps' },
+      ],
       level: 2,
+    },
+    {
+      exerciseId: 'negative_pullups',
+      unlockRequirements: [{ exerciseId: 'band_assisted_pullups', threshold: 6, unit: 'reps' }],
+      level: 2,
+    },
+    {
+      exerciseId: 'pullups',
+      unlockRequirements: [{ exerciseId: 'negative_pullups', threshold: 5, unit: 'reps' }],
+      level: 3,
     },
     {
       exerciseId: 'hanging_knee_to_chest',
@@ -132,9 +173,26 @@ const PULL_VERTICAL: ProgressionChain = {
       level: 3,
     },
     {
-      exerciseId: 'muscle_ups',
-      unlockRequirements: [{ exerciseId: 'pullups', threshold: 10, unit: 'reps' }],
+      exerciseId: 'high_pull_ups_c2b',
+      unlockRequirements: [{ exerciseId: 'pullups', threshold: 8, unit: 'reps' }],
       level: 4,
+    },
+    {
+      exerciseId: 'bar_lean_overs',
+      unlockRequirements: [
+        { exerciseId: 'straight_bar_dips', threshold: 8, unit: 'reps' },
+        { exerciseId: 'pullups', threshold: 8, unit: 'reps' },
+      ],
+      level: 4,
+    },
+    {
+      exerciseId: 'muscle_ups',
+      unlockRequirements: [
+        { exerciseId: 'pullups', threshold: 10, unit: 'reps' },
+        { exerciseId: 'high_pull_ups_c2b', threshold: 5, unit: 'reps' },
+        { exerciseId: 'bar_lean_overs', threshold: 6, unit: 'reps' },
+      ],
+      level: 5,
     },
   ],
 }
@@ -143,22 +201,37 @@ const PULL_HORIZONTAL: ProgressionChain = {
   id: 'pull_horizontal',
   category: 'pull',
   label: 'Horizontal Pull',
-  description: 'Rows and grip work for pulling endurance',
+  description: 'Eccentric rows → ring rows → wide rows → archer rows',
   nodes: [
     {
-      exerciseId: 'door_pull',
+      exerciseId: 'eccentric_rows',
       unlockRequirements: [],
       level: 1,
     },
     {
       exerciseId: 'ring_rows',
-      unlockRequirements: [{ exerciseId: 'door_pull', threshold: 12, unit: 'reps' }],
+      unlockRequirements: [{ exerciseId: 'eccentric_rows', threshold: 10, unit: 'reps' }],
       level: 2,
+    },
+    {
+      exerciseId: 'wide_rows',
+      unlockRequirements: [{ exerciseId: 'ring_rows', threshold: 12, unit: 'reps' }],
+      level: 3,
+    },
+    {
+      exerciseId: 'archer_rows',
+      unlockRequirements: [{ exerciseId: 'wide_rows', threshold: 10, unit: 'reps' }],
+      level: 4,
     },
     {
       exerciseId: 'australian_pullups',
       unlockRequirements: [{ exerciseId: 'ring_rows', threshold: 12, unit: 'reps' }],
-      level: 3,
+      level: 2,
+    },
+    {
+      exerciseId: 'door_pull',
+      unlockRequirements: [],
+      level: 1,
     },
   ],
 }
@@ -172,47 +245,67 @@ const LEGS_SQUAT: ProgressionChain = {
   id: 'legs_squat',
   category: 'legs',
   label: 'Squat Progression',
-  description: 'Bilateral to single-leg strength',
+  description: 'Deep squats → narrow → bilateral → unilateral → pistol',
   nodes: [
     {
-      exerciseId: 'wall_sit',
+      exerciseId: 'deep_squat_atg',
       unlockRequirements: [],
       level: 1,
     },
     {
-      exerciseId: 'squats',
-      unlockRequirements: [{ exerciseId: 'wall_sit', threshold: 30, unit: 's' }],
+      exerciseId: 'narrow_stance_squat',
+      unlockRequirements: [{ exerciseId: 'deep_squat_atg', threshold: 12, unit: 'reps' }],
       level: 1,
+    },
+    {
+      exerciseId: 'squats',
+      unlockRequirements: [{ exerciseId: 'narrow_stance_squat', threshold: 12, unit: 'reps' }],
+      level: 2,
     },
     {
       exerciseId: 'glute_bridge',
       unlockRequirements: [{ exerciseId: 'squats', threshold: 15, unit: 'reps' }],
-      level: 1,
-    },
-    {
-      exerciseId: 'lunge_forward',
-      unlockRequirements: [{ exerciseId: 'squats', threshold: 25, unit: 'reps' }],
-      level: 2,
-    },
-    {
-      exerciseId: 'lunge_backward',
-      unlockRequirements: [{ exerciseId: 'lunge_forward', threshold: 15, unit: 'reps' }],
       level: 2,
     },
     {
       exerciseId: 'bulgarian_squat',
-      unlockRequirements: [{ exerciseId: 'squats', threshold: 30, unit: 'reps' }],
+      unlockRequirements: [{ exerciseId: 'squats', threshold: 15, unit: 'reps' }],
       level: 3,
     },
     {
-      exerciseId: 'pistol_squats',
-      unlockRequirements: [{ exerciseId: 'bulgarian_squat', threshold: 12, unit: 'reps' }],
+      exerciseId: 'cossack_squat',
+      unlockRequirements: [{ exerciseId: 'bulgarian_squat', threshold: 6, unit: 'reps' }],
+      level: 3,
+    },
+    {
+      exerciseId: 'pistol_squat_box',
+      unlockRequirements: [{ exerciseId: 'cossack_squat', threshold: 6, unit: 'reps' }],
       level: 4,
     },
     {
+      exerciseId: 'pistol_squats',
+      unlockRequirements: [{ exerciseId: 'pistol_squat_box', threshold: 5, unit: 'reps' }],
+      level: 5,
+    },
+    {
       exerciseId: 'calf_raises',
-      unlockRequirements: [{ exerciseId: 'squats', threshold: 20, unit: 'reps' }],
+      unlockRequirements: [{ exerciseId: 'squats', threshold: 15, unit: 'reps' }],
       level: 2,
+    },
+    {
+      exerciseId: 'lunge_forward',
+      unlockRequirements: [{ exerciseId: 'squats', threshold: 15, unit: 'reps' }],
+      level: 2,
+    },
+    {
+      exerciseId: 'lunge_backward',
+      unlockRequirements: [{ exerciseId: 'lunge_forward', threshold: 12, unit: 'reps' }],
+      level: 2,
+    },
+    {
+      exerciseId: 'wall_sit',
+      unlockRequirements: [],
+      level: 1,
     },
   ],
 }
@@ -259,9 +352,19 @@ const CORE_ANTERIOR: ProgressionChain = {
       level: 3,
     },
     {
-      exerciseId: 'lsit',
+      exerciseId: 'one_leg_bent_lsit',
       unlockRequirements: [{ exerciseId: 'tuck_lsit', threshold: 15, unit: 's' }],
+      level: 3,
+    },
+    {
+      exerciseId: 'lsit',
+      unlockRequirements: [{ exerciseId: 'one_leg_bent_lsit', threshold: 10, unit: 's' }],
       level: 4,
+    },
+    {
+      exerciseId: 'straddle_lsit',
+      unlockRequirements: [{ exerciseId: 'lsit', threshold: 15, unit: 's' }],
+      level: 5,
     },
   ],
 }
@@ -315,11 +418,6 @@ const LEGS_ADDUCTOR: ProgressionChain = {
   description: 'Groin and inner thigh strength for guard control',
   nodes: [
     {
-      exerciseId: 'cossack_squat',
-      unlockRequirements: [{ exerciseId: 'squats', threshold: 20, unit: 'reps' }],
-      level: 2,
-    },
-    {
       exerciseId: 'copenhagen_plank',
       unlockRequirements: [{ exerciseId: 'side_plank', threshold: 30, unit: 's' }],
       level: 3,
@@ -360,11 +458,16 @@ const PULL_LEVERS: ProgressionChain = {
   id: 'pull_levers',
   category: 'pull',
   label: 'Levers & Statics',
-  description: 'Straight-arm pulling strength: skin the cat to full levers',
+  description: 'Straight-arm pulling: german hang → skin the cat → back/front lever',
   nodes: [
     {
-      exerciseId: 'skin_the_cat',
+      exerciseId: 'german_hang',
       unlockRequirements: [{ exerciseId: 'dead_hang', threshold: 30, unit: 's' }],
+      level: 2,
+    },
+    {
+      exerciseId: 'skin_the_cat',
+      unlockRequirements: [{ exerciseId: 'german_hang', threshold: 15, unit: 's' }],
       level: 2,
     },
     {
@@ -373,13 +476,148 @@ const PULL_LEVERS: ProgressionChain = {
       level: 3,
     },
     {
-      exerciseId: 'back_lever',
-      unlockRequirements: [{ exerciseId: 'skin_the_cat', threshold: 8, unit: 'reps' }],
+      exerciseId: 'adv_tuck_front_lever',
+      unlockRequirements: [{ exerciseId: 'tucked_front_lever', threshold: 10, unit: 's' }],
+      level: 4,
+    },
+    {
+      exerciseId: 'straddle_front_lever',
+      unlockRequirements: [{ exerciseId: 'adv_tuck_front_lever', threshold: 10, unit: 's' }],
       level: 4,
     },
     {
       exerciseId: 'front_lever',
-      unlockRequirements: [{ exerciseId: 'tucked_front_lever', threshold: 10, unit: 's' }],
+      unlockRequirements: [{ exerciseId: 'straddle_front_lever', threshold: 10, unit: 's' }],
+      level: 5,
+    },
+    {
+      exerciseId: 'back_lever_adv_tuck',
+      unlockRequirements: [{ exerciseId: 'skin_the_cat', threshold: 5, unit: 'reps' }],
+      level: 3,
+    },
+    {
+      exerciseId: 'back_lever_straddle',
+      unlockRequirements: [{ exerciseId: 'back_lever_adv_tuck', threshold: 10, unit: 's' }],
+      level: 4,
+    },
+    {
+      exerciseId: 'back_lever',
+      unlockRequirements: [{ exerciseId: 'back_lever_straddle', threshold: 10, unit: 's' }],
+      level: 5,
+    },
+  ],
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// PUSH — HANDSTAND & HSPU
+// Wall walks → Headstand → Chest-to-wall → Freestanding → HSPU
+// ─────────────────────────────────────────────────────────────────────────
+
+const PUSH_HANDSTAND: ProgressionChain = {
+  id: 'push_handstand',
+  category: 'push',
+  label: 'Handstand & HSPU',
+  description: 'Inverted pressing: wall walks to freestanding handstand push-ups',
+  nodes: [
+    {
+      exerciseId: 'pike_pushups',
+      unlockRequirements: [{ exerciseId: 'pushups', threshold: 15, unit: 'reps' }],
+      level: 2,
+    },
+    {
+      exerciseId: 'tripod_headstand',
+      unlockRequirements: [{ exerciseId: 'pike_pushups', threshold: 8, unit: 'reps' }],
+      level: 2,
+    },
+    {
+      exerciseId: 'wall_walks',
+      unlockRequirements: [{ exerciseId: 'tripod_headstand', threshold: 20, unit: 's' }],
+      level: 3,
+    },
+    {
+      exerciseId: 'chest_to_wall_handstand',
+      unlockRequirements: [{ exerciseId: 'wall_walks', threshold: 5, unit: 'reps' }],
+      level: 3,
+    },
+    {
+      exerciseId: 'freestanding_handstand',
+      unlockRequirements: [{ exerciseId: 'chest_to_wall_handstand', threshold: 45, unit: 's' }],
+      level: 4,
+    },
+    {
+      exerciseId: 'wall_hspu',
+      unlockRequirements: [{ exerciseId: 'chest_to_wall_handstand', threshold: 30, unit: 's' }],
+      level: 4,
+    },
+  ],
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// PUSH — ONE-ARM PUSH-UP
+// Diamond → Archer → Pseudo planche → (leads to one-arm)
+// ─────────────────────────────────────────────────────────────────────────
+
+const PUSH_ONE_ARM: ProgressionChain = {
+  id: 'push_one_arm',
+  category: 'push',
+  label: 'One-Arm Push-Up',
+  description: 'Unilateral pressing: diamond to pseudo planche',
+  nodes: [
+    {
+      exerciseId: 'diamond_push_ups',
+      unlockRequirements: [{ exerciseId: 'pushups', threshold: 15, unit: 'reps' }],
+      level: 2,
+    },
+    {
+      exerciseId: 'archer_pushups',
+      unlockRequirements: [{ exerciseId: 'diamond_push_ups', threshold: 10, unit: 'reps' }],
+      level: 3,
+    },
+    {
+      exerciseId: 'pseudo_planche_push_up',
+      unlockRequirements: [{ exerciseId: 'archer_pushups', threshold: 8, unit: 'reps' }],
+      level: 4,
+    },
+  ],
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// CORE — DRAGON FLAG
+// Hollow body → Leg raises → Negatives → Full hold
+// ─────────────────────────────────────────────────────────────────────────
+
+const CORE_DRAGON_FLAG: ProgressionChain = {
+  id: 'core_dragon_flag',
+  category: 'core',
+  label: 'Dragon Flag',
+  description: 'Maximal anterior core: hollow body to full dragon flag',
+  nodes: [
+    {
+      exerciseId: 'hollow_body_hold',
+      unlockRequirements: [{ exerciseId: 'plank', threshold: 60, unit: 's' }],
+      level: 2,
+    },
+    {
+      exerciseId: 'hollow_body_rocks',
+      unlockRequirements: [{ exerciseId: 'hollow_body_hold', threshold: 30, unit: 's' }],
+      level: 2,
+    },
+    {
+      exerciseId: 'leg_raise',
+      unlockRequirements: [{ exerciseId: 'hollow_body_hold', threshold: 30, unit: 's' }],
+      level: 3,
+    },
+    {
+      exerciseId: 'dragon_flag_negatives',
+      unlockRequirements: [
+        { exerciseId: 'hollow_body_hold', threshold: 40, unit: 's' },
+        { exerciseId: 'leg_raise', threshold: 12, unit: 'reps' },
+      ],
+      level: 4,
+    },
+    {
+      exerciseId: 'dragon_flag_press_hold',
+      unlockRequirements: [{ exerciseId: 'dragon_flag_negatives', threshold: 5, unit: 'reps' }],
       level: 5,
     },
   ],
@@ -392,6 +630,8 @@ const PULL_LEVERS: ProgressionChain = {
 export const PROGRESSION_CHAINS: ProgressionChain[] = [
   PUSH_HORIZONTAL,
   PUSH_VERTICAL,
+  PUSH_HANDSTAND,
+  PUSH_ONE_ARM,
   PULL_VERTICAL,
   PULL_HORIZONTAL,
   PULL_LEVERS,
@@ -400,6 +640,7 @@ export const PROGRESSION_CHAINS: ProgressionChain[] = [
   LEGS_ADDUCTOR,
   CORE_ANTERIOR,
   CORE_POSTERIOR,
+  CORE_DRAGON_FLAG,
 ]
 
 export function getChainsForCategory(category: ProgressionCategory): ProgressionChain[] {

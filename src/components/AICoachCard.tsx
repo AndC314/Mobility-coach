@@ -1,6 +1,7 @@
 import { Card } from './Card'
 import { useAICoach } from '../hooks/useAICoach'
 import { useAuth } from '../hooks/useAuth'
+import { usePreferences } from '../hooks/usePreferences'
 
 function cleanCoaching(text: string): string {
   return text
@@ -55,6 +56,21 @@ function renderInline(text: string): (string | JSX.Element)[] {
   return parts
 }
 
+function CoachIcon() {
+  const { preferences } = usePreferences()
+  if (preferences.profileAvatar) {
+    return (
+      <img
+        src={`/icons/avatars/${preferences.profileAvatar}.png`}
+        alt=""
+        className="w-7 h-7"
+        style={{ imageRendering: 'pixelated' }}
+      />
+    )
+  }
+  return <span className="text-lg">{'\u{1F916}'}</span>
+}
+
 export default function AICoachCard() {
   const { user } = useAuth()
   const { coaching, loading, error, generatedAt, limitReached, refresh } = useAICoach()
@@ -63,7 +79,7 @@ export default function AICoachCard() {
     return (
       <Card className="border-accent/20">
         <div className="flex items-center gap-2">
-          <span className="text-lg">🤖</span>
+          <CoachIcon />
           <div>
             <p className="text-sm font-semibold text-ink">AI Coach</p>
             <p className="text-xs text-muted">Sign in to enable daily coaching</p>
@@ -77,7 +93,7 @@ export default function AICoachCard() {
     return (
       <Card className="border-accent/20">
         <div className="flex items-center gap-3">
-          <span className="text-lg">🤖</span>
+          <CoachIcon />
           <div className="flex-1 space-y-2">
             <div className="h-3 w-32 animate-pulse rounded bg-border" />
             <div className="h-3 w-full animate-pulse rounded bg-border" />
@@ -93,7 +109,7 @@ export default function AICoachCard() {
       <Card className="border-red-400/30">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-lg">🤖</span>
+            <CoachIcon />
             <div>
               <p className="text-sm font-semibold text-ink">AI Coach</p>
               <p className="text-xs text-red-400">{error}</p>
@@ -120,7 +136,7 @@ export default function AICoachCard() {
     <Card className="border-accent/20">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <span className="text-lg">🤖</span>
+          <CoachIcon />
           <span className="text-sm font-bold text-ink">AI Coach</span>
         </div>
         {!limitReached && (

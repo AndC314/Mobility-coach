@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import CalisthenicsSection, { type BulkPrefill } from '../components/CalisthenicsSection'
 import TodayStrengthCard from '../components/TodayStrengthCard'
 import AISessionCard from '../components/AISessionCard'
@@ -39,6 +40,13 @@ export default function CalisthenicsPage() {
         <p className="text-sm text-muted">Your training</p>
         <h1 className="text-2xl font-extrabold">Calisthenics</h1>
       </div>
+
+      <Link
+        to="/skills"
+        className="block rounded-xl border border-accent/30 bg-accent/5 p-3 text-center text-sm font-semibold text-accent active:scale-[0.98] transition-transform"
+      >
+        🌳 Skill Tree — Unlock advanced moves
+      </Link>
 
       <AICoachCard />
 

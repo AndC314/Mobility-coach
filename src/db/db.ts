@@ -180,6 +180,48 @@ export type CalisthenicsExerciseId =
   | 'straight_bar_dips'
   | 'muscle_ups'
   | 'skin_the_cat'
+  | 'wall_walks'
+  | 'tripod_headstand'
+  | 'chest_to_wall_handstand'
+  | 'freestanding_handstand'
+  | 'wall_hspu'
+  | 'back_lever_adv_tuck'
+  | 'back_lever_straddle'
+  | 'dragon_flag_negatives'
+  | 'dragon_flag_press_hold'
+  | 'human_flag_drills'
+  | 'hollow_body_rocks'
+  | 'v_ups_libretto'
+  | 'high_pull_ups_c2b'
+  | 'pull_up_slides'
+  | 'pseudo_planche_push_up'
+  | 'triceps_bw_extension'
+  | 'false_grip_hang'
+  | 'fingertip_push_ups'
+  | 'pistol_squat_box'
+  | 'pistol_squat_eccentric'
+  | 'narrow_stance_squat'
+  | 'deep_squat_atg'
+  | 'seated_good_mornings'
+  | 'jefferson_curl'
+  | 'reverse_plank'
+  | 'passive_hang'
+  | 'bar_lean_overs'
+  | 'elbow_plank'
+  | 'tuck_leg_raise'
+  | 'negative_pushups'
+  | 'scapula_pushups'
+  | 'explosive_pushups'
+  | 'band_assisted_pullups'
+  | 'negative_pullups'
+  | 'german_hang'
+  | 'one_leg_bent_lsit'
+  | 'straddle_lsit'
+  | 'eccentric_rows'
+  | 'wide_rows'
+  | 'archer_rows'
+  | 'adv_tuck_front_lever'
+  | 'straddle_front_lever'
 
 export type CalisthenicsMetric = 'hold_sec' | 'reps'
 
@@ -260,6 +302,20 @@ export type MobilityGoal = 'bjj' | 'calisthenics' | 'general'
 export type SessionDuration = 10 | 20 | 30
 export type AvatarVariant = 'lean' | 'muscular' | 'balanced'
 
+export type ProfileAvatar =
+  | 'calisthenics_front_lever'
+  | 'calisthenics_handstand'
+  | 'calisthenics_muscle_up'
+  | 'calisthenics_planche'
+  | 'calisthenics_lsit'
+  | 'calisthenics_pistol_squat'
+  | 'calisthenics_back_lever'
+  | 'calisthenics_human_flag'
+  | 'bjj_fighter_stance'
+  | 'bjj_triangle_choke'
+  | 'bjj_bow'
+  | 'bjj_sparring'
+
 export type SportDurationKey = 'mobility' | 'calisthenics' | 'running' | 'bjj' | 'elite_forces'
 export type SportDurations = Record<SportDurationKey, SessionDuration>
 
@@ -273,6 +329,7 @@ export interface UserPreferences {
   weeklyGoalDays: number // target number of days/week with a logged session
   soundEnabled: boolean // midpoint/end timer dings
   avatarVariant: AvatarVariant // character body type
+  profileAvatar: ProfileAvatar | null // sport-specific pixel art avatar
   availableEquipment: string[] // e.g. ['pull_up_bar', 'parallel_bars', 'parallettes']
   activeSports: string[] // which sports appear in nav: mobility, bjj, calisthenics, running, elite_forces
   weightKg: number | null // current bodyweight for mechanical work calculations
@@ -514,6 +571,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   weeklyGoalDays: 4,
   soundEnabled: true,
   avatarVariant: 'balanced',
+  profileAvatar: null,
   availableEquipment: ['pull_up_bar', 'parallel_bars', 'parallettes'],
   activeSports: ['mobility', 'bjj', 'calisthenics', 'running', 'elite_forces'],
   weightKg: null,

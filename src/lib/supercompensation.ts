@@ -49,6 +49,31 @@ const CATEGORY_PARAMS: Record<FitnessCategory, BanisterParams> = {
 // Base impulse for a "standard hard session" — scaled by actual volume/best volume
 const BASE_IMPULSE = 8
 
+// AEL (Accentuated Eccentric Loading) multiplier for isometric/hold exercises
+const AEL_HOLD_MULTIPLIER = 1.25
+
+// Lever intensity factors — longer moment arm = greater neuromuscular demand
+const LEVER_FACTORS: Record<string, number> = {
+  tucked_front_lever: 1.0,
+  adv_tuck_front_lever: 1.3,
+  straddle_front_lever: 1.5,
+  front_lever: 1.8,
+  back_lever_adv_tuck: 1.2,
+  back_lever_straddle: 1.4,
+  back_lever: 1.8,
+  german_hang: 1.0,
+  dragon_flag_negatives: 1.2,
+  dragon_flag_press_hold: 1.5,
+  planche_leans: 1.2,
+  pseudo_planche_push_up: 1.3,
+  hollow_body_hold: 1.0,
+  hollow_body_rocks: 1.1,
+  lsit: 1.2,
+  one_leg_bent_lsit: 1.1,
+  straddle_lsit: 1.3,
+  tuck_lsit: 1.0,
+}
+
 // Density: rest time affects impulse magnitude
 // Reference rest = 90s between sets. Shorter rest = higher density = bigger impulse.
 const REFERENCE_REST_SEC = 90
@@ -137,7 +162,6 @@ export function computeSupercompensation(
     const dayMap = dailyVolume.get(log.date)!
 
     const isChallenge = log.notes?.startsWith('Challenge:')
-    // Challenge logs store total reps in value (already summed across sets)
     const rawVolume = isChallenge ? log.value : log.value * (log.sets ?? 1)
 
     let densityFactor = 1.0
@@ -151,7 +175,12 @@ export function computeSupercompensation(
       densityFactor = Math.max(DENSITY_MIN, Math.min(DENSITY_MAX, REFERENCE_REST_SEC / Math.max(10, log.restSec)))
     }
 
-    dayMap.set(cat, (dayMap.get(cat) ?? 0) + rawVolume * densityFactor)
+    // AEL: holds/isometrics generate higher neuromuscular stress per unit
+    const aelFactor = log.metric === 'hold_sec' ? AEL_HOLD_MULTIPLIER : 1.0
+    // Lever: longer moment arm = disproportionate demand
+    const leverFactor = LEVER_FACTORS[log.exerciseId] ?? 1.0
+
+    dayMap.set(cat, (dayMap.get(cat) ?? 0) + rawVolume * densityFactor * aelFactor * leverFactor)
   }
 
   for (const log of bjjLogs) {
@@ -305,4 +334,60 @@ export function computeForecastInsights(data: DayPoint[]): ForecastInsight[] {
   }
 
   return insights.sort((a, b) => a.peakDay - b.peakDay)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DELOAD TRIGGER
+// Rolling 4-week volume accumulator: recommend deload after 3 consecutive
+// weeks of ≥3 calisthenics sessions/week.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface DeloadStatus {
+  category: FitnessCategory
+  consecutiveHardWeeks: number
+  shouldDeload: boolean
+}
+
+export function computeDeloadStatus(
+  calLogs: CalisthenicsLog[]
+): DeloadStatus[] {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const categories: FitnessCategory[] = ['push', 'pull', 'legs', 'core']
+  const results: DeloadStatus[] = []
+
+  for (const cat of categories) {
+    let consecutiveHardWeeks = 0
+    // Check last 4 weeks backwards (week 0 = current partial week, skip it)
+    for (let weekOffset = 1; weekOffset <= 4; weekOffset++) {
+      const weekStart = new Date(today)
+      weekStart.setDate(weekStart.getDate() - weekOffset * 7)
+      const weekEnd = new Date(weekStart)
+      weekEnd.setDate(weekEnd.getDate() + 7)
+
+      const weekStartStr = weekStart.toISOString().slice(0, 10)
+      const weekEndStr = weekEnd.toISOString().slice(0, 10)
+
+      const daysWithTraining = new Set<string>()
+      for (const log of calLogs) {
+        if (log.date < weekStartStr || log.date >= weekEndStr) continue
+        const logCat = getExerciseCategory(log.exerciseId)
+        if (logCat === cat) daysWithTraining.add(log.date)
+      }
+
+      if (daysWithTraining.size >= 3) {
+        consecutiveHardWeeks++
+      } else {
+        break
+      }
+    }
+
+    results.push({
+      category: cat,
+      consecutiveHardWeeks,
+      shouldDeload: consecutiveHardWeeks >= 3,
+    })
+  }
+
+  return results
 }
