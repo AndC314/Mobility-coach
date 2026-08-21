@@ -117,10 +117,16 @@ function SkillCard({ sp, onTap }: { sp: SkillProgress; onTap: () => void }) {
       </div>
 
       {!sp.isUnlocked && (
-        <div className="mt-3 space-y-1.5">
+        <div className="mt-3 space-y-2">
           {sp.prereqProgress.map((p) => (
-            <div key={p.exerciseId} className="flex items-center gap-2">
-              <div className="h-1.5 flex-1 rounded-full bg-border overflow-hidden">
+            <div key={p.exerciseId}>
+              <div className="flex items-center justify-between mb-0.5">
+                <span className="text-[11px] text-ink/70 truncate">{p.label}</span>
+                <span className="text-[10px] text-muted ml-2 shrink-0">
+                  {p.current}/{p.threshold}
+                </span>
+              </div>
+              <div className="h-1.5 rounded-full bg-border overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all"
                   style={{
@@ -129,9 +135,6 @@ function SkillCard({ sp, onTap }: { sp: SkillProgress; onTap: () => void }) {
                   }}
                 />
               </div>
-              <span className="text-[10px] text-muted w-16 text-right truncate">
-                {p.current}/{p.threshold}
-              </span>
             </div>
           ))}
           <p className="text-[10px] text-muted">{overallPercent}% to unlock</p>

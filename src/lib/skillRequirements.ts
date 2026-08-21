@@ -6,7 +6,7 @@ export const SKILL_TREE_DATA: SkillNode[] = [
     name: 'Back Lever',
     category: 'pull',
     prerequisites: [
-      { exerciseId: 'passive_hang', metric: 'sec', threshold: 60, label: 'Passive Hang 60s' },
+      { exerciseId: 'dead_hang', metric: 'sec', threshold: 60, label: 'Dead Hang 60s' },
       { exerciseId: 'reverse_plank', metric: 'sec', threshold: 40, label: 'Reverse Plank 40s' },
       { exerciseId: 'skin_the_cat', metric: 'reps', threshold: 3, label: 'Skin the Cat ×3' },
       { exerciseId: 'pullups', metric: 'reps', threshold: 6, label: 'Pull-ups ×6' },
