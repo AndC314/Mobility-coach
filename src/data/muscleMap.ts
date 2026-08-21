@@ -541,6 +541,8 @@ export interface TargetedSuggestion {
   label: string
   targetSets: number
   targetReps: number
+  /** Per-set rep breakdown for micro-progression, e.g. [5, 4, 4] means 1×5 + 2×4 */
+  repScheme?: number[]
   metric: 'reps' | 'hold_sec'
   primaryMuscle: string // primary muscle of the exercise itself
   muscle: MuscleGroup // the gap muscle that triggered this suggestion
@@ -554,11 +556,13 @@ export function computeSuggestions(
   const seen = new Set<CalisthenicsExerciseId>()
   const suggestions: TargetedSuggestion[] = []
 
-  // Find user's best value per exercise
+  // Find user's best value and most recent sets per exercise
   const bestByExercise = new Map<CalisthenicsExerciseId, number>()
+  const lastSetsByExercise = new Map<CalisthenicsExerciseId, number>()
   for (const log of allLogs) {
     const prev = bestByExercise.get(log.exerciseId) ?? 0
     if (log.value > prev) bestByExercise.set(log.exerciseId, log.value)
+    if (log.sets != null) lastSetsByExercise.set(log.exerciseId, log.sets)
   }
 
   for (const muscle of muscles) {
@@ -571,13 +575,21 @@ export function computeSuggestions(
       const isHold = def?.metric === 'hold_sec'
       const best = bestByExercise.get(exerciseId)
       const isNew = best == null
+      const sets = lastSetsByExercise.get(exerciseId) ?? 3
+      const step = isHold ? 5 : 1
+
       let targetReps: number
+      let repScheme: number[] | undefined
       if (isNew) {
         targetReps = isHold ? 20 : 5
-      } else if (best < 10) {
-        targetReps = best + (isHold ? 5 : 1)
+      } else if (best! >= 10) {
+        targetReps = Math.ceil(best! * 1.1)
       } else {
-        targetReps = Math.ceil(best * 1.1)
+        // Micro-progression: add +step to one set at a time
+        // e.g. best=4, sets=3 → [5, 4, 4] then [5, 5, 4] then [5, 5, 5]
+        const nextRep = best! + step
+        repScheme = Array.from({ length: sets }, (_, i) => i === 0 ? nextRep : best!)
+        targetReps = nextRep
       }
 
       const activations = EXERCISE_MUSCLES[exerciseId] ?? []
@@ -587,8 +599,9 @@ export function computeSuggestions(
       suggestions.push({
         exerciseId,
         label,
-        targetSets: 3,
+        targetSets: sets,
         targetReps,
+        repScheme,
         metric: isHold ? 'hold_sec' : 'reps',
         primaryMuscle,
         muscle,
@@ -625,6 +638,7 @@ export interface LogEntry {
   exerciseId: CalisthenicsExerciseId
   value: number
   date: string
+  sets?: number
 }
 
 /**

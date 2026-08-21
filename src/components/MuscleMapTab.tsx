@@ -5,6 +5,18 @@ import { MUSCLE_LABELS, computeMuscleScores, computeAdaptiveCaps, computeSuggest
 import { db } from '../db/db'
 import { todayIso } from '../lib/date'
 
+/** Format [5,4,4] as "1×5 + 2×4" */
+function formatRepScheme(scheme: number[], metric: 'reps' | 'hold_sec'): string {
+  const unit = metric === 'hold_sec' ? 's' : ''
+  const groups: { count: number; reps: number }[] = []
+  for (const reps of scheme) {
+    const last = groups[groups.length - 1]
+    if (last && last.reps === reps) last.count++
+    else groups.push({ count: 1, reps })
+  }
+  return groups.map((g) => `${g.count}×${g.reps}${unit}`).join(' + ')
+}
+
 export default function MuscleMapTab() {
   const today = todayIso()
 
@@ -64,7 +76,10 @@ export default function MuscleMapTab() {
                   </div>
                 </div>
                 <span className="text-sm font-bold text-teal tabular-nums">
-                  {s.targetSets}×{s.targetReps}{s.metric === 'hold_sec' ? 's' : ''}
+                  {s.repScheme
+                    ? formatRepScheme(s.repScheme, s.metric)
+                    : `${s.targetSets}×${s.targetReps}${s.metric === 'hold_sec' ? 's' : ''}`
+                  }
                 </span>
               </div>
             ))}
