@@ -361,6 +361,23 @@ export interface AICoachingLog {
   generatedAt: string // ISO timestamp
 }
 
+export interface MobilityPlanItem {
+  exerciseId: string
+  name: string
+  holdSec: number
+  sets: number
+  category: string
+  notes?: string | null
+}
+
+export interface AIMobilityCoachingLog {
+  id?: number
+  date: string // YYYY-MM-DD
+  coaching: string
+  sessionPlan?: MobilityPlanItem[] | null
+  generatedAt: string
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // DB
 // ─────────────────────────────────────────────────────────────────────────
@@ -382,6 +399,7 @@ export class MobilityDB extends Dexie {
   weightLogs!: Table<WeightLog, number>
   bodyMeasurementLogs!: Table<BodyMeasurementLog, number>
   aiCoachingLogs!: Table<AICoachingLog, number>
+  aiMobilityCoachingLogs!: Table<AIMobilityCoachingLog, number>
 
   constructor() {
     super('mobilityCoachDB')
@@ -464,6 +482,9 @@ export class MobilityDB extends Dexie {
     })
     this.version(8).stores({
       aiCoachingLogs: '++id, &date'
+    })
+    this.version(9).stores({
+      aiMobilityCoachingLogs: '++id, &date'
     })
   }
 }

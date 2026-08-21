@@ -4,8 +4,8 @@ import { MOBILITY_EXERCISES, type MobilityExerciseId } from '../data/mobilityExe
 import { upsertTodaySession } from '../hooks/useSessions'
 import { todayIso } from '../lib/date'
 import { useWakeLock } from '../hooks/useWakeLock'
-import TodayMobilityCard from '../components/TodayMobilityCard'
-import type { MobilitySessionExercise } from '../lib/mobilitySession'
+import AIMobilityCoachCard from '../components/AIMobilityCoachCard'
+import type { MobilityPlanItem } from '../db/db'
 
 function ExerciseThumb({ id, icon, className }: { id: string; icon: string; className?: string }) {
   const [src, setSrc] = useState<'sprite' | 'legacy' | 'emoji'>('sprite')
@@ -115,13 +115,15 @@ export default function MobilityPage() {
     }
   }
 
-  function handleStartMobilitySession(exercises: MobilitySessionExercise[]) {
-    const newSelected: SelectedExercise[] = exercises.map((ex) => ({
-      id: ex.id as MobilityExerciseId,
-      holdSec: ex.holdSec,
-      sets: ex.sets,
-      restSec: 30,
-    }))
+  function handleStartAIMobilitySession(plan: MobilityPlanItem[]) {
+    const newSelected: SelectedExercise[] = plan
+      .filter((item) => MOBILITY_EXERCISES.some((e) => e.id === item.exerciseId))
+      .map((item) => ({
+        id: item.exerciseId as MobilityExerciseId,
+        holdSec: item.holdSec,
+        sets: item.sets,
+        restSec: 30,
+      }))
     setSelected(newSelected)
   }
 
@@ -144,7 +146,7 @@ export default function MobilityPage() {
         <h1 className="text-2xl font-extrabold">Mobility</h1>
       </div>
 
-      <TodayMobilityCard onStartSession={handleStartMobilitySession} />
+      <AIMobilityCoachCard onStartSession={handleStartAIMobilitySession} />
 
       {view === 'picker' ? (
         <>
