@@ -5,6 +5,9 @@ import { useCalisthenicsSession } from '../hooks/useCalisthenicsSession'
 import { db, DEFAULT_PREFERENCES } from '../db/db'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { getExerciseDef } from '../data/calisthenics'
+import { computeMuscleScores, computeAdaptiveCaps, computeSessionLoadForecast } from '../data/muscleMap'
+import type { SessionLoadForecast } from '../data/muscleMap'
+import { todayIso } from '../lib/date'
 import type { SessionExercise } from '../lib/calisthenicsSession'
 import type { Equipment } from '../data/calisthenics'
 
@@ -27,6 +30,22 @@ export default function TodayStrengthCard({ onStartSession }: Props) {
   }, [prefs])
 
   const { session, regenerate, isLoading } = useCalisthenicsSession(equipment)
+
+  const today = todayIso()
+  const loadForecast = useLiveQuery(async () => {
+    if (!session) return []
+    const [ty, tm, td] = today.split('-').map(Number)
+    const twoWeeksAgo = new Date(ty, tm - 1, td - 14)
+    const twoWeeksStr = `${twoWeeksAgo.getFullYear()}-${String(twoWeeksAgo.getMonth() + 1).padStart(2, '0')}-${String(twoWeeksAgo.getDate()).padStart(2, '0')}`
+    const logs = await db.calisthenicsLogs.where('date').aboveOrEqual(twoWeeksStr).toArray()
+    const adaptiveCaps = computeAdaptiveCaps(logs, today)
+    const scores = computeMuscleScores(logs, today, adaptiveCaps)
+    return computeSessionLoadForecast(
+      session.exercises.map(e => ({ exerciseId: e.exerciseId, targetSets: e.targetSets, targetValue: e.targetValue })),
+      scores,
+      adaptiveCaps
+    )
+  }, [session, today], []) as SessionLoadForecast[]
 
   function toggleEquipment(id: string) {
     setEquipment((prev) => {
@@ -99,6 +118,21 @@ export default function TodayStrengthCard({ onStartSession }: Props) {
             </div>
           ))}
         </div>
+
+        {loadForecast.length > 0 && (
+          <div className="rounded-lg bg-teal/5 border border-teal/20 px-3 py-2">
+            <div className="text-[10px] font-semibold text-teal mb-1">Muscle load after session</div>
+            <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+              {loadForecast.slice(0, 5).map((f) => (
+                <span key={f.muscle} className="text-[10px] text-ink/70">
+                  {f.label}: <span className="text-muted">{f.currentScore}%</span>
+                  {' → '}
+                  <span className="font-semibold text-teal">{f.projectedScore}%</span>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         {onStartSession && (
           <button

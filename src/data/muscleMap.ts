@@ -654,6 +654,45 @@ export function enrichSuggestionsWithPredictions(
   })
 }
 
+export interface SessionLoadForecast {
+  muscle: MuscleGroup
+  label: string
+  currentScore: number
+  projectedScore: number
+}
+
+export function computeSessionLoadForecast(
+  exercises: { exerciseId: CalisthenicsExerciseId; targetSets: number; targetValue: number }[],
+  scores: MuscleScore[],
+  adaptiveCaps?: MuscleCaps
+): SessionLoadForecast[] {
+  const scoreMap = new Map(scores.map((s) => [s.muscle, s]))
+  const addedByMuscle = new Map<MuscleGroup, number>()
+
+  for (const ex of exercises) {
+    const activations = EXERCISE_MUSCLES[ex.exerciseId] ?? []
+    const totalVolume = ex.targetSets * ex.targetValue
+    for (const { muscle, level } of activations) {
+      const multiplier = level === 'primary' ? 1.0 : 0.5
+      addedByMuscle.set(muscle, (addedByMuscle.get(muscle) ?? 0) + totalVolume * multiplier)
+    }
+  }
+
+  const results: SessionLoadForecast[] = []
+  for (const [muscle, added] of addedByMuscle) {
+    const cap = adaptiveCaps?.[muscle] ?? BASELINE_CAP
+    const current = scoreMap.get(muscle)
+    const currentScore = current?.score ?? 0
+    const currentVolume = (currentScore / 100) * cap
+    const projectedScore = Math.min(100, Math.round(((currentVolume + added) / cap) * 100))
+    if (projectedScore > currentScore) {
+      results.push({ muscle, label: MUSCLE_LABELS[muscle], currentScore, projectedScore })
+    }
+  }
+
+  return results.sort((a, b) => (b.projectedScore - b.currentScore) - (a.projectedScore - a.currentScore))
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // SORENESS / LOAD SCORING
 //

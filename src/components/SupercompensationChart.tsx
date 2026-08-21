@@ -28,10 +28,12 @@ const PHASE_STYLES: Record<Phase, { label: string; bg: string; text: string }> =
   baseline: { label: 'Baseline', bg: 'bg-border', text: 'text-muted' },
 }
 
-function getPhase(currentValue: number, prevValue: number): Phase {
+function getPhase(currentValue: number, prevValue: number, forecastPeak?: number): Phase {
   if (currentValue < 97) return 'fatigued'
-  if (currentValue > 103 && currentValue >= prevValue - 0.2) return 'supercompensated'
   if (currentValue < 100 && currentValue > prevValue) return 'recovering'
+  // If a higher peak is coming in the forecast, we're still rising
+  if (currentValue > 100 && forecastPeak != null && forecastPeak > currentValue + 1) return 'supercompensated'
+  if (currentValue > 103 && currentValue >= prevValue - 0.2) return 'supercompensated'
   if (currentValue > 100 && currentValue < prevValue) return 'decaying'
   return 'baseline'
 }
@@ -112,16 +114,22 @@ export default function SupercompensationChart() {
     return ''
   }
 
-  // Compute current phase for each category
+  // Compute current phase for each category using today (last history point), not last forecast point
   const phases: { cat: FitnessCategory; phase: Phase; value: number }[] = []
-  if (data.length >= 2) {
-    const latest = data[data.length - 1]
-    const prev = data[data.length - 2]
+  const historyPoints = data.filter(d => !d.isForecast)
+  const forecastPoints = data.filter(d => d.isForecast)
+  if (historyPoints.length >= 2) {
+    const today = historyPoints[historyPoints.length - 1]
+    const yesterday = historyPoints[historyPoints.length - 2]
     for (const cat of Object.keys(CATEGORY_CONFIG) as FitnessCategory[]) {
-      const val = latest[cat] as number
-      const prevVal = prev[cat] as number
+      const val = today[cat] as number
+      const prevVal = yesterday[cat] as number
+      // Find the peak in the forecast for this category
+      const forecastPeak = forecastPoints.length > 0
+        ? Math.max(...forecastPoints.map(d => d[cat] as number))
+        : undefined
       if (val !== 100 || prevVal !== 100) {
-        phases.push({ cat, phase: getPhase(val, prevVal), value: val })
+        phases.push({ cat, phase: getPhase(val, prevVal, forecastPeak), value: Math.round(val) })
       }
     }
   }
