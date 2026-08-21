@@ -4,7 +4,6 @@ import {
 } from 'recharts'
 import SkillTree from '../components/SkillTree'
 import SkillRadar from '../components/SkillRadar'
-import SupercompensationChart from '../components/SupercompensationChart'
 import WeakLinkCard from '../components/WeakLinkCard'
 import { Card } from '../components/Card'
 import { useActivityTimeseries } from '../hooks/useActivityTimeseries'
@@ -52,7 +51,6 @@ export default function Progress() {
       {view === 'trends' && (
         <div className="space-y-4">
           <SkillRadar />
-          <SupercompensationChart />
         </div>
       )}
 

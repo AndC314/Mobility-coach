@@ -11,6 +11,8 @@ import { useTodayPlan } from '../hooks/useTodayPlan'
 import { useStreak } from '../hooks/useStreak'
 import { todayIso } from '../lib/date'
 import { useSmartRecovery } from '../hooks/useSmartRecovery'
+import MuscleMapTab from '../components/MuscleMapTab'
+import SupercompensationChart from '../components/SupercompensationChart'
 import type { ExerciseItem } from '../data/exercises'
 
 function scoreColor(score: number) {
@@ -317,6 +319,12 @@ export default function Recovery() {
           )}
         </>
       )}
+
+      {/* Fitness level — Supercompensation */}
+      <SupercompensationChart />
+
+      {/* Muscle load map */}
+      <MuscleMapTab />
     </div>
   )
 }
