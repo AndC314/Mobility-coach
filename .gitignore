@@ -12,5 +12,7 @@ dist/
 .claude/
 CONTEXT.md
 *.md
+*.html
+!index.html
 !docs/**/*.md
 .mcp.json
