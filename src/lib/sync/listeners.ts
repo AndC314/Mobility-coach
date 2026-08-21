@@ -1,4 +1,4 @@
-import { db as dexieDb, type SessionType, type CalisthenicsExerciseId, type BodySite } from '../../db/db'
+import { db as dexieDb, type SessionType, type CalisthenicsExerciseId, type BodySite, type SessionDuration, type SportDurations, type MobilityGoal, type AvatarVariant } from '../../db/db'
 import { normalizeCreatedAt } from './helpers'
 import type {
   WorkoutDoc,
@@ -209,22 +209,21 @@ export async function syncBodyMeasurementsToLocal(docs: BodyMeasurementDoc[]): P
 
 export async function syncPreferencesToLocal(remote: PreferencesDoc): Promise<void> {
   const local = await dexieDb.preferences.get(1)
-  const localUpdated = local?.updatedAt ?? 0
+  const localUpdated = (local as any)?.updatedAt ?? 0
   if (remote.updatedAt > localUpdated) {
     await dexieDb.preferences.put({
       id: 1,
       bjjDays: remote.bjjDays,
-      sessionDuration: remote.sessionDuration as 'short' | 'medium' | 'long',
-      sportDurations: (remote.sportDurations ?? { mobility: 10, calisthenics: 20, running: 30, bjj: 20, elite_forces: 20 }) as Record<string, number>,
-      goal: remote.goal as 'strength' | 'mobility' | 'hybrid',
+      sessionDuration: remote.sessionDuration as SessionDuration,
+      sportDurations: (remote.sportDurations ?? { mobility: 10, calisthenics: 20, running: 30, bjj: 20, elite_forces: 20 }) as SportDurations,
+      goal: remote.goal as MobilityGoal,
       darkMode: remote.darkMode,
       weeklyGoalDays: remote.weeklyGoalDays,
       soundEnabled: remote.soundEnabled,
-      avatarVariant: remote.avatarVariant as 'default' | 'hoodie' | 'tank',
+      avatarVariant: remote.avatarVariant as AvatarVariant,
       availableEquipment: remote.availableEquipment ?? ['pull_up_bar', 'parallel_bars', 'parallettes'],
       activeSports: remote.activeSports ?? ['mobility', 'bjj', 'calisthenics', 'running', 'elite_forces'],
       weightKg: remote.weightKg ?? null,
-      updatedAt: remote.updatedAt,
     })
   }
 }
@@ -266,7 +265,7 @@ export async function syncCustomExercisesToLocal(remoteExercises: CustomExercise
         icon: remote.icon,
         exerciseType: remote.exerciseType,
         primaryMuscles: remote.primaryMuscles,
-        category: remote.category as 'push' | 'pull' | 'legs' | 'core' | 'mobility',
+        category: remote.category as 'push' | 'pull' | 'legs' | 'core' | undefined,
         bodyArea: remote.bodyArea,
         isGlobal: remote.isGlobal,
         createdAt: remote.createdAt,
