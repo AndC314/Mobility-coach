@@ -235,7 +235,7 @@ export const CALISTHENICS_EXERCISES: CalisthenicsExerciseDef[] = [
     icon: '⭕',
     category: 'pull',
     primaryMuscles: ['Lats', 'Biceps'],
-    equipment: ['pull_up_bar'],
+    equipment: ['rings'],
     description: 'Horizontal pulling on rings. Adjust angle to control difficulty. Break someone\'s posture.',
     setup: 'Hang your rings and adjust the angle to control the difficulty.',
     cue: 'Initiate the movement by retracting your shoulder blades first, then pull the rings to your ribs. Squeeze your glutes to keep your body completely straight—do not let your hips sag.',
