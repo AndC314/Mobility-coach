@@ -2,6 +2,14 @@ import { Card } from './Card'
 import { useAICoach } from '../hooks/useAICoach'
 import { useAuth } from '../hooks/useAuth'
 
+function cleanCoaching(text: string): string {
+  return text
+    .replace(/^\s*\)\s*/gm, '')
+    .replace(/^\s*\*\s+(?!\*)/gm, '- ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
 function parseSimpleMarkdown(text: string): JSX.Element[] {
   return text.split('\n').map((line, i) => {
     if (!line.trim()) return <br key={i} />
@@ -125,7 +133,7 @@ export default function AICoachCard() {
         </button>
       </div>
 
-      <div className="space-y-1">{parseSimpleMarkdown(coaching)}</div>
+      <div className="space-y-1">{parseSimpleMarkdown(cleanCoaching(coaching))}</div>
 
       {timeStr && (
         <p className="mt-3 text-[10px] text-muted">
