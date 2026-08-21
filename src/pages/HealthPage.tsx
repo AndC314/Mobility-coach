@@ -148,10 +148,10 @@ function DailyMetricsTab() {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <MetricInput label="Sleep" value={sleepHours} onChange={setSleepHours} unit="hrs" step="0.5" sparkData={sleepData} sparkColor="#2ec4b6" />
-            <MetricInput label="HRV" value={hrv} onChange={setHrv} unit="ms" sparkData={hrvData} sparkColor="#2ec4b6" />
-            <MetricInput label="Resting HR" value={restingHr} onChange={setRestingHr} unit="bpm" sparkData={rhrData} sparkColor="#e8622a" />
-            <MetricInput label="Weight" value={weight} onChange={setWeight} unit="kg" step="0.1" sparkData={weightData} sparkColor="#e8622a" />
+            <MetricInput label="Sleep" value={sleepHours} onChange={setSleepHours} unit="hrs" step="0.5" />
+            <MetricInput label="HRV" value={hrv} onChange={setHrv} unit="ms" />
+            <MetricInput label="Resting HR" value={restingHr} onChange={setRestingHr} unit="bpm" />
+            <MetricInput label="Weight" value={weight} onChange={setWeight} unit="kg" step="0.1" />
           </div>
 
           <div>
@@ -169,11 +169,6 @@ function DailyMetricsTab() {
                 </button>
               ))}
             </div>
-            {energyData.length >= 2 && (
-              <div className="mt-1 flex justify-end">
-                <Sparkline data={energyData} color="#2ec4b6" width={60} height={16} />
-              </div>
-            )}
           </div>
 
           <div>
@@ -226,29 +221,45 @@ function DailyMetricsTab() {
           </div>
         </Card>
       )}
+
+      {(sleepData.length >= 2 || hrvData.length >= 2 || rhrData.length >= 2 || weightData.length >= 2 || energyData.length >= 2) && (
+        <Card>
+          <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">Trends (30 days)</h3>
+          <div className="space-y-3">
+            {sleepData.length >= 2 && (
+              <TrendRow label="Sleep" data={sleepData} color="#2ec4b6" unit="hrs" />
+            )}
+            {hrvData.length >= 2 && (
+              <TrendRow label="HRV" data={hrvData} color="#2ec4b6" unit="ms" />
+            )}
+            {rhrData.length >= 2 && (
+              <TrendRow label="Resting HR" data={rhrData} color="#e8622a" unit="bpm" />
+            )}
+            {weightData.length >= 2 && (
+              <TrendRow label="Weight" data={weightData} color="#e8622a" unit="kg" />
+            )}
+            {energyData.length >= 2 && (
+              <TrendRow label="Energy" data={energyData} color="#2ec4b6" unit="/10" />
+            )}
+          </div>
+        </Card>
+      )}
     </div>
   )
 }
 
 function MetricInput({
-  label, value, onChange, unit, step, sparkData, sparkColor,
+  label, value, onChange, unit, step,
 }: {
   label: string
   value: string
   onChange: (v: string) => void
   unit: string
   step?: string
-  sparkData?: number[]
-  sparkColor?: string
 }) {
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <label className="text-[11px] font-semibold text-muted uppercase tracking-wider">{label}</label>
-        {sparkData && sparkData.length >= 2 && (
-          <Sparkline data={sparkData} color={sparkColor} width={48} height={14} />
-        )}
-      </div>
+      <label className="text-[11px] font-semibold text-muted uppercase tracking-wider">{label}</label>
       <div className="mt-1 flex items-center gap-1">
         <input
           type="number"
@@ -260,6 +271,24 @@ function MetricInput({
         />
         <span className="text-[10px] text-muted whitespace-nowrap">{unit}</span>
       </div>
+    </div>
+  )
+}
+
+function TrendRow({ label, data, color, unit }: { label: string; data: number[]; color: string; unit: string }) {
+  const latest = data[data.length - 1]
+  const prev = data[data.length - 2]
+  const diff = latest - prev
+  const arrow = diff > 0 ? '↑' : diff < 0 ? '↓' : '→'
+  return (
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-semibold text-ink w-20">{label}</span>
+        <Sparkline data={data} color={color} width={100} height={24} />
+      </div>
+      <span className="text-xs text-muted">
+        {latest}{unit} {arrow}
+      </span>
     </div>
   )
 }
@@ -352,17 +381,7 @@ function BodyMeasurementsTab() {
           <div className="grid grid-cols-2 gap-3">
             {BODY_SITES.map(({ key, label }) => (
               <div key={key}>
-                <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-semibold text-muted uppercase tracking-wider">{label}</label>
-                  {bySite(key).length >= 2 && (
-                    <Sparkline
-                      data={bySite(key)}
-                      color={key === 'waist' ? '#e8622a' : '#2ec4b6'}
-                      width={48}
-                      height={14}
-                    />
-                  )}
-                </div>
+                <label className="text-[11px] font-semibold text-muted uppercase tracking-wider">{label}</label>
                 <div className="mt-1 flex items-center gap-1">
                   <input
                     type="number"
@@ -417,6 +436,23 @@ function BodyMeasurementsTab() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </Card>
+      )}
+
+      {BODY_SITES.some(({ key }) => bySite(key).length >= 2) && (
+        <Card>
+          <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">Trends</h3>
+          <div className="space-y-3">
+            {BODY_SITES.filter(({ key }) => bySite(key).length >= 2).map(({ key, label }) => (
+              <TrendRow
+                key={key}
+                label={label}
+                data={bySite(key)}
+                color={key === 'waist' ? '#e8622a' : '#2ec4b6'}
+                unit="cm"
+              />
+            ))}
           </div>
         </Card>
       )}
