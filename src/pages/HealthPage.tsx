@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type HealthMetrics, type BodyMeasurementLog, type BodySite } from '../db/db'
-import { syncHealthMetricsToFirebase, syncBodyMeasurementToFirebase } from '../lib/firebase-workout-sync'
+import { syncHealthMetricsToFirebase, syncBodyMeasurementToFirebase, syncWeightLogToFirebase } from '../lib/sync'
 import { todayIso } from '../lib/date'
 import { Card } from '../components/Card'
 import Sparkline from '../components/Sparkline'
@@ -108,7 +108,9 @@ function DailyMetricsTab() {
       syncHealthMetricsToFirebase(entry)
 
       if (weightVal > 0) {
-        await db.weightLogs.add({ date, weightKg: weightVal, createdAt: new Date().toISOString() })
+        const weightLog = { date, weightKg: weightVal, createdAt: new Date().toISOString() }
+        await db.weightLogs.add(weightLog)
+        syncWeightLogToFirebase(weightLog)
         await db.preferences.update(1, { weightKg: weightVal })
       }
 

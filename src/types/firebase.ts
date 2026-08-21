@@ -146,6 +146,23 @@ export interface BodyMeasurementDoc {
   createdAt: string  // ISO string — used as dedup key on sync
 }
 
+export interface HoldLogDoc {
+  id?: string
+  date: string
+  exerciseKey: string
+  phase: number
+  plannedSec: number
+  actualSec: number
+  createdAt: string
+}
+
+export interface WeightLogDoc {
+  id?: string
+  date: string
+  weightKg: number
+  createdAt: string
+}
+
 export interface UseAuthState {
   user: User | null
   loading: boolean

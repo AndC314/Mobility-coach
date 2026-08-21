@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, lazy, Suspense } from 'react'
 import { HashRouter, Routes, Route } from 'react-router-dom'
 import ErrorBoundary from './components/ErrorBoundary'
 import BottomNav from './components/BottomNav'
@@ -7,11 +7,12 @@ import MobilityPage from './pages/MobilityPage'
 import Bjj from './pages/Bjj'
 import CalisthenicsPage from './pages/CalisthenicsPage'
 import Recovery from './pages/Recovery'
-import Progress from './pages/Progress'
-import Profile from './pages/Profile'
-import Calendar from './pages/Calendar'
 import HiitPage from './pages/HiitPage'
 import RunningPage from './pages/RunningPage'
+
+const Progress = lazy(() => import('./pages/Progress'))
+const Profile = lazy(() => import('./pages/Profile'))
+const Calendar = lazy(() => import('./pages/Calendar'))
 import { usePreferences } from './hooks/usePreferences'
 import { useAuth } from './hooks/useAuth'
 import { useFirebaseSync } from './hooks/useFirebaseSync'
@@ -24,7 +25,9 @@ import {
   setRunningLogSyncCallback,
   setHealthMetricsSyncCallback,
   setBodyMeasurementSyncCallback,
-} from './lib/firebase-workout-sync'
+  setHoldLogSyncCallback,
+  setWeightLogSyncCallback,
+} from './lib/sync'
 
 function AppContent() {
   const { preferences } = usePreferences()
@@ -38,6 +41,8 @@ function AppContent() {
     addRunningLogToFirestore,
     addHealthMetricsToFirestore,
     addBodyMeasurementToFirestore,
+    addHoldLogToFirestore,
+    addWeightLogToFirestore,
   } = useFirebaseSync(user)
 
   // Wire Firebase sync callbacks for all logging functions
@@ -49,6 +54,8 @@ function AppContent() {
       setRunningLogSyncCallback(addRunningLogToFirestore)
       setHealthMetricsSyncCallback(addHealthMetricsToFirestore)
       setBodyMeasurementSyncCallback(addBodyMeasurementToFirestore)
+      setHoldLogSyncCallback(addHoldLogToFirestore)
+      setWeightLogSyncCallback(addWeightLogToFirestore)
     } else {
       setFirebaseSyncCallback(null)
       setBjjClassLogSyncCallback(null)
@@ -56,8 +63,10 @@ function AppContent() {
       setRunningLogSyncCallback(null)
       setHealthMetricsSyncCallback(null)
       setBodyMeasurementSyncCallback(null)
+      setHoldLogSyncCallback(null)
+      setWeightLogSyncCallback(null)
     }
-  }, [user, addWorkoutToFirestore, addBjjClassLogToFirestore, addCalisthenicsLogToFirestore, addRunningLogToFirestore, addHealthMetricsToFirestore, addBodyMeasurementToFirestore])
+  }, [user, addWorkoutToFirestore, addBjjClassLogToFirestore, addCalisthenicsLogToFirestore, addRunningLogToFirestore, addHealthMetricsToFirestore, addBodyMeasurementToFirestore, addHoldLogToFirestore, addWeightLogToFirestore])
 
   useEffect(() => {
     const root = document.documentElement
@@ -81,18 +90,20 @@ function AppContent() {
           }}
         >
           {!isLoading && <ConflictWarning conflictDays={conflictDays} />}
-          <Routes>
-            <Route path="/" element={<Today />} />
-            <Route path="/mobility" element={<MobilityPage />} />
-            <Route path="/bjj" element={<Bjj />} />
-            <Route path="/calisthenics" element={<CalisthenicsPage />} />
-            <Route path="/recovery" element={<Recovery />} />
-            <Route path="/progress" element={<Progress />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/calendar" element={<Calendar />} />
-            <Route path="/hiit" element={<HiitPage />} />
-            <Route path="/running" element={<RunningPage />} />
-          </Routes>
+          <Suspense fallback={<div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-teal" /></div>}>
+            <Routes>
+              <Route path="/" element={<Today />} />
+              <Route path="/mobility" element={<MobilityPage />} />
+              <Route path="/bjj" element={<Bjj />} />
+              <Route path="/calisthenics" element={<CalisthenicsPage />} />
+              <Route path="/recovery" element={<Recovery />} />
+              <Route path="/progress" element={<Progress />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/calendar" element={<Calendar />} />
+              <Route path="/hiit" element={<HiitPage />} />
+              <Route path="/running" element={<RunningPage />} />
+            </Routes>
+          </Suspense>
         </div>
         <BottomNav />
       </div>

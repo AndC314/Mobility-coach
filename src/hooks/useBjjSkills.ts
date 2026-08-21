@@ -3,7 +3,7 @@ import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from 'firebase
 import { db, type BjjSkillTag, type BjjClassLog, type CompletedSession } from '../db/db'
 import { db as firestoreDb } from '../lib/firebase'
 import { todayIso } from '../lib/date'
-import { syncSessionToFirebase, syncBjjClassLogToFirebase } from '../lib/firebase-workout-sync'
+import { syncSessionToFirebase, syncBjjClassLogToFirebase } from '../lib/sync'
 import { useAuth } from './useAuth'
 
 export function useBjjSkillTags() {

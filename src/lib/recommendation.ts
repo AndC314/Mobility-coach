@@ -11,6 +11,25 @@ import {
 } from '../data/muscleMap'
 import { RECOVERY_SEQUENCES } from '../data/recovery'
 
+/**
+ * Pure recovery score formula — extracted for testability.
+ * Score = 100 - 12*bjjYesterday - 6*soreAreas + min(streak,5)*1.5 - 8*suppressedCategories
+ * Clamped [35, 98].
+ */
+export function computeRecoveryScore(params: {
+  bjjYesterday: boolean
+  soreAreasCount: number
+  streak: number
+  suppressedCount: number
+}): number {
+  let score = 100
+  if (params.bjjYesterday) score -= 12
+  score -= params.soreAreasCount * 6
+  score += Math.min(params.streak, 5) * 1.5
+  score -= params.suppressedCount * 8
+  return Math.max(35, Math.min(98, Math.round(score)))
+}
+
 export interface PlanItem {
   id: string
   label: string
@@ -286,13 +305,12 @@ export async function generateTodayPlan(
   const totalMin = items.reduce((sum, i) => sum + i.durationMin, 0)
 
   // ── Recovery score heuristic ───────────────────────────────────────────
-  let score = 100
-  if (bjjYesterday) score -= 12
-  score -= soreAreasToday.length * 6
-  score += Math.min(streak, 5) * 1.5
-  // Factor in decay-based category fatigue
-  score -= suppressedCategories.length * 8
-  score = Math.max(35, Math.min(98, Math.round(score)))
+  const score = computeRecoveryScore({
+    bjjYesterday,
+    soreAreasCount: soreAreasToday.length,
+    streak,
+    suppressedCount: suppressedCategories.length,
+  })
 
   let rationale: string
   if (bjjYesterday) {

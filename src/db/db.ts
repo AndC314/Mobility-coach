@@ -276,7 +276,8 @@ export interface UserPreferences {
   availableEquipment: string[] // e.g. ['pull_up_bar', 'parallel_bars', 'parallettes']
   activeSports: string[] // which sports appear in nav: mobility, bjj, calisthenics, running, elite_forces
   weightKg: number | null // current bodyweight for mechanical work calculations
-  preferredSessionMin?: number // 15-90, default 45 — for AI coaching recommendations
+  /** @deprecated Use sportDurations.calisthenics instead. Will be removed in schema v10. */
+  preferredSessionMin?: number
 }
 
 // ─────────────────────────────────────────────────────────────────────────

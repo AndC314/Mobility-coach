@@ -12,6 +12,15 @@ export interface TrainingHours {
 }
 
 /**
+ * Pure decay function: apply 5%/week linear decay for inactivity.
+ * Floored at 0.
+ */
+export function applyDecay(totalHours: number, daysInactive: number): number {
+  const weeksInactive = daysInactive / 7
+  return Math.max(0, totalHours * (1 - 0.05 * weeksInactive))
+}
+
+/**
  * Map session types to training categories
  */
 function getCategory(sessionType: string): TrainingCategory | null {
@@ -70,11 +79,8 @@ export async function computeTrainingHours(category: TrainingCategory): Promise<
 
   const now = new Date()
   const daysInactive = Math.floor((now.getTime() - lastActivityDate.getTime()) / (1000 * 60 * 60 * 24))
-  const weeksInactive = daysInactive / 7
 
-  // Apply 5% per week decay
-  const decayRate = 0.05
-  const activeHours = Math.max(0, Math.round(totalHours * (1 - decayRate * weeksInactive) * 100) / 100)
+  const activeHours = Math.round(applyDecay(totalHours, daysInactive) * 100) / 100
 
   // Hours in past 7 days (no decay)
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]

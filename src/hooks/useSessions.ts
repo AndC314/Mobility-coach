@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type CompletedSession, type SessionType } from '../db/db'
 import { todayIso, startOfWeek, isoDate } from '../lib/date'
-import { syncSessionToFirebase } from '../lib/firebase-workout-sync'
+import { syncSessionToFirebase } from '../lib/sync'
 
 /** Coerces to a finite number, falling back if NaN/undefined/Infinity. */
 function safeNum(n: unknown, fallback: number): number {

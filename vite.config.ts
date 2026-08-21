@@ -6,6 +6,16 @@ export default defineConfig({
   esbuild: {
     charset: 'utf8'
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          recharts: ['recharts'],
+          firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore'],
+        }
+      }
+    }
+  },
   plugins: [
     react(),
     VitePWA({

@@ -1,0 +1,677 @@
+<title>Mobility Coach Architecture</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600;700&display=swap">
+
+<style>
+:root {
+  --bg: #0f1117;
+  --surface: #181b24;
+  --surface-2: #1f2330;
+  --border: #2a2e3a;
+  --ink: #e8eaf0;
+  --ink-muted: #8b90a0;
+  --ink-dim: #5c6070;
+  --accent: #2dd4a8;
+  --accent-dim: rgba(45, 212, 168, 0.12);
+  --accent-border: rgba(45, 212, 168, 0.25);
+  --warn: #f59e0b;
+  --warn-dim: rgba(245, 158, 11, 0.12);
+  --red: #ef4444;
+  --red-dim: rgba(239, 68, 68, 0.1);
+  --blue: #60a5fa;
+  --purple: #a78bfa;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f8f9fb;
+    --surface: #ffffff;
+    --surface-2: #f0f2f5;
+    --border: #e2e5ec;
+    --ink: #1a1d27;
+    --ink-muted: #5c6070;
+    --ink-dim: #8b90a0;
+    --accent: #0d9b76;
+    --accent-dim: rgba(13, 155, 118, 0.08);
+    --accent-border: rgba(13, 155, 118, 0.2);
+    --warn: #d97706;
+    --warn-dim: rgba(217, 119, 6, 0.08);
+    --red: #dc2626;
+    --red-dim: rgba(220, 38, 38, 0.06);
+    --blue: #2563eb;
+    --purple: #7c3aed;
+  }
+}
+
+:root[data-theme="light"] {
+  --bg: #f8f9fb;
+  --surface: #ffffff;
+  --surface-2: #f0f2f5;
+  --border: #e2e5ec;
+  --ink: #1a1d27;
+  --ink-muted: #5c6070;
+  --ink-dim: #8b90a0;
+  --accent: #0d9b76;
+  --accent-dim: rgba(13, 155, 118, 0.08);
+  --accent-border: rgba(13, 155, 118, 0.2);
+  --warn: #d97706;
+  --warn-dim: rgba(217, 119, 6, 0.08);
+  --red: #dc2626;
+  --red-dim: rgba(220, 38, 38, 0.06);
+  --blue: #2563eb;
+  --purple: #7c3aed;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 6rem;
+}
+
+h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.25rem;
+}
+
+.subtitle {
+  color: var(--ink-muted);
+  font-size: 0.875rem;
+  margin-bottom: 2.5rem;
+}
+
+h2 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-top: 3rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+h3 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--ink);
+}
+
+p, li {
+  font-size: 0.875rem;
+  color: var(--ink-muted);
+  line-height: 1.7;
+}
+
+p + p { margin-top: 0.75rem; }
+
+ul, ol { padding-left: 1.25rem; margin-top: 0.5rem; }
+li { margin-bottom: 0.35rem; }
+li::marker { color: var(--ink-dim); }
+
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  color: var(--accent);
+}
+
+pre {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  line-height: 1.7;
+  margin: 0.75rem 0;
+  color: var(--ink-muted);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  margin: 1rem 0;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+.stat-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-dim);
+  margin-top: 0.25rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  margin: 0.75rem 0;
+}
+
+th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-dim);
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--ink-muted);
+  vertical-align: top;
+}
+
+tr:last-child td { border-bottom: none; }
+
+.badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.2em 0.5em;
+  border-radius: 4px;
+}
+
+.badge-done { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent-border); }
+.badge-partial { background: var(--warn-dim); color: var(--warn); border: 1px solid rgba(245,158,11,0.25); }
+.badge-missing { background: var(--red-dim); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+
+.diagram {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin: 1rem 0;
+  overflow-x: auto;
+}
+
+pre.mermaid {
+  background: transparent;
+  border: none;
+  padding: 0;
+  text-align: center;
+}
+
+.section-tag {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.25rem;
+}
+
+.file-ref {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--ink-dim);
+}
+
+@media (max-width: 640px) {
+  .page { padding: 2rem 1rem 4rem; }
+  h1 { font-size: 1.4rem; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  table { font-size: 0.72rem; }
+}
+</style>
+
+<div class="page">
+
+<h1>Mobility Coach</h1>
+<p class="subtitle">Architecture Document &mdash; v1.2a &mdash; August 2026</p>
+
+<div class="stats-grid">
+  <div class="stat"><div class="stat-value">22.7k</div><div class="stat-label">Lines of Code</div></div>
+  <div class="stat"><div class="stat-value">12</div><div class="stat-label">Pages</div></div>
+  <div class="stat"><div class="stat-value">87</div><div class="stat-label">Exercises</div></div>
+  <div class="stat"><div class="stat-value">9</div><div class="stat-label">Dexie Tables</div></div>
+  <div class="stat"><div class="stat-value">2</div><div class="stat-label">AI Endpoints</div></div>
+  <div class="stat"><div class="stat-value">8</div><div class="stat-label">Firestore Collections</div></div>
+</div>
+
+<h2>1. Stack Overview</h2>
+
+<div class="card">
+<table>
+  <tr><th>Layer</th><th>Technology</th><th>Role</th></tr>
+  <tr><td>Framework</td><td><code>React 18</code> + <code>TypeScript</code></td><td>UI rendering, type safety</td></tr>
+  <tr><td>Build</td><td><code>Vite</code> + <code>vite-plugin-pwa</code></td><td>Dev server, HMR, PWA manifest & service worker</td></tr>
+  <tr><td>Styling</td><td><code>Tailwind CSS</code></td><td>Utility-first styling, dark/light theme</td></tr>
+  <tr><td>Routing</td><td><code>react-router-dom v6</code> (HashRouter)</td><td>Client-side navigation</td></tr>
+  <tr><td>Local DB</td><td><code>Dexie v4</code> (IndexedDB)</td><td>Offline-first persistent storage</td></tr>
+  <tr><td>Cloud Sync</td><td><code>Firebase/Firestore</code></td><td>Cross-device real-time sync</td></tr>
+  <tr><td>Auth</td><td><code>Firebase Auth</code> (Google provider)</td><td>User identity, token-gated API</td></tr>
+  <tr><td>AI</td><td><code>Gemini 3.5 Flash Lite</code> via Vercel serverless</td><td>Daily coaching generation</td></tr>
+  <tr><td>Charts</td><td><code>Recharts</code></td><td>Supercompensation, progress, sparklines</td></tr>
+  <tr><td>Hosting</td><td><code>Vercel</code></td><td>Static deploy + serverless functions</td></tr>
+  <tr><td>PWA</td><td><code>Workbox</code> (via VitePWA)</td><td>Offline cache, installability</td></tr>
+</table>
+</div>
+
+<h2>2. High-Level Architecture</h2>
+
+<div class="diagram">
+<pre class="mermaid">
+graph TB
+  subgraph Client["Browser (PWA)"]
+    UI[React Pages & Components]
+    Hooks[Custom Hooks]
+    Dexie[(IndexedDB via Dexie)]
+    SW[Service Worker]
+  end
+
+  subgraph Vercel["Vercel Edge"]
+    API1["/api/generateCoaching"]
+    API2["/api/generateMobilityCoaching"]
+  end
+
+  subgraph Google["Google Cloud"]
+    Firestore[(Firestore)]
+    Auth[Firebase Auth]
+    Gemini[Gemini 3.5 Flash Lite]
+  end
+
+  UI --> Hooks
+  Hooks --> Dexie
+  Hooks -->|onSnapshot + catchUpSync| Firestore
+  Hooks -->|POST + Bearer token| API1
+  Hooks -->|POST + Bearer token| API2
+  API1 -->|generateContent| Gemini
+  API2 -->|generateContent| Gemini
+  API1 -->|verifyIdToken| Auth
+  API2 -->|verifyIdToken| Auth
+  UI --> Auth
+  SW -.->|cache-first| UI
+</pre>
+</div>
+
+<h2>3. Data Layer</h2>
+
+<h3>3.1 Dexie (IndexedDB) — Offline-First Store</h3>
+<p>All user data lives locally first. The app works fully offline; Firestore sync is an enhancement, not a dependency.</p>
+
+<div class="card">
+<table>
+  <tr><th>Table</th><th>Key Fields</th><th>Synced to Firestore</th></tr>
+  <tr><td><code>sessions</code></td><td>date, type, duration, exercises[]</td><td><span class="badge badge-done">Yes</span></td></tr>
+  <tr><td><code>calisthenicsLogs</code></td><td>date, exerciseId, value, sets, metric</td><td><span class="badge badge-done">Yes</span></td></tr>
+  <tr><td><code>bjjClassLogs</code></td><td>date, technicalMins, sparringMins, notes, skills[]</td><td><span class="badge badge-done">Yes</span></td></tr>
+  <tr><td><code>holdLogs</code></td><td>date, exerciseKey, holdSec</td><td><span class="badge badge-missing">No</span></td></tr>
+  <tr><td><code>runningLogs</code></td><td>date, distanceKm, durationMin, type</td><td><span class="badge badge-done">Yes</span></td></tr>
+  <tr><td><code>healthMetrics</code></td><td>date, sleepHours, hrv, restingHR</td><td><span class="badge badge-done">Yes</span></td></tr>
+  <tr><td><code>customExercises</code></td><td>userId, name, type, category</td><td><span class="badge badge-done">Yes</span></td></tr>
+  <tr><td><code>preferences</code></td><td>sportDurations, goal, equipment, activeSports</td><td><span class="badge badge-done">Yes</span></td></tr>
+  <tr><td><code>aiCoachingLogs</code></td><td>date (unique), coaching, sessionPlan</td><td><span class="badge badge-done">Yes</span></td></tr>
+  <tr><td><code>aiMobilityCoachingLogs</code></td><td>date (unique), coaching, sessionPlan</td><td><span class="badge badge-done">Yes</span></td></tr>
+  <tr><td><code>bodyMeasurementLogs</code></td><td>date, site, valueCm</td><td><span class="badge badge-missing">No</span></td></tr>
+  <tr><td><code>weightLogs</code></td><td>date, weightKg</td><td><span class="badge badge-missing">No</span></td></tr>
+</table>
+</div>
+
+<h3>3.2 Firestore Sync Architecture</h3>
+<p class="file-ref">src/hooks/useFirebaseSync.ts (833 lines)</p>
+
+<p>Bidirectional sync uses two mechanisms running concurrently:</p>
+
+<div class="card">
+<table>
+  <tr><th>Direction</th><th>Mechanism</th><th>Trigger</th></tr>
+  <tr><td>Firestore → Local</td><td><code>onSnapshot</code> listeners (8 collections)</td><td>Real-time, continuous while logged in</td></tr>
+  <tr><td>Local → Firestore</td><td><code>catchUpSync()</code> push</td><td>Once on login (pushes local-only records)</td></tr>
+  <tr><td>Local → Firestore</td><td><code>addDoc</code> callbacks on log creation</td><td>Immediately on each new log entry</td></tr>
+</table>
+</div>
+
+<p>Firestore document path pattern: <code>users/{uid}/{collection}/{docId}</code></p>
+<p>AI coaching path: <code>users/{uid}/aiCoaching/{section}_{YYYY-MM-DD}</code></p>
+
+<p><strong>Key constraint:</strong> Firestore rejects <code>undefined</code> values. All writes pass through <code>stripUndefined()</code> helper before <code>addDoc()</code>.</p>
+
+<h2>4. AI Coach Integration</h2>
+
+<div class="diagram">
+<pre class="mermaid">
+sequenceDiagram
+  participant U as User opens app
+  participant H as useAICoach hook
+  participant FS as Firestore
+  participant D as Dexie
+  participant API as Vercel API
+  participant G as Gemini
+
+  U->>H: Page load
+  H->>FS: getDoc(aiCoaching/calisthenics_{today})
+  alt Already generated today
+    FS-->>H: cached response
+    H->>H: limitReached = true
+  else No cache
+    H->>D: Check local Dexie cache
+    alt Local cache exists
+      D-->>H: cached response
+      H->>H: limitReached = true
+    else No cache anywhere
+      H->>D: Check 48h activity gate
+      alt No training in 48h
+        H->>H: Skip AI (rule-based fallback)
+      else Recent training exists
+        H->>API: POST /api/generateCoaching
+        API->>G: generateContent(context)
+        G-->>API: JSON response
+        API-->>H: {coaching, sessionPlan}
+        H->>FS: setDoc (cross-device sync)
+        H->>D: cache locally
+        H->>H: limitReached = true
+      end
+    end
+  end
+</pre>
+</div>
+
+<h3>4.1 Rate Limiting & Controls</h3>
+<div class="card">
+<table>
+  <tr><th>Control</th><th>Implementation</th></tr>
+  <tr><td>1 call/day per section</td><td><code>limitReached</code> boolean blocks refresh once any response exists for today</td></tr>
+  <tr><td>48h activity gate</td><td>AI only fires if <code>calisthenicsLogs + bjjClassLogs + sessions</code> in last 48h > 0</td></tr>
+  <tr><td>Recovery-first prompt</td><td>System prompt instructs: suggest rest if muscles trained &lt;48h ago</td></tr>
+  <tr><td>429 rate limit handling</td><td>Friendly "bots fixing bugs" message returned as valid coaching text</td></tr>
+  <tr><td>Cross-device consistency</td><td>Firestore-first lookup ensures all devices show same daily coaching</td></tr>
+</table>
+</div>
+
+<h3>4.2 Context Sent to Gemini</h3>
+<p class="file-ref">src/lib/coachingContext.ts &amp; src/lib/mobilityCoachingContext.ts</p>
+<pre>
+{
+  supercompensation: { push, pull, legs, core, grappling, mob_* },
+  forecastInsights: [{ category, trend, message }],
+  muscleScores: [{ muscle, score }],           // bottom-10, needing work
+  trainingHours: [{ category, totalHours, hoursThisWeek, lastActivityDaysAgo }],
+  recoveryScore: number,
+  exerciseHistory: [{ exerciseId, recentSessions[], trend, currentBest, daysSinceLastPR }],
+  progressionChains: [{ chainName, currentExercise, nextExercise }],
+  availableExercises: [{ id, name, category, type, equipment }],
+  preferredSessionMin: number,  // from sportDurations (per-sport)
+  availableEquipment: string[],
+  weekNumber: number
+}
+</pre>
+
+<h2>5. Mathematical Models</h2>
+
+<h3>5.1 Supercompensation (Banister Two-Factor)</h3>
+<p class="file-ref">src/lib/supercompensation.ts</p>
+<pre>
+P(t) = P₀ + Σ[ k₁·wᵢ·exp(-(t-tᵢ)/τ₁) ] - Σ[ k₂·wᵢ·exp(-(t-tᵢ)/τ₂) ]
+
+Category Parameters:
+  Strength   → τ₁=21, τ₂=3,   k₁=1, k₂=2.2
+  Grappling  → τ₁=25, τ₂=4,   k₁=1, k₂=2.0
+  Mobility   → τ₁=30, τ₂=1.5, k₁=1, k₂=1.8
+
+Training Impulse:
+  impulse = BASE_IMPULSE(8) × intensity × density_factor
+  intensity = session_volume / running_best_volume
+  density = 1 + (exercise_count - 1) × 0.1
+
+Atrophy (no training > 10 days):
+  P(t) = baseline × exp(-0.4 × (days_inactive - 10))
+  Floor = 70, Baseline = 100
+</pre>
+
+<h3>5.2 Training Hours Consistency</h3>
+<p class="file-ref">src/lib/trainingHourCalculator.ts</p>
+<pre>
+active_hours = total_hours × (1 - 0.05 × weeks_inactive)
+Decay: 5% per week of inactivity → Floor: 0h
+</pre>
+
+<h3>5.3 Session Recommendation (Rule-Based)</h3>
+<p class="file-ref">src/lib/calisthenicsSession.ts &amp; src/lib/recommendation.ts</p>
+<pre>
+priority = (100 - supercomp_score) + recency_bonus + plateau_penalty
+recency_bonus = min(days_since_last × 3, 30)
+Micro-progression: +1 set at a time, max +10% weekly volume
+Deload: every 4th week (reduce volume 40-50%)
+</pre>
+
+<h2>6. Pages & Features</h2>
+
+<div class="card">
+<table>
+  <tr><th>Route</th><th>Page</th><th>Key Features</th></tr>
+  <tr><td><code>/</code></td><td>Today</td><td>Supercompensation chart, AI coach card, daily session card, training calendar, avatar</td></tr>
+  <tr><td><code>/mobility</code></td><td>Mobility</td><td>AI mobility coach, exercise picker grid (29 exercises), timer with bilateral sides</td></tr>
+  <tr><td><code>/calisthenics</code></td><td>Calisthenics</td><td>AI session plan, exercise picker (58 exercises), set/rep logger, progression chains</td></tr>
+  <tr><td><code>/bjj</code></td><td>BJJ</td><td>Class logger, skill tags, split timer (technical/sparring), dojo pixel scene</td></tr>
+  <tr><td><code>/running</code></td><td>Running</td><td>Run logger (distance, duration, type), pace calculation</td></tr>
+  <tr><td><code>/hiit</code></td><td>HIIT</td><td>Circuit timer, preset workouts, work/rest intervals</td></tr>
+  <tr><td><code>/progress</code></td><td>Progress</td><td>Per-exercise trends, sparklines, PR tracking, stagnation detection</td></tr>
+  <tr><td><code>/recovery</code></td><td>Recovery</td><td>Body map (muscle soreness), smart recovery recommendations</td></tr>
+  <tr><td><code>/calendar</code></td><td>Calendar</td><td>Month view with training dots, session details on tap</td></tr>
+  <tr><td><code>/profile</code></td><td>Profile/Settings</td><td>Preferences, data export/import, sync diagnostics, math rules, account</td></tr>
+</table>
+</div>
+
+<h3>6.1 Component Library Highlights</h3>
+<ul>
+  <li><strong>SpriteAnimator</strong> — Pixel-art avatar with walk cycle, generated via PixelLab</li>
+  <li><strong>ExerciseIcon</strong> — Per-exercise pixel sprites (PixelLab generated, fallback emoji)</li>
+  <li><strong>SupercompensationChart</strong> — Multi-category Recharts area chart with time range toggle</li>
+  <li><strong>SkillTree</strong> — Progression chain visualization (push/pull/legs/core paths)</li>
+  <li><strong>Timer</strong> — Countdown with audio cues, wake lock, bilateral side switching</li>
+  <li><strong>TrainingCalendar</strong> — Dot-coded month grid with session type colors</li>
+  <li><strong>BodyMap</strong> — SVG muscle group display with heat-map coloring</li>
+</ul>
+
+<h2>7. Data Files</h2>
+
+<div class="card">
+<table>
+  <tr><th>File</th><th>Content</th><th>Size</th></tr>
+  <tr><td><code>data/calisthenics.ts</code></td><td>58 exercises: id, name, category, type, equipment, description, metric</td><td>878 lines</td></tr>
+  <tr><td><code>data/mobilityExercises.ts</code></td><td>29 exercises: id, name, category, holdSec, description, setup, cue, feel, sides</td><td>388 lines</td></tr>
+  <tr><td><code>data/progressionChains.ts</code></td><td>13 chains (push H/V, pull H/V, legs, core, holds, skills)</td><td>452 lines</td></tr>
+  <tr><td><code>data/challenges.ts</code></td><td>Timed challenges (plank, hang, L-sit, etc.)</td><td>283 lines</td></tr>
+  <tr><td><code>data/muscleMap.ts</code></td><td>Exercise → muscle activation mappings (primary/secondary)</td><td>~200 lines</td></tr>
+  <tr><td><code>data/recovery.ts</code></td><td>Recovery recommendations per muscle group</td><td>~80 lines</td></tr>
+</table>
+</div>
+
+<h2>8. Serverless API</h2>
+
+<div class="card">
+<table>
+  <tr><th>Endpoint</th><th>Auth</th><th>Model</th><th>Purpose</th></tr>
+  <tr><td><code>POST /api/generateCoaching</code></td><td>Firebase ID token</td><td>gemini-3.5-flash-lite</td><td>Calisthenics daily plan + coaching text</td></tr>
+  <tr><td><code>POST /api/generateMobilityCoaching</code></td><td>Firebase ID token</td><td>gemini-3.5-flash-lite</td><td>Mobility daily plan + coaching text</td></tr>
+</table>
+</div>
+
+<p><strong>Gemini config:</strong> <code>maxOutputTokens: 2048</code>, <code>temperature: 0.7</code>, <code>responseMimeType: 'application/json'</code></p>
+<p><strong>Rate limits (free tier):</strong> 15 RPM, 250K TPM, 500 RPD</p>
+<p><strong>Fallback:</strong> On 429, returns friendly "bots fixing bugs" message with <code>rateLimited: true</code> flag.</p>
+
+<h2>9. PWA & Offline</h2>
+
+<ul>
+  <li><strong>Service Worker:</strong> Workbox (via VitePWA plugin) with cache-first strategy</li>
+  <li><strong>Manifest:</strong> Installable on iOS/Android, standalone display mode</li>
+  <li><strong>Offline data:</strong> Full app works without network — Dexie stores everything locally</li>
+  <li><strong>Wake Lock:</strong> <code>useWakeLock</code> hook keeps screen on during active timers</li>
+  <li><strong>Audio:</strong> Completion dings via Web Audio API (primed on user interaction)</li>
+</ul>
+
+<h2>10. What's Missing / Planned</h2>
+
+<div class="card">
+<table>
+  <tr><th>Feature</th><th>Status</th><th>Notes</th></tr>
+  <tr>
+    <td><strong>Apple Health / HealthKit</strong></td>
+    <td><span class="badge badge-partial">Stubbed</span></td>
+    <td><code>useAppleHealth.ts</code> has full interface + localStorage mock. Needs Capacitor native plugin (<code>@capacitor-community/apple-health</code>). Zero UI changes needed — hook signature is already async.</td>
+  </tr>
+  <tr>
+    <td><strong>Garmin Connect</strong></td>
+    <td><span class="badge badge-missing">Not started</span></td>
+    <td>Data model ready (<code>healthMetrics</code> table has HRV, resting HR). Needs OAuth flow + API polling serverless function.</td>
+  </tr>
+  <tr>
+    <td><strong>Sleep & HRV-based recovery</strong></td>
+    <td><span class="badge badge-partial">Partial</span></td>
+    <td><code>useBiometricModifiers</code> + <code>useSmartRecovery</code> hooks exist and compute recovery scores. Currently fed by manual/mock data. Needs real biometric input from Health/Garmin.</td>
+  </tr>
+  <tr>
+    <td><strong>Body measurements sync</strong></td>
+    <td><span class="badge badge-missing">Not synced</span></td>
+    <td><code>bodyMeasurementLogs</code> + <code>weightLogs</code> exist in Dexie but have no Firestore listener. Need <code>onSnapshot</code> + <code>catchUpSync</code> additions.</td>
+  </tr>
+  <tr>
+    <td><strong>Hold logs sync</strong></td>
+    <td><span class="badge badge-missing">Not synced</span></td>
+    <td><code>holdLogs</code> table exists locally but missing Firestore collection sync.</td>
+  </tr>
+  <tr>
+    <td><strong>AI Coach for BJJ</strong></td>
+    <td><span class="badge badge-missing">Not started</span></td>
+    <td>No <code>/api/generateBjjCoaching</code> endpoint. Would need BJJ-specific context builder (sparring patterns, technique gaps, belt progression).</td>
+  </tr>
+  <tr>
+    <td><strong>AI Coach for main/Today page</strong></td>
+    <td><span class="badge badge-missing">Not started</span></td>
+    <td>Today page uses rule-based recommendations only. Could have a holistic daily coach combining all sports.</td>
+  </tr>
+  <tr>
+    <td><strong>Push notifications</strong></td>
+    <td><span class="badge badge-missing">Not started</span></td>
+    <td>No FCM setup. Would remind users to train when supercompensation peaks.</td>
+  </tr>
+  <tr>
+    <td><strong>Social / sharing</strong></td>
+    <td><span class="badge badge-missing">Not started</span></td>
+    <td>No multi-user features. Could share progress snapshots or challenge friends.</td>
+  </tr>
+  <tr>
+    <td><strong>Deload auto-detection</strong></td>
+    <td><span class="badge badge-partial">Partial</span></td>
+    <td>AI prompt mentions "deload every 4th week" but no actual week counter or enforcement in rule-based engine.</td>
+  </tr>
+  <tr>
+    <td><strong>Workout conflict resolution</strong></td>
+    <td><span class="badge badge-done">Done</span></td>
+    <td><code>WorkoutConflictResolver</code> component handles Dexie/Firestore merge conflicts with UI for manual resolution.</td>
+  </tr>
+  <tr>
+    <td><strong>Data export (JSON)</strong></td>
+    <td><span class="badge badge-done">Done</span></td>
+    <td>Full export/import in Profile page (<code>dataTransfer.ts</code>). Merge or replace modes.</td>
+  </tr>
+  <tr>
+    <td><strong>Pixel art sprites</strong></td>
+    <td><span class="badge badge-done">Done</span></td>
+    <td>Avatar + exercise icons generated via PixelLab MCP. Stored in <code>/public/sprites/</code>.</td>
+  </tr>
+</table>
+</div>
+
+<h2>11. File Structure</h2>
+
+<pre>
+mobility-coach/
+├── api/                          # Vercel serverless functions
+│   ├── generateCoaching.ts       # Calisthenics AI endpoint
+│   └── generateMobilityCoaching.ts # Mobility AI endpoint
+├── public/
+│   ├── sprites/avatar/           # Pixel avatar frames
+│   ├── sprites/exercises/        # Per-exercise pixel icons
+│   └── icons/                    # PWA icons (192, 512)
+├── src/
+│   ├── pages/                    # 12 route pages
+│   ├── components/               # 40 shared components
+│   ├── hooks/                    # 35 custom hooks
+│   ├── lib/                      # Pure logic (models, context, utils)
+│   ├── data/                     # Static exercise/progression data
+│   ├── db/db.ts                  # Dexie schema (single source of truth)
+│   ├── types/                    # Shared TypeScript types
+│   ├── App.tsx                   # Router + auth + sync provider
+│   └── main.tsx                  # Entry point
+├── vercel.json                   # Rewrite rules
+├── vite.config.ts                # Build + PWA config
+└── package.json
+</pre>
+
+<h2>12. Environment Variables (Vercel)</h2>
+
+<div class="card">
+<table>
+  <tr><th>Variable</th><th>Purpose</th></tr>
+  <tr><td><code>GEMINI_API_KEY</code></td><td>Google AI Studio API key for Gemini calls</td></tr>
+  <tr><td><code>FIREBASE_PROJECT_ID</code></td><td>Firebase project identifier</td></tr>
+  <tr><td><code>FIREBASE_CLIENT_EMAIL</code></td><td>Service account email for Admin SDK</td></tr>
+  <tr><td><code>FIREBASE_PRIVATE_KEY</code></td><td>Service account private key (escaped newlines)</td></tr>
+</table>
+</div>
+
+<p>Client-side Firebase config is embedded in <code>src/lib/firebase.ts</code> (public config, not secrets).</p>
+
+<h2>13. Known Technical Debt</h2>
+
+<ul>
+  <li><strong>HealthPage</strong> exists but is not routed (dead page) — was for manual biometric entry</li>
+  <li><strong>Mobility.tsx</strong> vs <strong>MobilityPage.tsx</strong> — legacy page not cleaned up</li>
+  <li><strong>holdLogs</strong> partially duplicates data in <code>calisthenicsLogs</code> for isometric exercises</li>
+  <li><strong>preferredSessionMin</strong> in AI Coach preferences section (Profile) is now redundant with per-sport durations — could be removed</li>
+  <li><strong>No TypeScript strict mode</strong> — some <code>any</code> types in hook return values and event handlers</li>
+  <li><strong>No test suite</strong> — manual testing only. Mathematical models (supercompensation, impulse) would benefit from unit tests</li>
+  <li><strong>Bundle size</strong> — Recharts is heavy (~200KB). Could lazy-load chart pages</li>
+</ul>
+
+</div>

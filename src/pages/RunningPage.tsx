@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type RunningLog } from '../db/db'
 import { upsertTodaySession } from '../hooks/useSessions'
-import { syncRunningLogToFirebase } from '../lib/firebase-workout-sync'
+import { syncRunningLogToFirebase } from '../lib/sync'
 import { todayIso } from '../lib/date'
 import { Card } from '../components/Card'
 

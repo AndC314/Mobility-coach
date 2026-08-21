@@ -4,7 +4,7 @@ import { todayIso } from '../lib/date'
 import { upsertTodaySession } from './useSessions'
 import { getExerciseDef, estimateCalisthenicsduration, DEPRECATED_EXERCISE_MAP } from '../data/calisthenics'
 import { usePreferences } from './usePreferences'
-import { syncCalisthenicsLogToFirebase } from '../lib/firebase-workout-sync'
+import { syncCalisthenicsLogToFirebase } from '../lib/sync'
 
 export async function logCalisthenicsBase(params: {
   exerciseId: CalisthenicsExerciseId

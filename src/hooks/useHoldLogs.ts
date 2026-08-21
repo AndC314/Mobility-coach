@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type ProgressionKey, type CompletedSession } from '../db/db'
 import { todayIso } from '../lib/date'
-import { syncSessionToFirebase } from '../lib/firebase-workout-sync'
+import { syncSessionToFirebase, syncHoldLogToFirebase } from '../lib/sync'
 
 export async function logHold(params: {
   exerciseKey: ProgressionKey
@@ -9,14 +9,17 @@ export async function logHold(params: {
   plannedSec: number
   actualSec: number
 }) {
-  const id = await db.holdLogs.add({
+  const holdLog = {
     date: todayIso(),
     exerciseKey: params.exerciseKey,
     phase: params.phase,
     plannedSec: params.plannedSec,
     actualSec: params.actualSec,
-    createdAt: new Date().toISOString()
-  })
+    createdAt: new Date().toISOString(),
+  }
+  const id = await db.holdLogs.add(holdLog)
+
+  syncHoldLogToFirebase(holdLog)
 
   // Also sync to Firestore as a mobility session (non-blocking)
   try {
