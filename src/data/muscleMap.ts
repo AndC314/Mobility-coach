@@ -635,6 +635,149 @@ export const EXERCISE_MUSCLES: Record<string, MuscleActivation[]> = {
     { muscle: 'abs', level: 'primary' },
     { muscle: 'rear_delt', level: 'primary' },
     { muscle: 'inner_thigh', level: 'secondary' }
+  ],
+  hollow_to_arch: [
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'lower_back', level: 'primary' },
+    { muscle: 'glutes', level: 'secondary' },
+    { muscle: 'hip_flexors', level: 'secondary' }
+  ],
+  ice_cream_makers: [
+    { muscle: 'lats', level: 'primary' },
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'rear_delt', level: 'primary' },
+    { muscle: 'biceps', level: 'secondary' }
+  ],
+  toes_to_bar: [
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'hip_flexors', level: 'primary' },
+    { muscle: 'lats', level: 'secondary' },
+    { muscle: 'forearms', level: 'secondary' }
+  ],
+  arch_body_hold: [
+    { muscle: 'lower_back', level: 'primary' },
+    { muscle: 'glutes', level: 'primary' },
+    { muscle: 'rear_delt', level: 'secondary' },
+    { muscle: 'hamstrings', level: 'secondary' }
+  ],
+  seated_pike_leg_lifts: [
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'hip_flexors', level: 'primary' },
+    { muscle: 'quads', level: 'secondary' }
+  ],
+  hspu_negative: [
+    { muscle: 'front_delt', level: 'primary' },
+    { muscle: 'triceps', level: 'primary' },
+    { muscle: 'traps', level: 'secondary' },
+    { muscle: 'abs', level: 'secondary' }
+  ],
+  handstand_kick_ups: [
+    { muscle: 'front_delt', level: 'primary' },
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'hip_flexors', level: 'secondary' }
+  ],
+  straddle_press_handstand: [
+    { muscle: 'front_delt', level: 'primary' },
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'hip_flexors', level: 'primary' },
+    { muscle: 'triceps', level: 'secondary' }
+  ],
+  tiger_bend_negative: [
+    { muscle: 'triceps', level: 'primary' },
+    { muscle: 'front_delt', level: 'primary' },
+    { muscle: 'abs', level: 'secondary' }
+  ],
+  scorpion_handstand: [
+    { muscle: 'front_delt', level: 'primary' },
+    { muscle: 'lower_back', level: 'primary' },
+    { muscle: 'triceps', level: 'secondary' }
+  ],
+  commando_pullups: [
+    { muscle: 'lats', level: 'primary' },
+    { muscle: 'biceps', level: 'primary' },
+    { muscle: 'abs', level: 'secondary' },
+    { muscle: 'forearms', level: 'secondary' }
+  ],
+  l_sit_pullups: [
+    { muscle: 'lats', level: 'primary' },
+    { muscle: 'biceps', level: 'primary' },
+    { muscle: 'abs', level: 'primary' },
+    { muscle: 'hip_flexors', level: 'secondary' }
+  ],
+  wide_pullups: [
+    { muscle: 'lats', level: 'primary' },
+    { muscle: 'rear_delt', level: 'primary' },
+    { muscle: 'biceps', level: 'secondary' },
+    { muscle: 'traps', level: 'secondary' }
+  ],
+  narrow_pullups: [
+    { muscle: 'biceps', level: 'primary' },
+    { muscle: 'lats', level: 'primary' },
+    { muscle: 'forearms', level: 'secondary' }
+  ],
+  tuck_back_lever: [
+    { muscle: 'rear_delt', level: 'primary' },
+    { muscle: 'biceps', level: 'primary' },
+    { muscle: 'lower_back', level: 'secondary' },
+    { muscle: 'abs', level: 'secondary' }
+  ],
+  decline_pushups: [
+    { muscle: 'chest', level: 'primary' },
+    { muscle: 'front_delt', level: 'primary' },
+    { muscle: 'triceps', level: 'secondary' }
+  ],
+  russian_dips: [
+    { muscle: 'triceps', level: 'primary' },
+    { muscle: 'front_delt', level: 'primary' },
+    { muscle: 'chest', level: 'secondary' }
+  ],
+  korean_dips: [
+    { muscle: 'triceps', level: 'primary' },
+    { muscle: 'front_delt', level: 'primary' },
+    { muscle: 'chest', level: 'secondary' }
+  ],
+  ring_dips: [
+    { muscle: 'chest', level: 'primary' },
+    { muscle: 'triceps', level: 'primary' },
+    { muscle: 'front_delt', level: 'primary' }
+  ],
+  ring_pushups: [
+    { muscle: 'chest', level: 'primary' },
+    { muscle: 'triceps', level: 'primary' },
+    { muscle: 'front_delt', level: 'secondary' }
+  ],
+  tuck_planche: [
+    { muscle: 'front_delt', level: 'primary' },
+    { muscle: 'chest', level: 'primary' },
+    { muscle: 'abs', level: 'secondary' },
+    { muscle: 'biceps', level: 'secondary' }
+  ],
+  bw_skull_crushers: [
+    { muscle: 'triceps', level: 'primary' },
+    { muscle: 'front_delt', level: 'secondary' }
+  ],
+  reverse_nordic_curls: [
+    { muscle: 'quads', level: 'primary' },
+    { muscle: 'hip_flexors', level: 'secondary' }
+  ],
+  sissy_squat: [
+    { muscle: 'quads', level: 'primary' },
+    { muscle: 'hip_flexors', level: 'secondary' }
+  ],
+  nordic_curls: [
+    { muscle: 'hamstrings', level: 'primary' },
+    { muscle: 'glutes', level: 'secondary' },
+    { muscle: 'calves', level: 'secondary' }
+  ],
+  hip_thrusts: [
+    { muscle: 'glutes', level: 'primary' },
+    { muscle: 'hamstrings', level: 'primary' },
+    { muscle: 'lower_back', level: 'secondary' }
+  ],
+  ring_support_hold: [
+    { muscle: 'chest', level: 'primary' },
+    { muscle: 'triceps', level: 'primary' },
+    { muscle: 'front_delt', level: 'secondary' }
   ]
 }
 
