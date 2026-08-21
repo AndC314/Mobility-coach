@@ -5,7 +5,10 @@ import { upsertTodaySession } from '../hooks/useSessions'
 import { todayIso } from '../lib/date'
 import { useWakeLock } from '../hooks/useWakeLock'
 import AIMobilityCoachCard from '../components/AIMobilityCoachCard'
-import type { MobilityPlanItem } from '../db/db'
+import type { MobilityPlanItem, CalisthenicsExerciseId } from '../db/db'
+import { db } from '../db/db'
+import { EXERCISE_MUSCLES } from '../data/muscleMap'
+import { syncCalisthenicsLogToFirebase } from '../lib/sync'
 
 function ExerciseThumb({ id, icon, className }: { id: string; icon: string; className?: string }) {
   const [src, setSrc] = useState<'sprite' | 'legacy' | 'emoji'>('sprite')
@@ -103,6 +106,24 @@ export default function MobilityPage() {
         exerciseIds: selected.map((s) => s.id),
         date
       })
+
+      // Write per-exercise calisthenics logs for exercises with muscle mappings
+      for (const entry of selected) {
+        if (EXERCISE_MUSCLES[entry.id]) {
+          const log = {
+            date,
+            exerciseId: entry.id as CalisthenicsExerciseId,
+            metric: 'hold_sec' as const,
+            value: entry.holdSec,
+            sets: entry.sets,
+            restSec: entry.restSec,
+            createdAt: new Date().toISOString(),
+          }
+          const id = await db.calisthenicsLogs.add(log)
+          const saved = await db.calisthenicsLogs.get(id)
+          if (saved) syncCalisthenicsLogToFirebase(saved).catch(() => {})
+        }
+      }
 
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)

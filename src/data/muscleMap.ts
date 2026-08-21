@@ -536,6 +536,12 @@ export const MUSCLE_SUGGESTIONS: Record<MuscleGroup, ExerciseSuggestion[]> = {
 // exercise suggestions with progressive overload targets.
 // ─────────────────────────────────────────────────────────────────────────
 
+export interface LoadPrediction {
+  muscle: MuscleGroup
+  currentScore: number
+  projectedScore: number
+}
+
 export interface TargetedSuggestion {
   exerciseId: CalisthenicsExerciseId
   label: string
@@ -547,6 +553,7 @@ export interface TargetedSuggestion {
   primaryMuscle: string // primary muscle of the exercise itself
   muscle: MuscleGroup // the gap muscle that triggered this suggestion
   isNew: boolean // true if user has never logged this exercise
+  predictions?: LoadPrediction[]
 }
 
 export function computeSuggestions(
@@ -557,9 +564,11 @@ export function computeSuggestions(
   const suggestions: TargetedSuggestion[] = []
 
   // Find user's best value and most recent sets per exercise
+  // Filter out Challenge logs — they store total accumulated volume, not per-set best
   const bestByExercise = new Map<CalisthenicsExerciseId, number>()
   const lastSetsByExercise = new Map<CalisthenicsExerciseId, number>()
   for (const log of allLogs) {
+    if (log.notes?.startsWith('Challenge:')) continue
     const prev = bestByExercise.get(log.exerciseId) ?? 0
     if (log.value > prev) bestByExercise.set(log.exerciseId, log.value)
     if (log.sets != null) lastSetsByExercise.set(log.exerciseId, log.sets)
@@ -614,6 +623,37 @@ export function computeSuggestions(
   return suggestions
 }
 
+export function enrichSuggestionsWithPredictions(
+  suggestions: TargetedSuggestion[],
+  scores: MuscleScore[],
+  adaptiveCaps?: MuscleCaps
+): TargetedSuggestion[] {
+  const scoreMap = new Map(scores.map((s) => [s.muscle, s]))
+
+  return suggestions.map((s) => {
+    const activations = EXERCISE_MUSCLES[s.exerciseId] ?? []
+    const totalVolume = s.repScheme
+      ? s.repScheme.reduce((sum, r) => sum + r, 0)
+      : s.targetSets * s.targetReps
+
+    const predictions: LoadPrediction[] = []
+    for (const { muscle, level } of activations) {
+      const multiplier = level === 'primary' ? 1.0 : 0.5
+      const addedContribution = totalVolume * multiplier
+      const cap = adaptiveCaps?.[muscle] ?? BASELINE_CAP
+      const current = scoreMap.get(muscle)
+      const currentScore = current?.score ?? 0
+      const currentVolume = (currentScore / 100) * cap
+      const projectedScore = Math.min(100, Math.round(((currentVolume + addedContribution) / cap) * 100))
+      if (projectedScore > currentScore) {
+        predictions.push({ muscle, currentScore, projectedScore })
+      }
+    }
+
+    return { ...s, predictions }
+  })
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // SORENESS / LOAD SCORING
 //
@@ -639,6 +679,7 @@ export interface LogEntry {
   value: number
   date: string
   sets?: number
+  notes?: string
 }
 
 /**
@@ -678,6 +719,7 @@ export function computeAdaptiveCaps(historicalLogs: LogEntry[], todayStr: string
 
     const muscleTotals = new Map<MuscleGroup, number>()
     for (const log of windowLogs) {
+      if (log.notes?.startsWith('Challenge:')) continue
       const activations = EXERCISE_MUSCLES[log.exerciseId] ?? []
       for (const { muscle, level } of activations) {
         const contribution = level === 'primary' ? log.value : log.value * 0.5
@@ -735,6 +777,77 @@ export function computeMuscleScores(
       level: entry?.level ?? 'secondary'
     }
   })
+}
+
+export interface MuscleContribution {
+  exerciseId: CalisthenicsExerciseId
+  label: string
+  value: number
+  sets: number
+  level: ActivationLevel
+  contribution: number
+}
+
+export interface MuscleBreakdown {
+  muscle: MuscleGroup
+  contributions: MuscleContribution[]
+  totalVolume: number
+  cap: number
+  score: number
+}
+
+export function computeMuscleBreakdown(
+  logs: LogEntry[],
+  todayStr: string,
+  adaptiveCaps?: MuscleCaps
+): MuscleBreakdown[] {
+  const [ty, tm, td] = todayStr.split('-').map(Number)
+  const yesterday = new Date(ty, tm - 1, td - 1)
+  const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`
+
+  const recent = logs.filter((l) => l.date >= yesterdayStr)
+
+  const perMuscle = new Map<MuscleGroup, { contributions: MuscleContribution[]; total: number }>()
+
+  for (const log of recent) {
+    const activations = EXERCISE_MUSCLES[log.exerciseId] ?? []
+    for (const { muscle, level } of activations) {
+      const multiplier = level === 'primary' ? 1.0 : 0.5
+      const contribution = log.value * multiplier
+      const def = getExerciseDef(log.exerciseId)
+      const entry: MuscleContribution = {
+        exerciseId: log.exerciseId,
+        label: def?.name ?? log.exerciseId,
+        value: log.value,
+        sets: log.sets ?? 1,
+        level,
+        contribution,
+      }
+      const existing = perMuscle.get(muscle)
+      if (!existing) {
+        perMuscle.set(muscle, { contributions: [entry], total: contribution })
+      } else {
+        existing.contributions.push(entry)
+        existing.total += contribution
+      }
+    }
+  }
+
+  const all = Object.keys(MUSCLE_LABELS) as MuscleGroup[]
+  return all
+    .map((muscle) => {
+      const data = perMuscle.get(muscle)
+      const cap = adaptiveCaps?.[muscle] ?? BASELINE_CAP
+      const totalVolume = data?.total ?? 0
+      return {
+        muscle,
+        contributions: data?.contributions ?? [],
+        totalVolume,
+        cap,
+        score: Math.min(100, Math.round((totalVolume / cap) * 100)),
+      }
+    })
+    .filter((b) => b.contributions.length > 0)
 }
 
 // ─────────────────────────────────────────────────────────────────────────
