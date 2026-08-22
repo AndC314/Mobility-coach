@@ -1,25 +1,13 @@
 import { useState } from 'react'
 import { Card } from './Card'
-import { db, type HealthMetrics } from '../db/db'
-import { syncHealthMetricsToFirebase, syncWeightLogToFirebase } from '../lib/sync'
+import { importHealthJSON } from '../lib/healthImport'
 
 type ImportStatus = 'idle' | 'importing' | 'success' | 'error'
-
-interface HealthImportPayload {
-  date: string
-  sleepHours?: number
-  hrv?: number
-  restingHr?: number
-  weight?: number
-  vo2max?: number
-  steps?: number
-  source?: string
-}
 
 export default function HealthConnectCard() {
   const [showGuide, setShowGuide] = useState<'apple' | 'google' | null>(null)
   const [importStatus, setImportStatus] = useState<ImportStatus>('idle')
-  const [importCount, setImportCount] = useState(0)
+  const [importMsg, setImportMsg] = useState('')
   const [pasteValue, setPasteValue] = useState('')
 
   async function handleImport() {
@@ -28,48 +16,15 @@ export default function HealthConnectCard() {
 
     setImportStatus('importing')
     try {
-      const data: HealthImportPayload | HealthImportPayload[] = JSON.parse(text)
-      const entries = Array.isArray(data) ? data : [data]
-      let count = 0
-
-      for (const entry of entries) {
-        if (!entry.date) continue
-
-        const metrics: HealthMetrics = {
-          date: entry.date,
-          createdAt: new Date().toISOString(),
-          source: 'apple_health',
-        }
-        if (entry.sleepHours != null && entry.sleepHours > 0) {
-          metrics.sleepHours = entry.sleepHours
-          metrics.sleepScore = Math.min(100, Math.round((entry.sleepHours / 8) * 100))
-        }
-        if (entry.hrv != null && entry.hrv > 0) metrics.hrv = entry.hrv
-        if (entry.restingHr != null && entry.restingHr > 0) metrics.restingHr = entry.restingHr
-        if (entry.vo2max != null && entry.vo2max > 0) metrics.vo2max = entry.vo2max
-
-        const hasData = metrics.sleepHours || metrics.hrv || metrics.restingHr || metrics.vo2max
-        if (hasData) {
-          await db.healthMetrics.add(metrics)
-          syncHealthMetricsToFirebase(metrics)
-        }
-
-        if (entry.weight != null && entry.weight > 0) {
-          const weightLog = { date: entry.date, weightKg: entry.weight, createdAt: new Date().toISOString() }
-          await db.weightLogs.add(weightLog)
-          syncWeightLogToFirebase(weightLog)
-        }
-
-        if (hasData || (entry.weight != null && entry.weight > 0)) count++
-      }
-
-      setImportCount(count)
+      const count = await importHealthJSON(text)
+      setImportMsg(`Imported ${count} entr${count === 1 ? 'y' : 'ies'}`)
       setImportStatus('success')
       setPasteValue('')
       setTimeout(() => setImportStatus('idle'), 3000)
-    } catch {
+    } catch (err: any) {
+      setImportMsg(err?.message ?? 'Import failed')
       setImportStatus('error')
-      setTimeout(() => setImportStatus('idle'), 3000)
+      setTimeout(() => setImportStatus('idle'), 4000)
     }
   }
 
@@ -94,8 +49,8 @@ export default function HealthConnectCard() {
           className="mt-2 w-full rounded-xl bg-teal py-2.5 text-sm font-bold text-white disabled:opacity-40 transition-opacity"
         >
           {importStatus === 'importing' ? 'Importing...' :
-           importStatus === 'success' ? `Imported ${importCount} entries` :
-           importStatus === 'error' ? 'Invalid JSON format' :
+           importStatus === 'success' ? importMsg :
+           importStatus === 'error' ? importMsg :
            'Import Data'}
         </button>
       </Card>

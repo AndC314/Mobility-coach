@@ -1,78 +1,61 @@
-import { useEffect, useRef } from 'react'
-import { db, type HealthMetrics } from '../db/db'
-import { syncHealthMetricsToFirebase, syncWeightLogToFirebase } from '../lib/sync'
+import { useEffect, useRef, useState } from 'react'
+import { importHealthBase64 } from '../lib/healthImport'
 
-interface HealthPayload {
-  date: string
-  sleepHours?: number
-  hrv?: number
-  restingHr?: number
-  weight?: number
-  vo2max?: number
+export interface AutoImportResult {
+  status: 'idle' | 'imported' | 'error'
+  count: number
+  message: string
 }
 
-export function useHealthAutoImport(onImported?: (count: number) => void) {
+export function useHealthAutoImport(): AutoImportResult {
   const ran = useRef(false)
+  const [result, setResult] = useState<AutoImportResult>({ status: 'idle', count: 0, message: '' })
 
   useEffect(() => {
     if (ran.current) return
     ran.current = true
 
-    const params = new URLSearchParams(window.location.search)
-    const encoded = params.get('health')
+    const encoded = findHealthParam()
     if (!encoded) return
 
-    try {
-      const json = atob(encoded)
-      const data: HealthPayload | HealthPayload[] = JSON.parse(json)
-      const entries = Array.isArray(data) ? data : [data]
-
-      importEntries(entries).then((count) => {
-        // Clean URL without reload
-        const url = new URL(window.location.href)
-        url.searchParams.delete('health')
-        window.history.replaceState(null, '', url.toString())
-        onImported?.(count)
+    importHealthBase64(encoded)
+      .then((count) => {
+        cleanUrl()
+        setResult({ status: 'imported', count, message: `Imported ${count} health entries` })
       })
-    } catch {
-      // Invalid payload — silently ignore
-    }
+      .catch((err) => {
+        setResult({ status: 'error', count: 0, message: String(err?.message ?? err) })
+      })
   }, [])
+
+  return result
 }
 
-async function importEntries(entries: HealthPayload[]): Promise<number> {
-  let count = 0
+function findHealthParam(): string | null {
+  const search = new URLSearchParams(window.location.search)
+  if (search.has('health')) return search.get('health')!
 
-  for (const entry of entries) {
-    if (!entry.date) continue
-
-    const metrics: HealthMetrics = {
-      date: entry.date,
-      createdAt: new Date().toISOString(),
-      source: 'apple_health',
-    }
-    if (entry.sleepHours != null && entry.sleepHours > 0) {
-      metrics.sleepHours = entry.sleepHours
-      metrics.sleepScore = Math.min(100, Math.round((entry.sleepHours / 8) * 100))
-    }
-    if (entry.hrv != null && entry.hrv > 0) metrics.hrv = entry.hrv
-    if (entry.restingHr != null && entry.restingHr > 0) metrics.restingHr = entry.restingHr
-    if (entry.vo2max != null && entry.vo2max > 0) metrics.vo2max = entry.vo2max
-
-    const hasMetrics = metrics.sleepHours || metrics.hrv || metrics.restingHr || metrics.vo2max
-    if (hasMetrics) {
-      await db.healthMetrics.add(metrics)
-      syncHealthMetricsToFirebase(metrics)
-    }
-
-    if (entry.weight != null && entry.weight > 0) {
-      const weightLog = { date: entry.date, weightKg: entry.weight, createdAt: new Date().toISOString() }
-      await db.weightLogs.add(weightLog)
-      syncWeightLogToFirebase(weightLog)
-    }
-
-    if (hasMetrics || (entry.weight != null && entry.weight > 0)) count++
+  const hash = window.location.hash
+  const qIdx = hash.indexOf('?')
+  if (qIdx !== -1) {
+    const hashParams = new URLSearchParams(hash.slice(qIdx))
+    if (hashParams.has('health')) return hashParams.get('health')!
   }
 
-  return count
+  return null
+}
+
+function cleanUrl() {
+  const url = new URL(window.location.href)
+  url.searchParams.delete('health')
+  const hash = url.hash
+  const qIdx = hash.indexOf('?')
+  if (qIdx !== -1) {
+    const base = hash.slice(0, qIdx)
+    const hashParams = new URLSearchParams(hash.slice(qIdx))
+    hashParams.delete('health')
+    const remaining = hashParams.toString()
+    url.hash = remaining ? `${base}?${remaining}` : base
+  }
+  window.history.replaceState(null, '', url.toString())
 }
