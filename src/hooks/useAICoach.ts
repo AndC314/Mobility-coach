@@ -14,7 +14,20 @@ export interface AICoachState {
   error: string | null
   generatedAt: string | null
   limitReached: boolean
+  stale: boolean
   refresh: () => void
+}
+
+const STALE_THRESHOLD_MS = 60 * 60 * 1000 // 1 hour
+
+async function isCoachingStale(generatedAtIso: string): Promise<boolean> {
+  const generatedTime = new Date(generatedAtIso).getTime()
+  const elapsed = Date.now() - generatedTime
+  if (elapsed < STALE_THRESHOLD_MS) return false
+
+  // Check if there are logs created after the coaching was generated
+  const logs = await db.calisthenicsLogs.where('createdAt').above(generatedAtIso).count()
+  return logs > 0
 }
 
 export function useAICoach(): AICoachState {
@@ -25,6 +38,7 @@ export function useAICoach(): AICoachState {
   const [error, setError] = useState<string | null>(null)
   const [generatedAt, setGeneratedAt] = useState<string | null>(null)
   const [limitReached, setLimitReached] = useState(false)
+  const [stale, setStale] = useState(false)
 
   const fetchCoaching = useCallback(async (bypassCache = false) => {
     if (!user) return
@@ -37,21 +51,25 @@ export function useAICoach(): AICoachState {
         const fsDoc = await getDoc(doc(firestoreDb, `users/${user.uid}/aiCoaching/calisthenics_${today}`))
         if (fsDoc.exists()) {
           const data = fsDoc.data()
-          setCoaching(data.coaching)
-          setSessionPlan(data.sessionPlan ?? null)
-          setGeneratedAt(data.generatedAt)
-          setLimitReached(true)
-          // Also cache locally
-          const existing = await db.aiCoachingLogs.where('date').equals(today).first()
-          if (!existing) {
-            await db.aiCoachingLogs.add({
-              date: today,
-              coaching: data.coaching,
-              sessionPlan: data.sessionPlan ?? null,
-              generatedAt: data.generatedAt,
-            })
+          const stale = await isCoachingStale(data.generatedAt)
+          if (!stale) {
+            setCoaching(data.coaching)
+            setSessionPlan(data.sessionPlan ?? null)
+            setGeneratedAt(data.generatedAt)
+            setLimitReached(true)
+            // Also cache locally
+            const existing = await db.aiCoachingLogs.where('date').equals(today).first()
+            if (!existing) {
+              await db.aiCoachingLogs.add({
+                date: today,
+                coaching: data.coaching,
+                sessionPlan: data.sessionPlan ?? null,
+                generatedAt: data.generatedAt,
+              })
+            }
+            return
           }
-          return
+          // Stale — fall through to regenerate
         }
       } catch {
         // Firestore unavailable — fall through to local cache
@@ -60,16 +78,23 @@ export function useAICoach(): AICoachState {
       // Fallback to local Dexie cache
       const cached = await db.aiCoachingLogs.where('date').equals(today).first()
       if (cached) {
-        setCoaching(cached.coaching)
-        setSessionPlan(cached.sessionPlan ?? null)
-        setGeneratedAt(cached.generatedAt)
-        setLimitReached(true)
-        return
+        const stale = await isCoachingStale(cached.generatedAt)
+        if (!stale) {
+          setCoaching(cached.coaching)
+          setSessionPlan(cached.sessionPlan ?? null)
+          setGeneratedAt(cached.generatedAt)
+          setLimitReached(true)
+          return
+        }
+        // Stale — fall through to regenerate
       }
     }
 
-    // If bypassCache but limit already reached, block the refresh
-    if (bypassCache && limitReached) return
+    // If bypassCache but limit already reached AND not stale, block the refresh
+    if (bypassCache && limitReached) {
+      const stale = generatedAt ? await isCoachingStale(generatedAt) : false
+      if (!stale) return
+    }
 
     // Only call AI if there's been training in the last 48h
     const twoDaysAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString().slice(0, 10)
@@ -141,16 +166,29 @@ export function useAICoach(): AICoachState {
     } finally {
       setLoading(false)
     }
-  }, [user, limitReached])
+  }, [user, limitReached, generatedAt])
 
   useEffect(() => {
     fetchCoaching()
   }, [fetchCoaching])
 
-  const refresh = useCallback(() => {
-    if (limitReached) return
-    fetchCoaching(true)
-  }, [fetchCoaching, limitReached])
+  // Periodically check if coaching is stale (every 5 min)
+  useEffect(() => {
+    if (!generatedAt) return
+    const check = () => {
+      isCoachingStale(generatedAt).then(setStale)
+    }
+    check()
+    const interval = setInterval(check, 5 * 60 * 1000)
+    return () => clearInterval(interval)
+  }, [generatedAt])
 
-  return { coaching, sessionPlan, loading, error, generatedAt, limitReached, refresh }
+  const refresh = useCallback(() => {
+    if (limitReached && !stale) return
+    setLimitReached(false)
+    setStale(false)
+    fetchCoaching(true)
+  }, [fetchCoaching, limitReached, stale])
+
+  return { coaching, sessionPlan, loading, error, generatedAt, limitReached, stale, refresh }
 }

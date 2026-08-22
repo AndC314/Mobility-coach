@@ -5,6 +5,7 @@ import { syncHealthMetricsToFirebase, syncBodyMeasurementToFirebase, syncWeightL
 import { todayIso } from '../lib/date'
 import { Card } from '../components/Card'
 import Sparkline from '../components/Sparkline'
+import HealthConnectCard from '../components/HealthConnectCard'
 
 const BODY_SITES: { key: BodySite; label: string }[] = [
   { key: 'chest', label: 'Chest' },
@@ -16,7 +17,7 @@ const BODY_SITES: { key: BodySite; label: string }[] = [
 
 const MOOD_EMOJIS = ['😫', '😟', '😐', '😊', '🤩']
 
-type Tab = 'daily' | 'body'
+type Tab = 'daily' | 'body' | 'connect'
 
 export default function HealthPage() {
   const [tab, setTab] = useState<Tab>('daily')
@@ -26,11 +27,14 @@ export default function HealthPage() {
       <h1 className="text-xl font-black text-ink">Health & Body</h1>
 
       <div className="flex gap-1 rounded-xl bg-card p-1 border border-border">
-        <TabButton active={tab === 'daily'} onClick={() => setTab('daily')}>Daily Metrics</TabButton>
-        <TabButton active={tab === 'body'} onClick={() => setTab('body')}>Body Measurements</TabButton>
+        <TabButton active={tab === 'daily'} onClick={() => setTab('daily')}>Daily</TabButton>
+        <TabButton active={tab === 'body'} onClick={() => setTab('body')}>Body</TabButton>
+        <TabButton active={tab === 'connect'} onClick={() => setTab('connect')}>Connect</TabButton>
       </div>
 
-      {tab === 'daily' ? <DailyMetricsTab /> : <BodyMeasurementsTab />}
+      {tab === 'daily' && <DailyMetricsTab />}
+      {tab === 'body' && <BodyMeasurementsTab />}
+      {tab === 'connect' && <HealthConnectCard />}
     </div>
   )
 }
@@ -217,9 +221,10 @@ function DailyMetricsTab() {
         <Card>
           <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">Recent</h3>
           <div className="space-y-2">
-            {last30.slice(0, 7).map((entry, i) => (
-              <RecentEntry key={entry.id ?? i} entry={entry} />
-            ))}
+            {last30.slice(0, 7).map((entry, i) => {
+              const dayWeight = (recentWeights ?? []).find(w => w.date === entry.date)
+              return <RecentEntry key={entry.id ?? i} entry={entry} weightKg={dayWeight?.weightKg} />
+            })}
           </div>
         </Card>
       )}
@@ -228,6 +233,9 @@ function DailyMetricsTab() {
         <Card>
           <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">Trends (30 days)</h3>
           <div className="space-y-3">
+            {weightData.length >= 2 && (
+              <TrendRow label="Weight" data={weightData} color="#f5c842" unit="kg" />
+            )}
             {sleepData.length >= 2 && (
               <TrendRow label="Sleep" data={sleepData} color="#2ec4b6" unit="hrs" />
             )}
@@ -236,9 +244,6 @@ function DailyMetricsTab() {
             )}
             {rhrData.length >= 2 && (
               <TrendRow label="Resting HR" data={rhrData} color="#e8622a" unit="bpm" />
-            )}
-            {weightData.length >= 2 && (
-              <TrendRow label="Weight" data={weightData} color="#e8622a" unit="kg" />
             )}
             {energyData.length >= 2 && (
               <TrendRow label="Energy" data={energyData} color="#2ec4b6" unit="/10" />
@@ -295,11 +300,12 @@ function TrendRow({ label, data, color, unit }: { label: string; data: number[];
   )
 }
 
-function RecentEntry({ entry }: { entry: HealthMetrics }) {
+function RecentEntry({ entry, weightKg }: { entry: HealthMetrics; weightKg?: number }) {
   const chips: string[] = []
   if (entry.sleepHours != null) chips.push(`${entry.sleepHours}h sleep`)
   if (entry.hrv != null) chips.push(`HRV ${entry.hrv}`)
   if (entry.restingHr != null) chips.push(`RHR ${entry.restingHr}`)
+  if (weightKg != null) chips.push(`${weightKg}kg`)
   if (entry.energy != null) chips.push(`E:${entry.energy}/10`)
   if (entry.mood != null) chips.push(MOOD_EMOJIS[entry.mood - 1])
 

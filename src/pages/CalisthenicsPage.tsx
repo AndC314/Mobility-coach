@@ -4,6 +4,7 @@ import CalisthenicsSection, { type BulkPrefill } from '../components/Calisthenic
 import TodayStrengthCard from '../components/TodayStrengthCard'
 import AISessionCard from '../components/AISessionCard'
 import AICoachCard from '../components/AICoachCard'
+import ProgramCard from '../components/ProgramCard'
 import { useAICoach } from '../hooks/useAICoach'
 import type { SessionExercise } from '../lib/calisthenicsSession'
 
@@ -63,6 +64,8 @@ export default function CalisthenicsPage() {
       ) : (
         <TodayStrengthCard onStartSession={handleStartSession} />
       )}
+
+      <ProgramCard />
 
       <CalisthenicsSection prefill={prefill} onPrefillConsumed={() => setPrefill(null)} />
     </div>

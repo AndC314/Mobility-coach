@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
-import { useLiveQuery } from 'dexie-react-hooks'
 import { Card, Tag } from './Card'
 import ExercisePicker from './ExercisePicker'
 import ExerciseIcon from './ExerciseIcon'
+import WorkoutCelebration, { type CelebrationData } from './WorkoutCelebration'
+import LiveTracker from './LiveTracker'
 import { CALISTHENICS_EXERCISES, getExerciseDef } from '../data/calisthenics'
 import { useCalisthenics, useCalisthenicsLogs, logCalisthenicsBase } from '../hooks/useCalisthenics'
 import { useWakeLock } from '../hooks/useWakeLock'
-import { db } from '../db/db'
 import { todayIso } from '../lib/date'
 import type { CalisthenicsExerciseId } from '../db/db'
 
@@ -14,9 +14,10 @@ export interface BulkPrefill {
   exercises: { id: string; value: number; sets: number }[]
 }
 
-type Tab = 'log' | 'bulk'
+type Tab = 'live' | 'log' | 'bulk'
 
 const TABS: { id: Tab; label: string }[] = [
+  { id: 'live', label: '▶ Live' },
   { id: 'log', label: '📋 Log' },
   { id: 'bulk', label: '📦 Bulk' },
 ]
@@ -27,7 +28,8 @@ interface CalisthenicsSectionProps {
 }
 
 export default function CalisthenicsSection({ prefill, onPrefillConsumed }: CalisthenicsSectionProps) {
-  const [tab, setTab] = useState<Tab>('log')
+  const [tab, setTab] = useState<Tab>('live')
+  const [celebration, setCelebration] = useState<CelebrationData | null>(null)
 
   useEffect(() => {
     if (prefill) {
@@ -53,15 +55,20 @@ export default function CalisthenicsSection({ prefill, onPrefillConsumed }: Cali
         ))}
       </div>
 
-      {tab === 'log' && <LogTab />}
-      {tab === 'bulk' && <BulkTab prefill={prefill} onPrefillConsumed={onPrefillConsumed} />}
+      {tab === 'live' && <LiveTracker onCelebrate={setCelebration} />}
+      {tab === 'log' && <LogTab onCelebrate={setCelebration} />}
+      {tab === 'bulk' && <BulkTab prefill={prefill} onPrefillConsumed={onPrefillConsumed} onCelebrate={setCelebration} />}
+
+      {celebration && (
+        <WorkoutCelebration data={celebration} onClose={() => setCelebration(null)} />
+      )}
     </div>
   )
 }
 
 // ─── LOG TAB ─────────────────────────────────────────────────────────────
 
-function LogTab() {
+function LogTab({ onCelebrate }: { onCelebrate: (data: CelebrationData) => void }) {
   const [selected, setSelected] = useState<CalisthenicsExerciseId>('pushups')
   const exercise = getExerciseDef(selected)!
   const logs = useCalisthenicsLogs(selected)
@@ -70,7 +77,6 @@ function LogTab() {
   const [value, setValue] = useState('')
   const [sets, setSets] = useState('')
   const [date, setDate] = useState(todayIso())
-  const [saved, setSaved] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(true)
 
   // Edit modal state
@@ -116,18 +122,18 @@ function LogTab() {
   async function handleSave() {
     const v = Number(value)
     if (!v || v <= 0) return
+    const s = sets ? Number(sets) : 1
     await logCalisthenics({
       exerciseId: selected,
       metric: exercise.metric,
       value: v,
-      sets: sets ? Number(sets) : undefined,
+      sets: s,
       date,
     })
     setValue('')
     setSets('')
     setDate(todayIso())
-    setSaved(true)
-    setTimeout(() => setSaved(false), 1500)
+    onCelebrate({ exercises: [{ id: selected, value: v, sets: s }], date })
   }
 
   return (
@@ -205,7 +211,7 @@ function LogTab() {
           onClick={handleSave}
           className="mt-3 w-full rounded-full bg-purple/15 py-3 text-sm font-bold text-purple border border-purple/40"
         >
-          {saved ? '✓ Logged' : 'Log entry'}
+          Log entry
         </button>
       </Card>
 
@@ -299,12 +305,11 @@ interface BulkEntry {
   restSec: number
 }
 
-function BulkTab({ prefill, onPrefillConsumed }: { prefill?: BulkPrefill | null; onPrefillConsumed?: () => void }) {
+function BulkTab({ prefill, onPrefillConsumed, onCelebrate }: { prefill?: BulkPrefill | null; onPrefillConsumed?: () => void; onCelebrate: (data: CelebrationData) => void }) {
   const [selected, setSelected] = useState<BulkEntry[]>([])
   const [view, setView] = useState<'picker' | 'config'>('picker')
   const [date, setDate] = useState(todayIso())
   const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
 
   useWakeLock(selected.length > 0)
 
@@ -354,10 +359,10 @@ function BulkTab({ prefill, onPrefillConsumed }: { prefill?: BulkPrefill | null;
           restSeconds: entry.restSec,
         })
       }
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
+      const celebrationExercises = selected.map((e) => ({ id: e.id, value: e.value, sets: e.sets }))
       setSelected([])
       setView('picker')
+      onCelebrate({ exercises: celebrationExercises, date })
     } catch (err) {
       console.error('Bulk log failed:', err)
     } finally {
@@ -449,7 +454,7 @@ function BulkTab({ prefill, onPrefillConsumed }: { prefill?: BulkPrefill | null;
                 disabled={saving || selected.length === 0}
                 className="flex-1 rounded-lg bg-purple/20 py-2.5 text-sm font-bold text-purple border border-purple/40 disabled:opacity-50"
               >
-                {saved ? '✓ Logged' : saving ? 'Saving…' : `Log ${selected.length} exercises`}
+                {saving ? 'Saving…' : `Log ${selected.length} exercises`}
               </button>
             </div>
           </div>

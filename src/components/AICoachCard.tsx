@@ -73,7 +73,7 @@ function CoachIcon() {
 
 export default function AICoachCard() {
   const { user } = useAuth()
-  const { coaching, loading, error, generatedAt, limitReached, refresh } = useAICoach()
+  const { coaching, loading, error, generatedAt, limitReached, stale, refresh } = useAICoach()
 
   if (!user) {
     return (
@@ -139,12 +139,12 @@ export default function AICoachCard() {
           <CoachIcon />
           <span className="text-sm font-bold text-ink">AI Coach</span>
         </div>
-        {!limitReached && (
+        {(!limitReached || stale) && (
           <button
             onClick={refresh}
             disabled={loading}
-            className="text-xs text-muted hover:text-accent transition-colors disabled:opacity-50"
-            title="Refresh coaching"
+            className={`text-xs transition-colors disabled:opacity-50 ${stale ? 'text-accent font-semibold animate-pulse' : 'text-muted hover:text-accent'}`}
+            title={stale ? 'New training detected — tap to refresh' : 'Refresh coaching'}
           >
             {loading ? '...' : '↻'}
           </button>
@@ -156,6 +156,7 @@ export default function AICoachCard() {
       {timeStr && (
         <p className="mt-3 text-[10px] text-muted">
           Generated today at {timeStr}
+          {stale && <span className="ml-1 text-accent font-semibold"> · New training logged — tap ↻ to update</span>}
         </p>
       )}
     </Card>

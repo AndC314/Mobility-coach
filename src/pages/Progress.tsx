@@ -4,13 +4,16 @@ import {
 } from 'recharts'
 import SkillTree from '../components/SkillTree'
 import SkillRadar from '../components/SkillRadar'
+import FitnessTrendChart from '../components/FitnessTrendChart'
+import TrainingBalanceCard from '../components/TrainingBalanceCard'
 import WeakLinkCard from '../components/WeakLinkCard'
+import WorkoutHistory from '../components/WorkoutHistory'
 import { Card } from '../components/Card'
 import { useActivityTimeseries } from '../hooks/useActivityTimeseries'
 import HealthPage from './HealthPage'
 
 export default function Progress() {
-  const [view, setView] = useState<'tree' | 'trends' | 'activity' | 'health'>('tree')
+  const [view, setView] = useState<'tree' | 'history' | 'trends' | 'activity' | 'health'>('tree')
   const timeseries = useActivityTimeseries(12)
 
   return (
@@ -23,7 +26,8 @@ export default function Progress() {
       <div className="flex gap-1.5">
         {(
           [
-            { id: 'tree', label: 'Skill Tree' },
+            { id: 'tree', label: 'Skills' },
+            { id: 'history', label: 'History' },
             { id: 'trends', label: 'Profile' },
             { id: 'health', label: 'Health' },
             { id: 'activity', label: 'Activity' },
@@ -48,8 +52,12 @@ export default function Progress() {
         </div>
       )}
 
+      {view === 'history' && <WorkoutHistory />}
+
       {view === 'trends' && (
         <div className="space-y-4">
+          <FitnessTrendChart />
+          <TrainingBalanceCard />
           <SkillRadar />
         </div>
       )}
@@ -147,9 +155,10 @@ export default function Progress() {
                         />
                         <Bar dataKey="bjjMins" name="BJJ" stackId="a" fill="#2ec4b6" radius={[0, 0, 0, 0]} />
                         <Bar dataKey="calisthenicsMins" name="Calisthenics" stackId="a" fill="#e8622a" radius={[0, 0, 0, 0]} />
+                        <Bar dataKey="runningMins" name="Running" stackId="a" fill="#06b6d4" radius={[0, 0, 0, 0]} />
                         <Bar dataKey="mobilityMins" name="Mobility" stackId="a" fill="#a78bfa" radius={[4, 4, 0, 0]}>
                           {chartData.map((_, i) => (
-                            <Cell key={i} opacity={i === currentWeekIdx ? 0.6 : 1} />
+                            <Cell key={i} opacity={i === currentWeekIdx ? 0.7 : 1} />
                           ))}
                         </Bar>
                       </BarChart>
@@ -166,6 +175,7 @@ export default function Progress() {
               {[
                 { label: 'BJJ', color: '#2ec4b6', minsKey: 'bjjMins' as const, sessKey: 'bjjSessions' as const },
                 { label: 'Calisthenics', color: '#e8622a', minsKey: 'calisthenicsMins' as const, sessKey: 'calisthenicsSessions' as const },
+                { label: 'Running', color: '#06b6d4', minsKey: 'runningMins' as const, sessKey: 'runningSessions' as const },
                 { label: 'Mobility', color: '#a78bfa', minsKey: 'mobilityMins' as const, sessKey: 'mobilitySessions' as const }
               ].map(({ label, color, minsKey, sessKey }) => {
                 const total = timeseries.reduce((s, w) => s + w[minsKey], 0)

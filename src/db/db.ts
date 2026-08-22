@@ -464,6 +464,35 @@ export interface AIMobilityCoachingLog {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// TRAINING PROGRAMS
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface ProgramWeek {
+  weekNumber: number
+  focus: string
+  isDeload: boolean
+  sessions: ProgramSession[]
+}
+
+export interface ProgramSession {
+  dayOfWeek: number // 0=Mon...6=Sun
+  label: string
+  exercises: SessionPlanItem[]
+}
+
+export interface TrainingProgram {
+  id?: number
+  name: string
+  goal: string
+  weeks: ProgramWeek[]
+  totalWeeks: number
+  currentWeek: number
+  completedSessions: string[] // "week-day" keys like "1-0", "1-3"
+  createdAt: string
+  active: boolean
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // DB
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -485,6 +514,7 @@ export class MobilityDB extends Dexie {
   bodyMeasurementLogs!: Table<BodyMeasurementLog, number>
   aiCoachingLogs!: Table<AICoachingLog, number>
   aiMobilityCoachingLogs!: Table<AIMobilityCoachingLog, number>
+  trainingPrograms!: Table<TrainingProgram, number>
 
   constructor() {
     super('mobilityCoachDB')
@@ -570,6 +600,9 @@ export class MobilityDB extends Dexie {
     })
     this.version(9).stores({
       aiMobilityCoachingLogs: '++id, &date'
+    })
+    this.version(10).stores({
+      trainingPrograms: '++id, active, createdAt'
     })
   }
 }

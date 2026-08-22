@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
+import { isoDate } from '../lib/date'
 
 export interface WeeklyActivityData {
   weekLabel: string // e.g. "Jun 30"
@@ -7,9 +8,11 @@ export interface WeeklyActivityData {
   bjjMins: number
   calisthenicsMins: number
   mobilityMins: number
+  runningMins: number
   bjjSessions: number
   calisthenicsSessions: number
   mobilitySessions: number
+  runningSessions: number
   totalMins: number
 }
 
@@ -28,8 +31,8 @@ export function useActivityTimeseries(weeksBack = 12): WeeklyActivityData[] {
     const weekStart = new Date(weekEnd)
     weekStart.setDate(weekEnd.getDate() - 6)
 
-    const wsStr = weekStart.toISOString().split('T')[0]
-    const weStr = weekEnd.toISOString().split('T')[0]
+    const wsStr = isoDate(weekStart)
+    const weStr = isoDate(weekEnd)
 
     // BJJ: sum technicalMins + sparringMins (fallback 50T+10S=60 for old logs)
     const bjjWeekLogs = bjjLogs.filter((l) => l.date >= wsStr && l.date <= weStr)
@@ -45,13 +48,20 @@ export function useActivityTimeseries(weeksBack = 12): WeeklyActivityData[] {
     )
     const calisthenicsMins = calisthenicsWeekSessions.reduce((sum, s) => sum + s.durationMin, 0)
 
-    // Mobility sessions (non-bjj, non-calisthenics, non-custom)
+    // Running sessions
+    const runningWeekSessions = sessions.filter(
+      (s) => s.date >= wsStr && s.date <= weStr && s.type === 'running'
+    )
+    const runningMins = runningWeekSessions.reduce((sum, s) => sum + s.durationMin, 0)
+
+    // Mobility sessions (everything else except bjj, calisthenics, running, custom)
     const mobilityWeekSessions = sessions.filter(
       (s) =>
         s.date >= wsStr &&
         s.date <= weStr &&
         s.type !== 'bjj' &&
         s.type !== 'calisthenics' &&
+        s.type !== 'running' &&
         s.type !== 'custom'
     )
     const mobilityMins = mobilityWeekSessions.reduce((sum, s) => sum + s.durationMin, 0)
@@ -64,10 +74,12 @@ export function useActivityTimeseries(weeksBack = 12): WeeklyActivityData[] {
       bjjMins,
       calisthenicsMins,
       mobilityMins,
+      runningMins,
       bjjSessions: bjjWeekLogs.length,
       calisthenicsSessions: calisthenicsWeekSessions.length,
       mobilitySessions: mobilityWeekSessions.length,
-      totalMins: bjjMins + calisthenicsMins + mobilityMins
+      runningSessions: runningWeekSessions.length,
+      totalMins: bjjMins + calisthenicsMins + mobilityMins + runningMins
     })
   }
 

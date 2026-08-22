@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { Card } from '../components/Card'
+import AchievementsCard from '../components/AchievementsCard'
 import { usePreferences } from '../hooks/usePreferences'
 import { useAuth } from '../hooks/useAuth'
 import { downloadExport, importData, readFileAsJson, type ImportMode } from '../lib/dataTransfer'
@@ -403,6 +404,8 @@ export default function Profile() {
         <h1 className="text-2xl font-extrabold">Profile</h1>
       </div>
 
+
+      <AchievementsCard />
 
       <Card>
         <h2 className="mb-3 text-base font-bold">Profile avatar</h2>
