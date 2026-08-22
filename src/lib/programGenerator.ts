@@ -126,17 +126,24 @@ function prescribeReps(
   goalRest: number,
   levels?: Map<string, ExerciseLevel>,
 ): { rep: string; rest: number } {
+  // No performance data at all — use conservative starting point
   if (!levels || !levels.has(exerciseId)) {
-    return { rep: type === 'hold' ? '20-30s' : goalReps, rest: goalRest }
+    if (type === 'hold') return { rep: '20-30s', rest: goalRest }
+    // Start at ~60% of goal range (e.g., "8-12" → "5-8")
+    const [gMin, gMax] = goalReps.split('-').map(Number)
+    const conservMin = Math.max(1, Math.round(gMin * 0.6))
+    const conservMax = Math.max(conservMin + 1, Math.round(gMax * 0.6))
+    return { rep: `${conservMin}-${conservMax}`, rest: goalRest }
   }
 
   const level = levels.get(exerciseId)!
   const max = level.maxValue
 
   if (type === 'hold' || level.unit === 'sec') {
-    // For holds: use 60-70% of max as working set
-    const workTime = Math.max(5, Math.round(max * 0.65))
-    const targetTime = Math.min(workTime + 5, max)
+    // For holds: use 60-70% of max, capped at 60s working sets
+    const rawWork = Math.round(max * 0.65)
+    const workTime = Math.max(5, Math.min(rawWork, 60))
+    const targetTime = Math.min(workTime + 5, max, 65)
     return { rep: `${workTime}-${targetTime}s`, rest: goalRest }
   }
 
@@ -144,19 +151,16 @@ function prescribeReps(
   const [goalMin, goalMax] = goalReps.split('-').map(Number)
 
   if (max >= goalMax) {
-    // User is strong enough for the full range
     return { rep: goalReps, rest: goalRest }
   }
 
   if (max >= goalMin) {
-    // User is in range but can't hit the top — work within their ability
     return { rep: `${goalMin}-${max}`, rest: goalRest }
   }
 
-  // User's max is below the goal range — work at ~80% of their max
+  // User's max is below the goal range — work near their max
   const workReps = Math.max(1, max - 1)
   const targetReps = max
-  // Give more rest when working near max
   const rest = Math.min(goalRest + 30, 180)
   return { rep: `${workReps}-${targetReps}`, rest }
 }
