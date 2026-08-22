@@ -89,9 +89,10 @@ export function useTrainingBalance(weeks = 4): TrainingBalance | null {
     counts.grappling.days.add(log.date)
   }
 
+  const MOBILITY_TYPES = new Set(['morning', 'bjj_release', 'hip_mobility', 'pancake', 'pike', 'ninety_ninety', 'recovery'])
   for (const sess of sessions) {
     if (sess.date < cutoffStr) continue
-    if (sess.type === 'mobility' || (sess.type !== 'bjj' && sess.type !== 'calisthenics' && sess.type !== 'running' && sess.type !== 'custom')) {
+    if (MOBILITY_TYPES.has(sess.type)) {
       counts.mobility.sets += 5
       counts.mobility.days.add(sess.date)
     }

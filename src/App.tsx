@@ -17,6 +17,7 @@ const Calendar = lazy(() => import('./pages/Calendar'))
 import { usePreferences } from './hooks/usePreferences'
 import { useAuth } from './hooks/useAuth'
 import { useFirebaseSync } from './hooks/useFirebaseSync'
+import { useHealthAutoImport } from './hooks/useHealthAutoImport'
 import { ConflictWarning } from './components/ConflictWarning'
 import { LoginScreen } from './components/LoginScreen'
 import {
@@ -68,6 +69,8 @@ function AppContent() {
       setWeightLogSyncCallback(null)
     }
   }, [user, addWorkoutToFirestore, addBjjClassLogToFirestore, addCalisthenicsLogToFirestore, addRunningLogToFirestore, addHealthMetricsToFirestore, addBodyMeasurementToFirestore, addHoldLogToFirestore, addWeightLogToFirestore])
+
+  useHealthAutoImport()
 
   useEffect(() => {
     const root = document.documentElement

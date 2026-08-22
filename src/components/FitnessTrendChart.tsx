@@ -28,6 +28,16 @@ export default function FitnessTrendChart() {
   const weekAgo = todayIdx >= 7 ? data[todayIdx - 7] : data[0]
   const delta = Math.round((current.overall - weekAgo.overall) * 10) / 10
 
+  const chartData = data.map((d) => ({
+    ...d,
+    overall: d.isForecast ? undefined : d.overall,
+    forecast: d.isForecast ? d.overall : undefined,
+  }))
+  const lastActualIdx = data.findIndex((d) => d.isForecast)
+  if (lastActualIdx > 0) {
+    (chartData[lastActualIdx] as any).forecast = data[lastActualIdx - 1].overall
+  }
+
   const minY = Math.min(...data.map((d) => Math.min(d.overall, d.strength, d.grappling, d.mobility)))
   const maxY = Math.max(...data.map((d) => Math.max(d.overall, d.strength, d.grappling, d.mobility)))
   const yMin = Math.floor(Math.min(minY, 95) / 5) * 5
@@ -51,7 +61,7 @@ export default function FitnessTrendChart() {
 
         <div style={{ height: 200 }}>
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={data} margin={{ left: -16, right: 4, top: 4 }}>
+            <ComposedChart data={chartData} margin={{ left: -16, right: 4, top: 4 }}>
               <XAxis
                 dataKey="label"
                 tick={{ fill: '#7a7d96', fontSize: 9 }}
@@ -85,7 +95,15 @@ export default function FitnessTrendChart() {
                 stroke={COLORS.overall}
                 strokeWidth={2.5}
                 dot={false}
-                strokeDasharray={(d: any) => d?.isForecast ? '4 3' : undefined}
+              />
+              <Line
+                type="monotone"
+                dataKey="forecast"
+                stroke={COLORS.overall}
+                strokeWidth={2}
+                dot={false}
+                strokeDasharray="4 3"
+                opacity={0.6}
               />
               <Line
                 type="monotone"

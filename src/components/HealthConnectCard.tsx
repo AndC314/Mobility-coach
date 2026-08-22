@@ -163,17 +163,22 @@ export default function HealthConnectCard() {
 }
 
 function AppleHealthGuide() {
+  const appUrl = window.location.origin + window.location.pathname
+
   return (
     <div className="rounded-xl bg-card2 border border-border p-4 space-y-3">
-      <h4 className="text-xs font-bold text-accent uppercase tracking-wider">Setup Guide</h4>
+      <h4 className="text-xs font-bold text-accent uppercase tracking-wider">Auto-Import via Shortcut</h4>
+      <p className="text-[11px] text-muted">
+        Create an iOS Shortcut that reads Apple Health and opens this app — data imports automatically, no paste needed.
+      </p>
 
       <div className="space-y-2.5">
         <Step n={1} title="Create an iOS Shortcut">
-          Open the <strong>Shortcuts</strong> app and create a new shortcut.
+          Open the <strong>Shortcuts</strong> app → tap + → name it "Sync Health".
         </Step>
 
         <Step n={2} title="Add Health actions">
-          Add "Find Health Samples" actions for each metric:
+          Add "Find Health Samples" for each metric you want:
           <ul className="mt-1 ml-3 space-y-0.5 text-[11px] text-muted list-disc">
             <li>Sleep Analysis → calculate total hours</li>
             <li>Heart Rate Variability → latest value</li>
@@ -183,22 +188,28 @@ function AppleHealthGuide() {
           </ul>
         </Step>
 
-        <Step n={3} title="Format as JSON">
-          Use a "Text" action to build the JSON object with today's date and your health values.
+        <Step n={3} title="Build JSON + Base64 encode">
+          Use a "Text" action with the JSON template, then "Base64 Encode" it.
         </Step>
 
-        <Step n={4} title="Copy to clipboard">
-          Add "Copy to Clipboard" at the end. Then open this app and paste in the Quick Import above.
+        <Step n={4} title='Open URL with data'>
+          Add "Open URLs" action with:
+          <code className="mt-1 block text-[10px] bg-card p-2 rounded border border-border break-all">
+            {appUrl}?health=[Base64 result]
+          </code>
         </Step>
 
-        <Step n={5} title="Automate (optional)">
-          In Shortcuts → Automation, trigger this shortcut daily at wake-up time for hands-free data collection.
+        <Step n={5} title="Automate daily">
+          Shortcuts → Automation → Time of Day → run "Sync Health" at wake-up. Enable "Run without asking".
         </Step>
       </div>
 
-      <div className="pt-2 border-t border-border">
+      <div className="pt-2 border-t border-border space-y-1.5">
         <p className="text-[10px] text-muted italic">
-          Tip: Set the automation to run without confirmation so it copies data to clipboard automatically each morning.
+          The app detects the URL parameter, imports data instantly, and cleans the URL. Zero taps after setup.
+        </p>
+        <p className="text-[10px] text-muted">
+          Fallback: you can still paste JSON manually in the Quick Import above.
         </p>
       </div>
     </div>
@@ -206,28 +217,41 @@ function AppleHealthGuide() {
 }
 
 function GoogleFitGuide() {
+  const appUrl = window.location.origin + window.location.pathname
+
   return (
     <div className="rounded-xl bg-card2 border border-border p-4 space-y-3">
-      <h4 className="text-xs font-bold text-teal uppercase tracking-wider">Setup Guide</h4>
+      <h4 className="text-xs font-bold text-teal uppercase tracking-wider">Auto-Import via Tasker</h4>
 
       <div className="space-y-2.5">
-        <Step n={1} title="Use Health Connect">
-          Install <strong>Health Connect</strong> from Play Store if not already on your device.
+        <Step n={1} title="Install Health Connect">
+          Get <strong>Health Connect</strong> from Play Store and grant permissions to Google Fit.
         </Step>
 
-        <Step n={2} title="Export via Tasker or MacroDroid">
-          Use an automation app to read Health Connect data and format it as JSON.
+        <Step n={2} title="Create Tasker profile">
+          Use <strong>Tasker</strong> or <strong>MacroDroid</strong> to read Health Connect APIs (sleep, HR, weight).
         </Step>
 
-        <Step n={3} title="Copy and paste">
-          Copy the JSON output and paste it in the Quick Import section above.
+        <Step n={3} title="Format + Base64 encode">
+          Build a JSON string with the data, then Base64 encode it.
+        </Step>
+
+        <Step n={4} title="Open browser with URL">
+          Launch browser with:
+          <code className="mt-1 block text-[10px] bg-card p-2 rounded border border-border break-all">
+            {appUrl}?health=[base64 encoded JSON]
+          </code>
+        </Step>
+
+        <Step n={5} title="Schedule daily">
+          Set the Tasker profile to trigger daily (e.g., 7am). The app imports automatically on open.
         </Step>
       </div>
 
       <div className="pt-2 border-t border-border">
         <h5 className="text-[11px] font-semibold text-ink mb-1">Alternative: Google Takeout</h5>
         <p className="text-[10px] text-muted">
-          Export from Google Takeout → Google Fit → download the JSON files → extract daily metrics → paste here.
+          Google Takeout → Google Fit → download JSON → base64 encode → open URL. Or paste JSON manually above.
         </p>
       </div>
     </div>
