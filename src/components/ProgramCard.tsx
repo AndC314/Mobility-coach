@@ -3,7 +3,7 @@ import { Card } from './Card'
 import { usePrograms } from '../hooks/usePrograms'
 import { usePreferences } from '../hooks/usePreferences'
 import { db, type TrainingProgram, type ProgramWeek, type ProgramSession, type SessionPlanItem } from '../db/db'
-import { generateProgram, GOAL_META, type ProgramGoal, type ProgramIntensity, type ProgramConfig } from '../lib/programGenerator'
+import { generateProgram, GOAL_META, type ProgramGoal, type ProgramIntensity, type ProgramConfig, type ExerciseLevel } from '../lib/programGenerator'
 
 const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -43,7 +43,32 @@ function ProgramBuilder({
   const [intensity, setIntensity] = useState<ProgramIntensity>('moderate')
   const [weeks, setWeeks] = useState(4)
 
-  function handleCreate() {
+  async function handleCreate() {
+    // Query user's actual exercise performance from last 60 days
+    const cutoff = new Date()
+    cutoff.setDate(cutoff.getDate() - 60)
+    const cutoffStr = cutoff.toISOString().slice(0, 10)
+    const recentLogs = await db.calisthenicsLogs
+      .where('date')
+      .above(cutoffStr)
+      .toArray()
+
+    const levels = new Map<string, ExerciseLevel>()
+    for (const log of recentLogs) {
+      const existing = levels.get(log.exerciseId)
+      const unit = log.metric === 'hold_sec' ? 'sec' : 'reps'
+      if (!existing) {
+        levels.set(log.exerciseId, {
+          maxValue: log.value,
+          lastSets: log.sets || 1,
+          unit,
+        })
+      } else {
+        existing.maxValue = Math.max(existing.maxValue, log.value)
+        existing.lastSets = log.sets || existing.lastSets
+      }
+    }
+
     const config: ProgramConfig = {
       goal,
       daysPerWeek: days,
@@ -51,6 +76,7 @@ function ProgramBuilder({
       intensity,
       equipment: preferences.availableEquipment ?? [],
       totalWeeks: weeks,
+      levels,
     }
     createProgram(generateProgram(config))
     onCreated()

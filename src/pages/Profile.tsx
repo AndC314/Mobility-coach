@@ -6,16 +6,11 @@ import { useAuth } from '../hooks/useAuth'
 import { downloadExport, importData, readFileAsJson, type ImportMode } from '../lib/dataTransfer'
 import { runFullRepair, purgeGhostMobilitySessions } from '../lib/dataRepair'
 import { primeAudio, playCompleteDing } from '../lib/sound'
-import { db, type MobilityGoal, type SessionDuration, type SportDurationKey, type SportDurations, type ProfileAvatar, DEFAULT_SPORT_DURATIONS } from '../db/db'
+import { db, type SessionDuration, type SportDurationKey, type SportDurations, type ProfileAvatar, DEFAULT_SPORT_DURATIONS } from '../db/db'
 import { collection, getDocs, addDoc, deleteDoc, doc } from 'firebase/firestore'
 import { db as firestoreDb } from '../lib/firebase'
 
 const DURATIONS: SessionDuration[] = [10, 20, 30]
-const GOALS: { id: MobilityGoal; label: string; icon: string }[] = [
-  { id: 'bjj', label: 'BJJ', icon: '🥋' },
-  { id: 'calisthenics', label: 'Calisthenics', icon: '🤸' },
-  { id: 'general', label: 'General health', icon: '❤️' }
-]
 
 const PROFILE_AVATARS: { id: ProfileAvatar; label: string; sport: 'calisthenics' | 'bjj' }[] = [
   { id: 'calisthenics_front_lever', label: 'Front Lever', sport: 'calisthenics' },
@@ -170,6 +165,7 @@ export default function Profile() {
   const [pushing, setPushing] = useState(false)
   const [clearingCache, setClearingCache] = useState(false)
   const [cacheCleared, setCacheCleared] = useState(false)
+  const [showAdvanced, setShowAdvanced] = useState(false)
 
   async function handleForcePush() {
     if (!user) return
@@ -561,25 +557,6 @@ export default function Profile() {
         </div>
       </Card>
 
-      <Card>
-        <h2 className="mb-3 text-base font-bold">Mobility goal</h2>
-        <div className="space-y-2">
-          {GOALS.map((g) => (
-            <button
-              key={g.id}
-              onClick={() => update({ goal: g.id })}
-              className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition-colors ${
-                preferences.goal === g.id
-                  ? 'bg-purple/20 text-purple border border-purple/40'
-                  : 'bg-card2 text-ink/90 border border-border'
-              }`}
-            >
-              <span className="text-xl">{g.icon}</span>
-              <span className="text-sm font-semibold">{g.label}</span>
-            </button>
-          ))}
-        </div>
-      </Card>
 
       <Card className="flex items-center justify-between">
         <div>
@@ -667,6 +644,29 @@ export default function Profile() {
       </Card>
 
 
+      <Card>
+        <h2 className="mb-2 text-base font-bold">Integrations</h2>
+        <p className="text-xs leading-relaxed text-muted mb-3">
+          Apple Health data (sleep, HRV, resting HR, weight) syncs daily via iOS Shortcuts.
+        </p>
+        <a
+          href="#/progress"
+          className="block w-full rounded-xl bg-teal/15 py-3 text-center text-sm font-bold text-teal border border-teal/40"
+        >
+          Progress → Health tab
+        </a>
+      </Card>
+
+      {/* Advanced / Developer section */}
+      <button
+        onClick={() => setShowAdvanced(!showAdvanced)}
+        className="w-full flex items-center justify-between rounded-xl bg-card2 px-4 py-3 border border-border"
+      >
+        <span className="text-sm font-semibold text-muted">Advanced</span>
+        <span className="text-xs text-muted">{showAdvanced ? '▲' : '▼'}</span>
+      </button>
+
+      {showAdvanced && <>
       <Card>
         <h2 className="mb-1 text-base font-bold">Your data</h2>
         <p className="mb-3 text-xs text-muted">
@@ -875,14 +875,6 @@ export default function Profile() {
       )}
 
       <Card>
-        <h2 className="mb-2 text-base font-bold">Integrations</h2>
-        <p className="text-xs leading-relaxed text-muted">
-          Apple Health, Garmin, sleep, HRV, resting HR and training readiness sync are planned for a future
-          companion app. The data model is already in place — no setup needed here yet.
-        </p>
-      </Card>
-
-      <Card>
         <h2 className="mb-1 text-base font-bold">App update</h2>
         <p className="mb-3 text-xs text-muted">
           Force-clear the service worker cache and reload. Use this when you know a new version is deployed but your phone is still showing the old UI.
@@ -895,6 +887,7 @@ export default function Profile() {
           {cacheCleared ? 'Cache cleared — reloading…' : clearingCache ? 'Clearing…' : 'Clear cache & reload'}
         </button>
       </Card>
+      </>}
 
       <MathRulesCard />
 
@@ -915,7 +908,7 @@ export default function Profile() {
         </Card>
       )}
 
-      <p className="pt-2 text-center text-xs text-muted">Mobility Coach · v1.2a · All data stored locally on this device</p>
+      <p className="pt-2 text-center text-xs text-muted">Mobility Coach · v1.3 · All data stored locally on this device</p>
     </div>
   )
 }

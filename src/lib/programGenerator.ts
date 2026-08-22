@@ -4,6 +4,12 @@ import type { ProgramWeek, ProgramSession, SessionPlanItem, TrainingProgram } fr
 export type ProgramGoal = 'strength' | 'hypertrophy' | 'endurance' | 'skills'
 export type ProgramIntensity = 'moderate' | 'hard' | 'max'
 
+export interface ExerciseLevel {
+  maxValue: number // best single-set value (reps or seconds)
+  lastSets: number // sets in most recent session
+  unit: string // 'reps' or 'sec'
+}
+
 export interface ProgramConfig {
   goal: ProgramGoal
   daysPerWeek: number // 2-6
@@ -11,6 +17,7 @@ export interface ProgramConfig {
   intensity: ProgramIntensity
   equipment: string[]
   totalWeeks: number // 3-6
+  levels?: Map<string, ExerciseLevel> // exerciseId → current ability
 }
 
 const GOAL_META: Record<ProgramGoal, { sets: [number, number]; reps: string; rest: number; label: string }> = {
@@ -37,7 +44,7 @@ const SPLIT_LABELS: Record<number, string[]> = {
 }
 
 export function generateProgram(config: ProgramConfig): Omit<TrainingProgram, 'id'> {
-  const { goal, daysPerWeek, sessionMinutes, intensity, equipment, totalWeeks } = config
+  const { goal, daysPerWeek, sessionMinutes, intensity, equipment, totalWeeks, levels } = config
   const meta = GOAL_META[goal]
   const split = SPLIT_MAP[daysPerWeek] || SPLIT_MAP[3]
   const labels = SPLIT_LABELS[daysPerWeek] || SPLIT_LABELS[3]
@@ -71,12 +78,14 @@ export function generateProgram(config: ProgramConfig): Omit<TrainingProgram, 'i
         const take = Math.min(remaining, Math.ceil(exercisesPerSession / categories.length))
         const picked = pickExercises(pool, take, goal)
         for (const ex of picked) {
+          const reps = prescribeReps(ex.id, ex.type, meta.reps, meta.rest, levels)
+          const sets = prescribeSets(ex.id, baseSets, volumeScale, levels)
           exercises.push({
             exerciseId: ex.id,
             name: ex.name,
-            sets: Math.max(2, Math.round(baseSets * volumeScale)),
-            reps: ex.type === 'hold' ? '20-30s' : meta.reps,
-            restSec: meta.rest,
+            sets,
+            reps: reps.rep,
+            restSec: reps.rest,
             category: ex.category,
           })
         }
@@ -108,6 +117,64 @@ export function generateProgram(config: ProgramConfig): Omit<TrainingProgram, 'i
     createdAt: new Date().toISOString(),
     active: true,
   }
+}
+
+function prescribeReps(
+  exerciseId: string,
+  type: string,
+  goalReps: string,
+  goalRest: number,
+  levels?: Map<string, ExerciseLevel>,
+): { rep: string; rest: number } {
+  if (!levels || !levels.has(exerciseId)) {
+    return { rep: type === 'hold' ? '20-30s' : goalReps, rest: goalRest }
+  }
+
+  const level = levels.get(exerciseId)!
+  const max = level.maxValue
+
+  if (type === 'hold' || level.unit === 'sec') {
+    // For holds: use 60-70% of max as working set
+    const workTime = Math.max(5, Math.round(max * 0.65))
+    const targetTime = Math.min(workTime + 5, max)
+    return { rep: `${workTime}-${targetTime}s`, rest: goalRest }
+  }
+
+  // Parse goal rep range (e.g., "8-12")
+  const [goalMin, goalMax] = goalReps.split('-').map(Number)
+
+  if (max >= goalMax) {
+    // User is strong enough for the full range
+    return { rep: goalReps, rest: goalRest }
+  }
+
+  if (max >= goalMin) {
+    // User is in range but can't hit the top — work within their ability
+    return { rep: `${goalMin}-${max}`, rest: goalRest }
+  }
+
+  // User's max is below the goal range — work at ~80% of their max
+  const workReps = Math.max(1, max - 1)
+  const targetReps = max
+  // Give more rest when working near max
+  const rest = Math.min(goalRest + 30, 180)
+  return { rep: `${workReps}-${targetReps}`, rest }
+}
+
+function prescribeSets(
+  exerciseId: string,
+  baseSets: number,
+  volumeScale: number,
+  levels?: Map<string, ExerciseLevel>,
+): number {
+  const scaledSets = Math.max(2, Math.round(baseSets * volumeScale))
+
+  if (!levels || !levels.has(exerciseId)) return scaledSets
+
+  const level = levels.get(exerciseId)!
+  // Start from what the user last did, then scale
+  const startSets = Math.max(2, Math.min(level.lastSets, baseSets))
+  return Math.max(2, Math.round(startSets * volumeScale))
 }
 
 function pickExercises(

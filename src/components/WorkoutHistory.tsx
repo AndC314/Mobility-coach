@@ -105,7 +105,7 @@ export default function WorkoutHistory() {
             <span className="rounded-full bg-teal/10 px-2.5 py-1 text-[11px] font-semibold text-teal">
               {day.totalVolume} vol
             </span>
-            {day.durationMin > 0 && (
+            {day.durationMin >= 5 && (
               <span className="rounded-full bg-gold/10 px-2.5 py-1 text-[11px] font-semibold text-gold">
                 {day.durationMin}min
               </span>
@@ -114,7 +114,7 @@ export default function WorkoutHistory() {
 
           {/* Exercise grid */}
           <div className="grid grid-cols-2 gap-1.5">
-            {day.exercises.slice(0, 6).map((ex) => {
+            {day.exercises.map((ex) => {
               const def = getExerciseDef(ex.id)
               if (!def) return null
               return (
@@ -128,9 +128,6 @@ export default function WorkoutHistory() {
               )
             })}
           </div>
-          {day.exercises.length > 6 && (
-            <p className="text-[10px] text-muted text-center">+{day.exercises.length - 6} more</p>
-          )}
         </Card>
       ))}
     </div>
